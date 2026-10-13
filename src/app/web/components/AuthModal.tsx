@@ -4,6 +4,7 @@ import { User } from "../../../types";
 import { apiFetch } from "../../../config";
 import { motion, AnimatePresence } from "motion/react";
 import { sessionState } from "../../../utils/sessionState";
+import { navigateTo } from "../../../router";
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -96,6 +97,7 @@ export function AuthModal({
         setSuccessMessage(`¡Cuenta creada con éxito! Bienvenido, @${cleanUsername}`);
         setTimeout(() => {
           onLoginSuccess(data.user);
+          navigateTo('/tienda/catalogo');
           onClose();
         }, 1000);
       } else {
@@ -139,6 +141,7 @@ export function AuthModal({
         setSuccessMessage(`¡Bienvenido de vuelta, @${data.user.username}!`);
         setTimeout(() => {
           onLoginSuccess(data.user);
+          navigateTo('/tienda/catalogo');
           onClose();
         }, 900);
       } else {

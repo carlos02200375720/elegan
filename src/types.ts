@@ -33,8 +33,8 @@ export interface User {
 export function isGuestUser(user?: Partial<User> | null): boolean {
   if (!user) return true;
   if (user.isGuest === true) return true;
-  // If explicitly registered (isGuest false and email present)
-  if (user.isGuest === false && Boolean(user.email)) return false;
+  // If explicitly registered (isGuest false and email or assigned username present)
+  if (user.isGuest === false && (Boolean(user.email) || (Boolean(user.username) && user.username !== "invitado" && user.username !== "guest" && user.username !== "current_user"))) return false;
   const username = (user.username || "").trim().toLowerCase();
   if (!username) return true;
   if (

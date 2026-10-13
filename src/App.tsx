@@ -42,19 +42,19 @@ export default function App() {
           const savedUserJson = JSON.stringify(sessionState.getUser());
           if (savedUserJson && isSuperAdmin(JSON.parse(savedUserJson))) return 'admin';
         } catch {}
-        return 'inicio';
+        return 'shop';
       }
       if (route.type === 'inicio' || route.type === 'reels') {
         return 'inicio';
       }
     }
-    return 'inicio';
+    return 'shop';
   });
 
-  // Ensure root URL '/' normalizes to '/inicio' when on the home page
+  // Ensure root URL '/' normalizes to '/tienda/catalogo' as the default entry page of the app/web
   useEffect(() => {
     if (typeof window !== "undefined" && (window.location.pathname === "/" || window.location.pathname === "")) {
-      navigateTo("/inicio", { replace: true });
+      navigateTo("/tienda/catalogo", { replace: true });
     }
   }, []);
 
@@ -172,8 +172,8 @@ export default function App() {
   // evaluated only after the variable has been initialized.
   useEffect(() => {
     if (activeTab === "admin" && !isSuperAdmin(currentUser)) {
-      setActiveTab("inicio");
-      navigateTo("/inicio");
+      setActiveTab("shop");
+      navigateTo("/tienda/catalogo");
     }
   }, [activeTab, currentUser]);
 
@@ -387,17 +387,21 @@ export default function App() {
         const sessionUsername = (sessionState.getUsername() || sessionUser?.username || '').toLowerCase().replace(/^@/, '');
         const currentUsername = (currentUser?.username || '').toLowerCase().replace(/^@/, '');
         const currentEmail = (currentUser?.email || sessionUser?.email || '').toLowerCase();
+        const isConfig = currentRoute.profileTab === 'config';
+        const isAuth = Boolean(
+          sessionState.isAuthenticated() ||
+          (currentUser && !isGuestUser(currentUser) && currentUser.username !== 'invitado' && currentUser.username !== 'guest') ||
+          (sessionUsername && sessionUsername !== 'invitado' && sessionUsername !== 'guest')
+        );
         const isOwnUser =
-          Boolean(
-            (currentUser && !currentUser.isGuest && currentUser.username !== 'invitado') ||
-            (sessionUsername && sessionUsername !== 'invitado')
-          ) &&
-          (cleanRouteUser === currentUsername ||
-            cleanRouteUser === sessionUsername ||
-            (Boolean(currentEmail) && cleanRouteUser === currentEmail) ||
-            currentRoute.userId === currentUser?.id ||
-            (Boolean(currentUser?.originalId) && currentRoute.userId === currentUser.originalId) ||
-            (Boolean(sessionUser?.originalId) && currentRoute.userId === sessionUser.originalId));
+          (isConfig && isAuth) ||
+          (isAuth &&
+            (cleanRouteUser === currentUsername ||
+              cleanRouteUser === sessionUsername ||
+              (Boolean(currentEmail) && cleanRouteUser === currentEmail) ||
+              currentRoute.userId === currentUser?.id ||
+              (Boolean(currentUser?.originalId) && currentRoute.userId === currentUser.originalId) ||
+              (Boolean(sessionUser?.originalId) && currentRoute.userId === sessionUser.originalId)));
         setSelectedCreatorProfileId(isOwnUser ? null : currentRoute.userId);
       } else {
         setSelectedCreatorProfileId(null);
@@ -430,24 +434,24 @@ export default function App() {
           (u.originalId && u.originalId === selectedCreatorProfileId) ||
           (u.username && u.username.toLowerCase() === selectedCreatorProfileId.toLowerCase())
       );
-      const targetUsername = matchedCreator?.username || selectedCreatorProfileId;
+      const targetUser = matchedCreator || selectedCreatorProfileId;
       const expectedPath = isSavedSubRoute
-        ? getProfileSavedPath(targetUsername)
+        ? getProfileSavedPath(targetUser)
         : isCompraSubRoute
-        ? getProfileCompraPath(targetUsername)
+        ? getProfileCompraPath(targetUser)
         : isConfigSubRoute
-        ? getProfileConfigPath(targetUsername)
+        ? getProfileConfigPath(targetUser)
         : isProductoSubRoute
-        ? getProfileProductoPath(targetUsername)
+        ? getProfileProductoPath(targetUser)
         : isVentaSubRoute
-        ? getProfileVentaPath(targetUsername)
+        ? getProfileVentaPath(targetUser)
         : isPublicacionesSubRoute
-        ? getProfilePublicacionesPath(targetUsername)
+        ? getProfilePublicacionesPath(targetUser)
         : isPublicarSubRoute
-        ? getProfilePublicarPath(targetUsername)
+        ? getProfilePublicarPath(targetUser)
         : isRendimientoSubRoute
-        ? getProfileRendimientoPath(targetUsername)
-        : getProfilePath(targetUsername);
+        ? getProfileRendimientoPath(targetUser)
+        : getProfilePath(targetUser);
       if (window.location.pathname !== expectedPath) {
         navigateTo(expectedPath, { replace: true });
       }
@@ -1587,16 +1591,17 @@ export default function App() {
         (u.originalId && u.originalId === creatorId) ||
         (u.username && u.username.toLowerCase() === creatorId.toLowerCase())
     );
-    const targetUsername = matchedCreator?.username || creatorId;
+    const targetUser = matchedCreator || creatorId;
     const isOwn =
       currentUser &&
       !isGuestUser(currentUser) &&
-      (targetUsername.toLowerCase() === currentUser.username?.toLowerCase() ||
-        creatorId === currentUser.id ||
-        (Boolean(currentUser.originalId) && creatorId === currentUser.originalId));
-    setSelectedCreatorProfileId(isOwn ? null : creatorId);
+      (creatorId === currentUser.id ||
+        (Boolean(currentUser.originalId) && creatorId === currentUser.originalId) ||
+        (matchedCreator && (matchedCreator.id === currentUser.id || (Boolean(currentUser.originalId) && matchedCreator.originalId === currentUser.originalId))) ||
+        (Boolean(currentUser.username) && (matchedCreator?.username?.toLowerCase() === currentUser.username.toLowerCase())));
+    setSelectedCreatorProfileId(isOwn ? null : (matchedCreator?.id || creatorId));
     setActiveTab('profile');
-    navigateTo(getProfilePath(targetUsername));
+    navigateTo(getProfilePath(isOwn ? currentUser : targetUser));
   };
 
   const handleProductDetailsLink = (product: Product) => {
@@ -1729,41 +1734,40 @@ export default function App() {
         onContinueAnyway={() => setIsInitialLoading(false)}
       />
 
-      {/* Floating Platform Switcher for Android Preview Mode:
-          When on Web, it has been moved directly into the Admin Panel horizontal menu;
-          When on Android, it allows returning to Web mode cleanly. */}
-      {typeof window !== "undefined" && !(typeof (window as any).Capacitor !== "undefined" && (window as any).Capacitor?.isNativePlatform?.()) && activePlatform === 'android' && (
-        <div
-          className="fixed top-3 right-3 z-[9999] flex items-center bg-slate-900/90 backdrop-blur-md p-1 border border-slate-700/80 rounded-full shadow-2xl text-xs font-semibold text-white select-none transition-all"
+      {/* Botones fijos para alternar rápidamente entre versión Web y versión Móvil / Android */}
+      {typeof window !== "undefined" && !(typeof (window as any).Capacitor !== "undefined" && (window as any).Capacitor?.isNativePlatform?.()) && (
+        <aside
+          aria-label="Selector de plataforma"
+          className="fixed top-3 right-3 z-[9999] flex items-center bg-slate-950/95 backdrop-blur-md p-1 border border-slate-700/80 rounded-full shadow-2xl text-xs font-semibold text-white select-none transition-all ring-1 ring-white/10"
           id="preview-platform-switcher"
         >
           <button
             type="button"
-            onClick={() => handleSwitchPlatform('android')}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-full transition-all cursor-pointer ${
-              activePlatform === 'android'
-                ? 'bg-amber-500 text-slate-950 font-bold shadow-md'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800'
-            }`}
-            title="Visualizar versión Android"
-          >
-            <span>📱</span>
-            <span>Android</span>
-          </button>
-          <button
-            type="button"
             onClick={() => handleSwitchPlatform('web')}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-full transition-all cursor-pointer ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all cursor-pointer ${
               activePlatform === 'web'
-                ? 'bg-amber-500 text-slate-950 font-bold shadow-md'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                ? 'bg-amber-500 text-slate-950 font-black shadow-md scale-102'
+                : 'text-slate-300 hover:text-white hover:bg-slate-800/80 font-medium'
             }`}
             title="Visualizar versión Web"
           >
             <span>🌐</span>
             <span>Web</span>
           </button>
-        </div>
+          <button
+            type="button"
+            onClick={() => handleSwitchPlatform('android')}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-all cursor-pointer ${
+              activePlatform === 'android'
+                ? 'bg-amber-500 text-slate-950 font-black shadow-md scale-102'
+                : 'text-slate-300 hover:text-white hover:bg-slate-800/80 font-medium'
+            }`}
+            title="Visualizar versión Android / Móvil"
+          >
+            <span>📱</span>
+            <span>Android</span>
+          </button>
+        </aside>
       )}
 
       {/* Main Target Routing: Android vs Web */}
@@ -1910,8 +1914,9 @@ export default function App() {
           });
           setGuestInteractionAlert(null);
           setSelectedCreatorProfileId(null);
-          setActiveTab('profile');
-          navigateTo(getProfilePath(loggedUser));
+          setActiveTab('shop');
+          setShopInitialStep('catalog');
+          navigateTo('/tienda/catalogo');
         }}
       />
 

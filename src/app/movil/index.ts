@@ -1,6 +1,7 @@
 export { default as movilApp, default as MovilApp, default as AndroidApp } from "./movilApp";
 export { default as Inicio, default as ReelsView } from "./Inicio";
-export { default as Tienda, default as Shop, default as ShopView } from "./Tienda";
+export { default as Tienda, default as Shop, default as ShopView } from "./tienda";
+export * from "./tienda";
 export { default as Perfil, default as ProfileView } from "./Perfil";
 export { default as LoginView, default as Login } from "./login";
 export { default as SocialPanel } from "./SocialPanel";

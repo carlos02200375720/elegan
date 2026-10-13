@@ -61,7 +61,7 @@ export function MovilHamburgerMenu({
       navigateTo("/inicio");
     } else if (tab === "shop") {
       if (onNavigateToShop) onNavigateToShop();
-      else navigateTo("/tienda");
+      else navigateTo("/tienda/catalogo");
     } else if (tab === "messages") {
       navigateTo("/messages");
     } else if (tab === "profile") {
@@ -102,7 +102,7 @@ export function MovilHamburgerMenu({
               >
                 <div
                   className="flex items-center space-x-2.5 cursor-pointer"
-                  onClick={() => handleSelectTab("inicio")}
+                  onClick={() => handleSelectTab("shop")}
                 >
                   <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-amber-500 via-rose-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-amber-500/20">
                     <Sparkles className="w-4 h-4 text-white" />

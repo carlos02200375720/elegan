@@ -250,10 +250,11 @@ export default function WebApp({
                   navigateTo(getProfileCompraPath(currentUser));
                 }}
                 onLoginSuccess={(loggedUser) => {
+                  const realUserId = (loggedUser.id && loggedUser.id !== "current_user") ? loggedUser.id : (loggedUser.originalId || loggedUser.id);
                   const normalizedUser: User = {
                     ...loggedUser,
-                    id: "current_user",
-                    originalId: loggedUser.originalId || loggedUser.id,
+                    id: realUserId,
+                    originalId: loggedUser.originalId || realUserId,
                     isGuest: false,
                   };
                   setCurrentUser(normalizedUser);
@@ -262,9 +263,9 @@ export default function WebApp({
                   sessionState.setUsername(normalizedUser.username);
                   sessionState.setUser(normalizedUser);
                   setSelectedCreatorProfileId(null);
-                  setProfileInitialSubTab('orders');
-                  setActiveTab('profile');
-                  navigateTo(getProfileCompraPath(normalizedUser));
+                  setActiveTab('shop');
+                  setShopInitialStep('catalog');
+                  navigateTo('/tienda/catalogo');
                 }}
                 onToggleDetailView={setIsProductDetailOpen}
                 initialStep={shopInitialStep}
@@ -320,6 +321,7 @@ export default function WebApp({
                   onSelectReel={handleReelLink}
                   onToggleFollowUser={handleToggleFollowUser}
                   onProfileUpdate={(updatedUser) => {
+                    const wasGuest = isGuestUser(currentUser);
                     setCurrentUser(updatedUser);
                     sessionState.setUser(updatedUser);
                     setUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
@@ -327,12 +329,20 @@ export default function WebApp({
                       setIsLoggedIn(true);
                       sessionState.setAuthenticated(true);
                       sessionState.setUsername(updatedUser.username);
-                      setSelectedCreatorProfileId(null);
-                      setActiveTab('profile');
                       const parsed = typeof window !== 'undefined' ? parseRoute(window.location.pathname) : null;
                       if (parsed?.type === 'profile' && parsed.profileTab === 'config') {
+                        setActiveTab('profile');
                         navigateTo(getProfileConfigPath(updatedUser));
-                      } else if (parsed?.type === 'profile' && parsed.profileTab === 'guardado') {
+                        return;
+                      }
+                      if (wasGuest) {
+                        setActiveTab('shop');
+                        setShopInitialStep('catalog');
+                        navigateTo('/tienda/catalogo');
+                        return;
+                      }
+                      setActiveTab('profile');
+                      if (parsed?.type === 'profile' && parsed.profileTab === 'guardado') {
                         navigateTo(getProfileSavedPath(updatedUser));
                       } else if (parsed?.type === 'profile' && parsed.profileTab === 'compra') {
                         navigateTo(getProfileCompraPath(updatedUser));
@@ -397,7 +407,7 @@ export default function WebApp({
                     } else if (tab === 'inicio' || tab === 'reels') {
                       navigateTo('/inicio');
                     } else if (tab === 'shop') {
-                      navigateTo('/tienda');
+                      navigateTo('/tienda/catalogo');
                     } else if (tab === 'messages') {
                       navigateTo('/messages');
                     } else if (tab === 'admin') {

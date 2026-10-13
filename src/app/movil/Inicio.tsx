@@ -7,7 +7,7 @@ import { AndroidProgressBar } from "./components/barraprogreso";
 import { AndroidAuthModal } from "./components/AndroidAuthModal";
 import { MovilHamburgerButton, MovilHamburgerMenu } from "./components/MovilHamburgerMenu";
 import { getMediaUrl } from "../../config";
-import { getInicioShareUrl, findReelByInicioParam } from "../../router";
+import { getInicioShareUrl, findReelByInicioParam, navigateTo } from "../../router";
 import { getLocalGuestToken } from "../../utils/guestToken";
 
 export interface AndroidInicioProps {
@@ -1050,8 +1050,12 @@ export default function Inicio({
         onClose={() => setShowAuthModal(false)}
         onLoginSuccess={() => {
           setShowAuthModal(false);
-          if (onNavigateToProfile) {
-            onNavigateToProfile();
+          if (onNavigateToShop) {
+            onNavigateToShop();
+          } else if (onNavigateToTab) {
+            onNavigateToTab('shop');
+          } else {
+            navigateTo('/tienda/catalogo');
           }
         }}
       />

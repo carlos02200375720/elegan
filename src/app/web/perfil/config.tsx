@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Settings, ShieldCheck, Camera, Users, Lock, LogIn, UserPlus, AlertCircle } from "lucide-react";
 import { motion } from "motion/react";
-import { User } from "../../../types";
+import { User, isGuestUser as checkIsGuest } from "../../../types";
 import { apiFetch } from "../../../config";
 import { sessionState } from "../../../utils/sessionState";
 
@@ -70,14 +70,23 @@ export function ConfigPerfilView({
   const [guestRegError, setGuestRegError] = useState("");
   const [isGuestRegistering, setIsGuestRegistering] = useState(false);
 
-  const isGuestUser = Boolean(
-    currentUser?.isGuest ||
-    currentUser?.username === "invitado" ||
-    currentUser?.id === "current_user" ||
-    currentUser?.id === "guest" ||
-    currentUser?.id === "invitado" ||
-    !currentUser?.id
+  // Synchronize form values whenever currentUser or profileUser changes
+  useEffect(() => {
+    if (currentUser && !checkIsGuest(currentUser)) {
+      setEditName(currentUser.name || "");
+      setEditUsername(currentUser.username || "");
+      setEditBio(currentUser.bio || "");
+      setEditAvatar(currentUser.avatar || "");
+      setEditCoverPhoto(currentUser.coverPhoto || "");
+      setEditPrivacyPolicy(currentUser.privacyPolicy || profileUser?.privacyPolicy || "");
+    }
+  }, [currentUser, profileUser]);
+
+  const isUserAuthenticated = Boolean(
+    sessionState.isAuthenticated() ||
+    (currentUser && !checkIsGuest(currentUser) && currentUser.username !== "invitado" && currentUser.username !== "guest")
   );
+  const isGuestUser = !isUserAuthenticated;
 
   const handleGuestLogin = async (e: React.FormEvent) => {
     e.preventDefault();

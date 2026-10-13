@@ -3,6 +3,7 @@ import { User as UserIcon, ShieldCheck, UserPlus, ArrowRight, Sparkles, Check, P
 import { User } from "../../types";
 import { apiFetch } from "../../config";
 import { sessionState } from "../../utils/sessionState";
+import { navigateTo, parseRoute, getProfileConfigPath } from "../../router";
 
 interface LoginViewProps {
   onLoginSuccess: (user: User) => void;
@@ -100,8 +101,13 @@ export default function LoginView({
         sessionState.setAuthenticated(true);
         sessionState.setUsername(data.user?.username || cleanEmail);
         
-        sessionState.setUser(data.user);
         onLoginSuccess(data.user);
+        const parsed = typeof window !== 'undefined' ? parseRoute(window.location.pathname) : null;
+        if (parsed?.type === 'profile' && parsed.profileTab === 'config') {
+          navigateTo(getProfileConfigPath(data.user));
+        } else {
+          navigateTo('/tienda/catalogo');
+        }
       } else {
         setLoginError(data.error || "El correo electrónico o la contraseña son incorrectos. Verifica tus datos.");
       }
@@ -165,6 +171,12 @@ export default function LoginView({
         sessionState.setUser(data.user);
         onRefreshUsers();
         onLoginSuccess(data.user);
+        const parsed = typeof window !== 'undefined' ? parseRoute(window.location.pathname) : null;
+        if (parsed?.type === 'profile' && parsed.profileTab === 'config') {
+          navigateTo(getProfileConfigPath(data.user));
+        } else {
+          navigateTo('/tienda/catalogo');
+        }
       } else {
         setRegisterError(data.error || "Error al registrar el usuario.");
       }

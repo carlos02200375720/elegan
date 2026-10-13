@@ -111,7 +111,12 @@ export default function Perfil({
 }: PerfilProps) {
   // Determine if we are looking at public creator profile or our private dashboard
   const decodedCreatorId = selectedCreatorId ? decodeURIComponent(selectedCreatorId).replace(/^@/, "") : null;
+  const isConfigRoute = typeof window !== "undefined" && (() => {
+    const parsed = parseRoute(window.location.pathname);
+    return parsed.type === "profile" && parsed.profileTab === "config";
+  })();
   const isSelf =
+    isConfigRoute ||
     decodedCreatorId === null ||
     decodedCreatorId === currentUser.id ||
     (!!currentUser.originalId && decodedCreatorId === currentUser.originalId) ||
@@ -610,6 +615,7 @@ export default function Perfil({
 
   const isGuestMode =
     isGuestUser(currentUser) &&
+    activeSubTab !== "edit" &&
     (isSelf || !selectedCreatorId || selectedCreatorId === currentUser.id || selectedCreatorId === currentUser.username || selectedCreatorId?.toLowerCase().startsWith("invitado") || selectedCreatorId === "usuario" || selectedCreatorId === "guest");
 
   if (isGuestMode) {
@@ -1138,7 +1144,7 @@ export default function Perfil({
                 {activeSubTab === "edit" && (
                   <ConfigPerfilView
                     currentUser={currentUser}
-                    profileUser={profileUser}
+                    profileUser={profileUser || currentUser}
                     users={users}
                     onProfileSaved={(updatedUser) => {
                       setProfileUser(updatedUser);

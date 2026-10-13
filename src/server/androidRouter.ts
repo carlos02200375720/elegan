@@ -241,27 +241,49 @@ export function createAndroidRouter(deps: AndroidRouterDependencies): Router {
       }
 
       const cleanUsername = String(targetUsername).trim().toLowerCase().replace(/^@/, "");
+      const isEmailLogin = cleanUsername.includes("@") || (typeof req.body.email === "string" && req.body.email.includes("@"));
+      const emailToSearch = (req.body.email || (cleanUsername.includes("@") ? cleanUsername : "")).trim().toLowerCase();
       let user = null;
 
-      if (mongoose.connection.readyState === 1) {
-        user = await MongoUser.findOne({
-          $or: [
-            { username: cleanUsername },
-            { username: targetUsername },
-            { email: cleanUsername },
-            { id: targetUsername },
-          ],
-        });
-      }
+      if (isEmailLogin && emailToSearch) {
+        if (mongoose.connection.readyState === 1) {
+          const escapedEmail = emailToSearch.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+          user = await MongoUser.findOne({
+            email: { $regex: new RegExp(`^${escapedEmail}$`, "i") },
+            id: { $ne: "current_user" }
+          });
+        }
 
-      if (!user && getUsers) {
-        const allUsers = await getUsers();
-        user = allUsers.find(
-          (u) =>
-            u.id === targetUsername ||
-            u.username?.toLowerCase() === cleanUsername ||
-            u.email?.toLowerCase() === cleanUsername
-        );
+        if (!user && getUsers) {
+          const allUsers = await getUsers();
+          user = allUsers.find((u) => u.email?.toLowerCase() === emailToSearch);
+        }
+
+        if (!user) {
+          res.status(404).json({ error: "No existe ninguna cuenta registrada con este correo electrónico." });
+          return;
+        }
+      } else {
+        if (mongoose.connection.readyState === 1) {
+          user = await MongoUser.findOne({
+            $or: [
+              { username: cleanUsername },
+              { username: targetUsername },
+              { email: cleanUsername },
+              { id: targetUsername },
+            ],
+          });
+        }
+
+        if (!user && getUsers) {
+          const allUsers = await getUsers();
+          user = allUsers.find(
+            (u) =>
+              u.id === targetUsername ||
+              u.username?.toLowerCase() === cleanUsername ||
+              u.email?.toLowerCase() === cleanUsername
+          );
+        }
       }
 
       if (!user) {
@@ -269,9 +291,12 @@ export function createAndroidRouter(deps: AndroidRouterDependencies): Router {
         return;
       }
 
-      if (user.password && password && user.password !== password) {
-        res.status(401).json({ error: "La contraseña ingresada es incorrecta." });
-        return;
+      const expectedPassword = String(user.password || "").trim();
+      if (!req.body.isSessionRestore) {
+        if (!password || !expectedPassword || expectedPassword !== String(password).trim()) {
+          res.status(401).json({ error: "La contraseña ingresada es incorrecta." });
+          return;
+        }
       }
 
       const formattedUser: User = {

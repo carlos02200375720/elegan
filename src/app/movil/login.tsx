@@ -3,6 +3,7 @@ import { User as UserIcon, ShieldCheck, UserPlus, ArrowRight, Sparkles, Check, P
 import { User } from "../../types";
 import { androidApiFetch } from "./api";
 import { sessionState } from "../../utils/sessionState";
+import { navigateTo } from "../../router";
 
 export interface AndroidLoginViewProps {
   onLoginSuccess: (user: User) => void;
@@ -11,6 +12,7 @@ export interface AndroidLoginViewProps {
   currentUser?: User | null;
   initialTab?: "login" | "register";
   restrictionNotice?: string;
+  bottomNavHeight?: number;
 }
 
 const PRESET_AVATARS = [
@@ -32,7 +34,8 @@ export default function AndroidLoginView({
   users,
   currentUser,
   initialTab,
-  restrictionNotice
+  restrictionNotice,
+  bottomNavHeight
 }: AndroidLoginViewProps) {
   const [activeTab, setActiveTab] = useState<"login" | "register">(() => {
     if (initialTab) return initialTab;
@@ -105,6 +108,7 @@ export default function AndroidLoginView({
         sessionState.setUsername(data.user.username);
         sessionState.setUser(data.user);
         onLoginSuccess(data.user);
+        navigateTo('/tienda/catalogo');
       }
     } catch (err: any) {
       setLoginError("Error de conexión al servidor de Android.");
@@ -160,6 +164,7 @@ export default function AndroidLoginView({
         sessionState.setUser(data.user);
         onRefreshUsers();
         onLoginSuccess(data.user);
+        navigateTo('/tienda/catalogo');
       }
     } catch (err: any) {
       setRegisterError("Error de conexión al servidor de Android.");
@@ -170,15 +175,17 @@ export default function AndroidLoginView({
 
   return (
     <div
-      className="w-full min-h-screen bg-white text-slate-900 flex flex-col px-3 pt-3 pb-24 font-sans select-none overflow-x-hidden no-scrollbar"
+      className="w-full bg-white text-slate-900 flex flex-col px-3 pt-3 pb-0 font-sans select-none overflow-x-hidden no-scrollbar mb-[3px]"
       id="android-login-view"
       style={{
         paddingTop: "max(0.75rem, calc(env(safe-area-inset-top, 0px) + 0.5rem))",
+        paddingBottom: "0px",
+        marginBottom: "3px",
       }}
     >
-      <div className="max-w-md mx-auto w-full bg-white border border-slate-200 rounded-2xl shadow-lg overflow-hidden flex flex-col">
+      <div className="max-w-md mx-auto w-full bg-white rounded-2xl overflow-hidden flex flex-col">
         {/* Top Brand Promo Header (matching Web LoginView style) */}
-        <div className="bg-slate-50 p-5 flex flex-col justify-between text-slate-900 relative overflow-hidden border-b border-slate-200">
+        <div className="bg-slate-50 p-5 flex flex-col justify-between text-slate-900 relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-tr from-amber-500/10 via-amber-100/20 to-white opacity-90 z-0" />
 
           <div className="relative z-10">

@@ -67,7 +67,7 @@ export default function WebSidebar({
         {/* Brand / Logo */}
         <div
           className="flex items-center space-x-2.5 px-3 py-3 mb-6 cursor-pointer group"
-          onClick={() => { refreshReels(); setActiveTab('inicio'); navigateTo('/inicio'); }}
+          onClick={() => { setActiveTab('shop'); navigateTo('/tienda/catalogo'); }}
         >
           <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 via-rose-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-amber-500/20 group-hover:scale-105 transition-all">
             <Sparkles className="w-5 h-5 text-white" />
@@ -257,7 +257,7 @@ export default function WebSidebar({
               >
                 <div
                   className="flex items-center space-x-2.5 cursor-pointer"
-                  onClick={() => handleMobileSelect('inicio')}
+                  onClick={() => handleMobileSelect('shop')}
                 >
                   <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-amber-500 via-rose-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-amber-500/20">
                     <Sparkles className="w-4 h-4 text-white" />

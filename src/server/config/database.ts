@@ -145,10 +145,11 @@ export async function connectToMongoDB(): Promise<void> {
       }, 12 * 60 * 60 * 1000);
     }
 
-    // Permanently purge any test reel or test publicacion from creador/creator
+    // Permanently purge any test reel or test publicacion from creador/creator or delinquent HLS resources
     await MongoReel.deleteMany({
       $or: [
         { id: "reel_pub_vatdfyio3" },
+        { id: { $regex: /reel_prod_prod_/ } },
         { creatorId: "creator" },
         { creatorId: "creador" },
         { creatorUsername: "creador" },
@@ -156,7 +157,9 @@ export async function connectToMongoDB(): Promise<void> {
         { creatorName: /^creador$/i },
         { creatorName: /^creator$/i },
         { videoUrl: { $regex: /hls_7a5hkwg34/ } },
-        { hlsUrl: { $regex: /hls_7a5hkwg34/ } }
+        { hlsUrl: { $regex: /hls_7a5hkwg34/ } },
+        { videoUrl: { $regex: /hls_(?:cvzp6xrcs|1k2m78m19)/ } },
+        { hlsUrl: { $regex: /hls_(?:cvzp6xrcs|1k2m78m19)/ } }
       ]
     });
     await MongoPublicacion.deleteMany({
@@ -166,9 +169,15 @@ export async function connectToMongoDB(): Promise<void> {
         { creatorId: "creador" },
         { usuarioNombre: /^creador$/i },
         { url: { $regex: /hls_7a5hkwg34/ } },
-        { hlsUrl: { $regex: /hls_7a5hkwg34/ } }
+        { hlsUrl: { $regex: /hls_7a5hkwg34/ } },
+        { url: { $regex: /hls_(?:cvzp6xrcs|1k2m78m19)/ } },
+        { hlsUrl: { $regex: /hls_(?:cvzp6xrcs|1k2m78m19)/ } }
       ]
     });
+    await MongoProduct.updateMany(
+      { videos: { $elemMatch: { $regex: /hls_(?:cvzp6xrcs|1k2m78m19|7a5hkwg34)/ } } },
+      { $set: { videos: [] } }
+    ).catch(() => {});
     console.log("🧹 Guest/anonymous profiles and test creator content purged successfully!");
 
     // Deduplicate any duplicate users by email or username in Atlas

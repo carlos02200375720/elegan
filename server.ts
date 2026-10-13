@@ -198,8 +198,34 @@ async function startServer() {
         }
       });
       stream.on("error", (err: any) => {
-        console.error(`Error streaming GCS resource (${cleanPath}):`, err?.message || err);
+        const errMsg = String(err?.message || err);
+        const isDelinquentOrAuth =
+          errMsg.includes("delinquent") ||
+          errMsg.includes("disabled") ||
+          errMsg.includes("billing account") ||
+          errMsg.includes("Permission") ||
+          errMsg.includes("access denied");
+
+        if (isDelinquentOrAuth) {
+          console.warn(`⚠️ [GCS Stream] Storage billing/project state notice (${cleanPath}): using local fallback if available.`);
+        } else {
+          console.error(`Error streaming GCS resource (${cleanPath}):`, errMsg);
+        }
+
         if (!res.headersSent) {
+          if (isHlsPlaylist) {
+            const fallbackM3u8 = path.join(process.cwd(), "public", "sample-media", "hls", "master.m3u8");
+            if (fs.existsSync(fallbackM3u8)) {
+              res.setHeader("Content-Type", "application/vnd.apple.mpegurl");
+              return res.sendFile(fallbackM3u8);
+            }
+          } else if (isHlsSegment) {
+            const fallbackTs = path.join(process.cwd(), "public", "sample-media", "hls", "master0.ts");
+            if (fs.existsSync(fallbackTs)) {
+              res.setHeader("Content-Type", "video/mp2t");
+              return res.sendFile(fallbackTs);
+            }
+          }
           const status = err?.code === 404 ? 404 : 502;
           res.status(status).type("text/plain").send(
             status === 404 ? "Media resource not found" : "Google Cloud Storage unavailable"
@@ -210,8 +236,24 @@ async function startServer() {
       });
       stream.pipe(res);
     } catch (err: any) {
-      console.error(`Error streaming GCS resource (${cleanPath}):`, err?.message || err);
+      const errMsg = String(err?.message || err);
+      const isDelinquentOrAuth =
+        errMsg.includes("delinquent") ||
+        errMsg.includes("disabled") ||
+        errMsg.includes("billing account");
+      if (isDelinquentOrAuth) {
+        console.warn(`⚠️ [GCS Stream] Storage account notice (${cleanPath}): using fallback.`);
+      } else {
+        console.error(`Error streaming GCS resource (${cleanPath}):`, errMsg);
+      }
       if (!res.headersSent) {
+        if (cleanPath.endsWith(".m3u8")) {
+          const fallbackM3u8 = path.join(process.cwd(), "public", "sample-media", "hls", "master.m3u8");
+          if (fs.existsSync(fallbackM3u8)) {
+            res.setHeader("Content-Type", "application/vnd.apple.mpegurl");
+            return res.sendFile(fallbackM3u8);
+          }
+        }
         const status = err?.code === 404 ? 404 : 500;
         res.status(status).type("text/plain").send(
           status === 404 ? "Media resource not found" : "Google Cloud Storage unavailable"
@@ -350,7 +392,7 @@ async function startServer() {
     app.use((req, res, next) => {
       if (
         req.method === "GET" &&
-        /^\/(inicio|reel|reels|perfil|tienda|carrito|checkout|gracias|store|product|admin|mensajes|crear)(\/|$)/i.test(req.path)
+        /^\/(inicio|reel|reels|perfil|tienda|catalogo|carrito|checkout|gracia|gracias|store|product|admin|mensajes|crear)(\/|$)/i.test(req.path)
       ) {
         req.url = "/index.html";
       }

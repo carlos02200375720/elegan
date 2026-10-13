@@ -1696,10 +1696,12 @@ export async function switchUser(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    const expectedPassword = targetUser.password || "";
-    if (!isSessionRestore && expectedPassword && expectedPassword !== password) {
-      res.status(401).json({ error: "La contraseña ingresada es incorrecta. Por favor verifícala." });
-      return;
+    const expectedPassword = String(targetUser.password || "").trim();
+    if (!isSessionRestore) {
+      if (!password || !expectedPassword || expectedPassword !== String(password).trim()) {
+        res.status(401).json({ error: "La contraseña ingresada es incorrecta. Por favor verifícala." });
+        return;
+      }
     }
 
     const resolvedUsername = sanitizeUsernameFromUser(targetUser);

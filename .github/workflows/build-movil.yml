@@ -11,7 +11,7 @@ on:
 
 jobs:
   build-movil:
-    name: Compilar App Móvil
+    name: Compilar App Móvil (APK y AAB)
     runs-on: ubuntu-latest
     env:
       VITE_APP_TARGET: android
@@ -58,14 +58,46 @@ jobs:
         run: |
           node -e "const fs=require('fs'); const f='android/build.gradle'; if(fs.existsSync(f)){const p='\\nsubprojects {\\n    configurations.all {\\n        exclude group: \'org.jetbrains.kotlin\', module: \'kotlin-stdlib-jdk7\'\\n        exclude group: \'org.jetbrains.kotlin\', module: \'kotlin-stdlib-jdk8\'\\n    }\\n}\\n'; fs.appendFileSync(f,p)}"
 
-      - name: Compilar APK Debug
+      - name: Compilar APK y Android App Bundle (.aab)
         run: |
           chmod +x android/gradlew
           cd android
+          echo "=== Compilando APK Debug para pruebas directas ==="
           ./gradlew assembleDebug
+          echo "=== Compilando Android App Bundle (.aab) para Google Play Store ==="
+          ./gradlew bundleRelease || ./gradlew bundle
 
-      - name: Guardar APK
+      - name: Firmar AAB (Opcional si existen secretos en GitHub)
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ] && [ -n "$KEY_ALIAS" ]; then
+            echo "Se encontraron credenciales de firma. Firmando bundle .aab..."
+            echo "$KEYSTORE_BASE64" | base64 -d > release.keystore
+            find android/app/build/outputs/bundle -name "*.aab" -exec jarsigner -verbose -sigalg SHA256withRSA -digestalg SHA-256 \
+              -keystore release.keystore \
+              -storepass "$KEYSTORE_PASSWORD" \
+              -keypass "$KEY_PASSWORD" \
+              {} "$KEY_ALIAS" \;
+            rm -f release.keystore
+            echo "Bundle .aab firmado con éxito."
+          else
+            echo "No se definieron secretos de keystore. El .aab se generó en modo release (apto para Google Play App Signing o firma manual)."
+          fi
+
+      - name: Guardar APK Debug
         uses: actions/upload-artifact@v4
         with:
           name: app-android-debug
           path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: warn
+
+      - name: Guardar AAB para Google Play Store
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-android-playstore-bundle
+          path: android/app/build/outputs/bundle/**/*.aab
+          if-no-files-found: error

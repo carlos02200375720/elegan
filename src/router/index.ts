@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { sessionState } from '../utils/sessionState';
 
 export type AppRoute =
   | { type: 'inicio'; reelId?: string; reelSlug?: string }
@@ -266,6 +267,11 @@ export function isGenericProfileUser(rawUser?: string): boolean {
 export function parseRoute(pathname: string): AppRoute {
   const normalized = pathname.trim().replace(/\/+$/, '') || '/';
 
+  // Entry page: root domain '/' or empty string maps to shop catalog
+  if (normalized === '/' || normalized === '') {
+    return { type: 'shop' };
+  }
+
   // /tienda/carrito (also supports legacy /shop/cart, /tienda/cart, /cart, or /shop/carrito)
   if (/^\/(?:tienda\/|shop\/)?(?:carrito|cart)$/i.test(normalized)) {
     return { type: 'cart' };
@@ -292,8 +298,8 @@ export function parseRoute(pathname: string): AppRoute {
     return { type: 'thankyou' };
   }
 
-  // /tienda or /tienda/catalogo or /shop
-  if (/^\/(?:tienda|shop)(?:\/catalogo)?$/i.test(normalized)) {
+  // /tienda, /tienda/catalogo, /shop, or /catalogo
+  if (/^\/(?:(?:tienda|shop)(?:\/catalogo)?|catalogo)$/i.test(normalized)) {
     return { type: 'shop' };
   }
 
@@ -495,8 +501,8 @@ export function parseRoute(pathname: string): AppRoute {
     };
   }
 
-  // Default: inicio / home
-  return { type: 'inicio' };
+  // Default: shop catalog / entrada principal
+  return { type: 'shop' };
 }
 
 /**
@@ -504,7 +510,7 @@ export function parseRoute(pathname: string): AppRoute {
  */
 export function useCurrentRoute(): AppRoute {
   const [route, setRoute] = useState<AppRoute>(() => {
-    if (typeof window === 'undefined') return { type: 'inicio' };
+    if (typeof window === 'undefined') return { type: 'shop' };
     return parseRoute(window.location.pathname);
   });
 
@@ -536,12 +542,12 @@ export function routeToPath(route: AppRoute): string {
     case 'product':
       return getProductPath(route.productId);
     case 'store':
-      return `/perfil/${encodeURIComponent(route.sellerId)}`;
+      return getProfilePath(route.sellerId);
     case 'inicio':
     case 'reels':
       return route.reelId ? getInicioPath(route.reelId) : '/inicio';
     case 'shop':
-      return '/tienda';
+      return '/tienda/catalogo';
     case 'checkout':
       return '/tienda/verificacion';
     case 'thankyou':
@@ -575,60 +581,99 @@ export function routeToPath(route: AppRoute): string {
       if (route.profileTab === 'rendimiento') {
         return getProfileRendimientoPath(route.userId);
       }
-      return route.userId ? `/perfil/${encodeURIComponent(route.userId)}` : '/perfil';
+      return route.userId ? getProfilePath(route.userId) : '/perfil';
     case 'admin':
       return route.adminTab ? `/admin/${encodeURIComponent(route.adminTab)}` : '/admin/resumen';
     default:
-      return '/inicio';
+      return '/tienda/catalogo';
   }
 }
 
 /**
- * Returns the profile URL path `/perfil/:username` for a registered user or username,
+ * Returns the profile URL path `/perfil/:id/` for a registered user or user ID,
  * or `/perfil` if the user is a guest / not registered.
  */
-export function getProfilePath(usernameOrUser?: string | { username?: string; name?: string; isGuest?: boolean } | null): string {
+export function getProfilePath(
+  usernameOrUser?: string | { id?: string; originalId?: string; username?: string; name?: string; isGuest?: boolean } | null
+): string {
   if (!usernameOrUser) return '/perfil';
+
+  let rawId: string | null = null;
+
   if (typeof usernameOrUser === 'string') {
     let clean = usernameOrUser.trim().replace(/^@/, '');
-    if (isGenericProfileUser(clean)) {
+    if (!clean || isGenericProfileUser(clean)) {
       return '/perfil';
     }
-    if (clean.includes('@')) {
-      clean = clean.split('@')[0];
+    rawId = clean;
+  } else {
+    if (usernameOrUser.isGuest) return '/perfil';
+
+    // Prioritize user's persistent unique database ID over username
+    const validOriginalId =
+      usernameOrUser.originalId &&
+      usernameOrUser.originalId !== 'current_user' &&
+      usernameOrUser.originalId !== 'guest' &&
+      usernameOrUser.originalId !== 'invitado'
+        ? usernameOrUser.originalId
+        : null;
+
+    const validId =
+      usernameOrUser.id &&
+      usernameOrUser.id !== 'current_user' &&
+      usernameOrUser.id !== 'guest' &&
+      usernameOrUser.id !== 'invitado'
+        ? usernameOrUser.id
+        : null;
+
+    if (validOriginalId) {
+      rawId = validOriginalId;
+    } else if (validId) {
+      rawId = validId;
+    } else {
+      // Check sessionState user for persistent id if user object had placeholder id
+      if (typeof window !== 'undefined') {
+        try {
+          const sessionUser = sessionState.getUser();
+          if (sessionUser && !sessionUser.isGuest) {
+            const sid =
+              sessionUser.originalId &&
+              sessionUser.originalId !== 'current_user' &&
+              sessionUser.originalId !== 'guest' &&
+              sessionUser.originalId !== 'invitado'
+                ? sessionUser.originalId
+                : sessionUser.id &&
+                  sessionUser.id !== 'current_user' &&
+                  sessionUser.id !== 'guest' &&
+                  sessionUser.id !== 'invitado'
+                ? sessionUser.id
+                : null;
+            if (sid) rawId = sid;
+          }
+        } catch {}
+      }
+      if (!rawId && usernameOrUser.username && !isGenericProfileUser(usernameOrUser.username)) {
+        rawId = usernameOrUser.username.trim().replace(/^@/, '');
+      }
     }
-    clean = clean
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .toLowerCase()
-      .replace(/\s+/g, '');
-    return clean ? `/perfil/${encodeURIComponent(clean)}` : '/perfil';
   }
-  if (usernameOrUser.isGuest) return '/perfil';
-  let clean = (usernameOrUser.username || '').trim().replace(/^@/, '');
-  if (isGenericProfileUser(clean)) {
+
+  if (!rawId || isGenericProfileUser(rawId)) {
     return '/perfil';
   }
-  if (clean.includes('@')) {
-    const fromName = (usernameOrUser.name || '')
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .toLowerCase()
-      .replace(/\s+/g, '')
-      .replace(/[^a-z0-9._-]/g, '');
-    clean = fromName && !isGenericProfileUser(fromName) ? fromName : clean.split('@')[0];
-  }
-  return clean ? `/perfil/${encodeURIComponent(clean)}` : '/perfil';
+
+  // Format as requested: dominio/perfil/id del usuario/
+  return `/perfil/${encodeURIComponent(rawId)}/`;
 }
 
 /**
- * Returns the saved publications URL path `/perfil/:username/guardado`
+ * Returns the saved publications URL path `/perfil/:id/guardado`
  * (or `/perfil/usuario/guardado` if the user is a guest / has no username).
  */
 export function getProfileSavedPath(
-  usernameOrUser?: string | { username?: string; name?: string; isGuest?: boolean } | null
+  usernameOrUser?: string | { id?: string; originalId?: string; username?: string; name?: string; isGuest?: boolean } | null
 ): string {
-  const basePath = getProfilePath(usernameOrUser);
+  const basePath = getProfilePath(usernameOrUser).replace(/\/+$/, '');
   if (basePath === '/perfil') {
     return '/perfil/usuario/guardado';
   }
@@ -636,13 +681,13 @@ export function getProfileSavedPath(
 }
 
 /**
- * Returns the purchases URL path `/perfil/:username/compra`
+ * Returns the purchases URL path `/perfil/:id/compra`
  * (or `/perfil/usuario/compra` if the user is a guest / has no username).
  */
 export function getProfileCompraPath(
-  usernameOrUser?: string | { username?: string; name?: string; isGuest?: boolean } | null
+  usernameOrUser?: string | { id?: string; originalId?: string; username?: string; name?: string; isGuest?: boolean } | null
 ): string {
-  const basePath = getProfilePath(usernameOrUser);
+  const basePath = getProfilePath(usernameOrUser).replace(/\/+$/, '');
   if (basePath === '/perfil') {
     return '/perfil/usuario/compra';
   }
@@ -650,13 +695,13 @@ export function getProfileCompraPath(
 }
 
 /**
- * Returns the profile configuration URL path `/perfil/:username/config`
+ * Returns the profile configuration URL path `/perfil/:id/config`
  * (or `/perfil/usuario/config` if the user is a guest / has no username).
  */
 export function getProfileConfigPath(
-  usernameOrUser?: string | { username?: string; name?: string; isGuest?: boolean } | null
+  usernameOrUser?: string | { id?: string; originalId?: string; username?: string; name?: string; isGuest?: boolean } | null
 ): string {
-  const basePath = getProfilePath(usernameOrUser);
+  const basePath = getProfilePath(usernameOrUser).replace(/\/+$/, '');
   if (basePath === '/perfil') {
     return '/perfil/usuario/config';
   }
@@ -664,13 +709,13 @@ export function getProfileConfigPath(
 }
 
 /**
- * Returns the profile products URL path `/perfil/:username/producto`
+ * Returns the profile products URL path `/perfil/:id/producto`
  * (or `/perfil/usuario/producto` if the user is a guest / has no username).
  */
 export function getProfileProductoPath(
-  usernameOrUser?: string | { username?: string; name?: string; isGuest?: boolean } | null
+  usernameOrUser?: string | { id?: string; originalId?: string; username?: string; name?: string; isGuest?: boolean } | null
 ): string {
-  const basePath = getProfilePath(usernameOrUser);
+  const basePath = getProfilePath(usernameOrUser).replace(/\/+$/, '');
   if (basePath === '/perfil') {
     return '/perfil/usuario/producto';
   }
@@ -678,13 +723,13 @@ export function getProfileProductoPath(
 }
 
 /**
- * Returns the profile incoming sales URL path `/perfil/:username/venta`
+ * Returns the profile incoming sales URL path `/perfil/:id/venta`
  * (or `/perfil/usuario/venta` if the user is a guest / has no username).
  */
 export function getProfileVentaPath(
-  usernameOrUser?: string | { username?: string; name?: string; isGuest?: boolean } | null
+  usernameOrUser?: string | { id?: string; originalId?: string; username?: string; name?: string; isGuest?: boolean } | null
 ): string {
-  const basePath = getProfilePath(usernameOrUser);
+  const basePath = getProfilePath(usernameOrUser).replace(/\/+$/, '');
   if (basePath === '/perfil') {
     return '/perfil/usuario/venta';
   }
@@ -692,13 +737,13 @@ export function getProfileVentaPath(
 }
 
 /**
- * Returns the profile publications URL path `/perfil/:username/publicaciones`
+ * Returns the profile publications URL path `/perfil/:id/publicaciones`
  * (or `/perfil/usuario/publicaciones` if the user is a guest / has no username).
  */
 export function getProfilePublicacionesPath(
-  usernameOrUser?: string | { username?: string; name?: string; isGuest?: boolean } | null
+  usernameOrUser?: string | { id?: string; originalId?: string; username?: string; name?: string; isGuest?: boolean } | null
 ): string {
-  const basePath = getProfilePath(usernameOrUser);
+  const basePath = getProfilePath(usernameOrUser).replace(/\/+$/, '');
   if (basePath === '/perfil') {
     return '/perfil/usuario/publicaciones';
   }
@@ -706,13 +751,13 @@ export function getProfilePublicacionesPath(
 }
 
 /**
- * Returns the profile publish URL path `/perfil/:username/publicar`
+ * Returns the profile publish URL path `/perfil/:id/publicar`
  * (or `/perfil/usuario/publicar` if the user is a guest / has no username).
  */
 export function getProfilePublicarPath(
-  usernameOrUser?: string | { username?: string; name?: string; isGuest?: boolean } | null
+  usernameOrUser?: string | { id?: string; originalId?: string; username?: string; name?: string; isGuest?: boolean } | null
 ): string {
-  const basePath = getProfilePath(usernameOrUser);
+  const basePath = getProfilePath(usernameOrUser).replace(/\/+$/, '');
   if (basePath === '/perfil') {
     return '/perfil/usuario/publicar';
   }
@@ -720,13 +765,13 @@ export function getProfilePublicarPath(
 }
 
 /**
- * Returns the profile performance URL path `/perfil/:username/rendimiento`
+ * Returns the profile performance URL path `/perfil/:id/rendimiento`
  * (or `/perfil/usuario/rendimiento` if the user is a guest / has no username).
  */
 export function getProfileRendimientoPath(
-  usernameOrUser?: string | { username?: string; name?: string; isGuest?: boolean } | null
+  usernameOrUser?: string | { id?: string; originalId?: string; username?: string; name?: string; isGuest?: boolean } | null
 ): string {
-  const basePath = getProfilePath(usernameOrUser);
+  const basePath = getProfilePath(usernameOrUser).replace(/\/+$/, '');
   if (basePath === '/perfil') {
     return '/perfil/usuario/rendimiento';
   }

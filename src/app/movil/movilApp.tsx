@@ -2,7 +2,7 @@ import React from "react";
 import { Play, ShoppingBag, User as UserIcon, MessageSquare } from "lucide-react";
 import { User, Reel, Product, CartItem, Order, ChatMessage, NavigationTab, isGuestUser } from "../../types";
 import Inicio from "./Inicio";
-import Tienda from "./Tienda";
+import Tienda from "./tienda";
 import SocialPanel from "./SocialPanel";
 import Perfil from "./Perfil";
 import AndroidLoginView from "./login";
@@ -220,7 +220,7 @@ export default function AndroidApp({
                     refreshReels();
                     navigateTo('/inicio');
                   } else if (tab === 'shop') {
-                    navigateTo('/tienda');
+                    navigateTo('/tienda/catalogo');
                   } else if (tab === 'messages') {
                     navigateTo('/messages');
                   } else if (tab === 'admin') {
@@ -231,7 +231,7 @@ export default function AndroidApp({
                 onUpdateCartQuantity={handleUpdateCartQuantity}
                 onNavigateToShop={() => {
                   setActiveTab('shop');
-                  navigateTo('/tienda');
+                  navigateTo('/tienda/catalogo');
                 }}
                 onNavigateToCheckout={(selectedIndices) => {
                   setShopInitialStep('checkout');
@@ -301,7 +301,7 @@ export default function AndroidApp({
                   setDirectSelectedProduct(null);
                   setIsProductDetailOpen(false);
                   setShopInitialStep('catalog');
-                  navigateTo('/tienda');
+                  navigateTo('/tienda/catalogo');
                 }}
                 cartDrawerRequest={cartDrawerRequest}
                 savedReelIds={savedReelIds}
@@ -314,7 +314,9 @@ export default function AndroidApp({
                 className="w-full bg-white min-h-screen"
                 id="android-profile-container"
                 style={{
-                  paddingBottom: `${navBarHeight + 6}px`
+                  paddingBottom: (!isUserLoggedIn && !selectedCreatorProfileId)
+                    ? `${navBarHeight}px`
+                    : `${navBarHeight + 3}px`
                 }}
               >
                 {(!isUserLoggedIn && !selectedCreatorProfileId) ? (
@@ -322,6 +324,7 @@ export default function AndroidApp({
                     users={users}
                     currentUser={currentUser}
                     initialTab="register"
+                    bottomNavHeight={navBarHeight}
                     restrictionNotice="Para acceder a tu perfil, tus publicaciones guardadas, el historial de tus compras y todas tus interacciones, debes registrarte en la plataforma. Toda tu información previa se transferirá automáticamente a tu cuenta."
                     onRefreshUsers={refreshAllData}
                     onLoginSuccess={(loggedUser) => {
@@ -332,8 +335,9 @@ export default function AndroidApp({
                       sessionState.setUser(loggedUser);
                       refreshAllData();
                       setSelectedCreatorProfileId(null);
-                      setActiveTab('profile');
-                      navigateTo(getProfilePath(loggedUser));
+                      setActiveTab('shop');
+                      setShopInitialStep('catalog');
+                      navigateTo('/tienda/catalogo');
                     }}
                   />
                 ) : (
@@ -418,7 +422,7 @@ export default function AndroidApp({
                     } else if (tab === 'inicio' || tab === 'reels') {
                       navigateTo('/inicio');
                     } else if (tab === 'shop') {
-                      navigateTo('/tienda');
+                      navigateTo('/tienda/catalogo');
                     } else if (tab === 'messages') {
                       navigateTo('/messages');
                     } else if (tab === 'admin') {
@@ -466,7 +470,7 @@ export default function AndroidApp({
 
             {/* Tab 2: Shop */}
             <button
-              onClick={() => { setActiveTab('shop'); navigateTo('/tienda'); }}
+              onClick={() => { setActiveTab('shop'); navigateTo('/tienda/catalogo'); }}
               className={`flex flex-col items-center justify-center py-1 px-3 rounded-2xl transition-all active:bg-amber-500/10 cursor-pointer relative ${
                 activeTab === 'shop'
                   ? "text-amber-600 scale-105"

@@ -4,6 +4,7 @@ import { User } from "../../../types";
 import { androidApiFetch } from "../api";
 import { motion, AnimatePresence } from "motion/react";
 import { sessionState } from "../../../utils/sessionState";
+import { navigateTo } from "../../../router";
 
 interface AndroidAuthModalProps {
   isOpen: boolean;
@@ -83,6 +84,7 @@ export function AndroidAuthModal({
         setSuccessMessage("¡Cuenta creada con éxito!");
         setTimeout(() => {
           onLoginSuccess(data.user);
+          navigateTo('/tienda/catalogo');
           onClose();
         }, 800);
       }
@@ -131,6 +133,7 @@ export function AndroidAuthModal({
         setSuccessMessage("¡Bienvenido!");
         setTimeout(() => {
           onLoginSuccess(data.user);
+          navigateTo('/tienda/catalogo');
           onClose();
         }, 800);
       }
