@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { androidApiFetch } from "./api";
 import AndroidVideoUploadPreview from "./components/AndroidVideoUploadPreview";
+import { formatPrice } from "../../utils/currency";
 
 export interface AndroidPublishViewProps {
   currentUser: User;
@@ -603,7 +604,7 @@ export default function AndroidPublishView({
                   <option value="">Sin producto etiquetado</option>
                   {userProducts.map((p, pIdx) => (
                     <option key={`${p.id}-${pIdx}`} value={p.id}>
-                      {p.name} (${p.price?.toFixed(2) || "0.00"})
+                      {p.name} ({formatPrice(p.price)})
                     </option>
                   ))}
                 </select>
@@ -657,7 +658,7 @@ export default function AndroidPublishView({
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                  Precio ($) <span className="text-amber-500">*</span>
+                  Precio (RD$) <span className="text-amber-500">*</span>
                 </label>
                 <input
                   value={price}
@@ -696,7 +697,7 @@ export default function AndroidPublishView({
                 {/* 1. Precio de envío a la capital */}
                 <div>
                   <label className="block text-[11px] font-semibold text-slate-300 mb-1">
-                    1. Precio de envío a la capital ($)
+                    1. Precio de envío a la capital (RD$)
                   </label>
                   <input
                     value={shippingCapital}
@@ -712,7 +713,7 @@ export default function AndroidPublishView({
                 {/* 2. Precio de envío a provincia */}
                 <div>
                   <label className="block text-[11px] font-semibold text-slate-300 mb-1">
-                    2. Precio de envío a provincia ($)
+                    2. Precio de envío a provincia (RD$)
                   </label>
                   <input
                     value={shippingProvince}
@@ -760,17 +761,17 @@ export default function AndroidPublishView({
                     <div className="flex flex-wrap items-center gap-1.5 font-mono text-[11px]">
                       {cap > 0 && (
                         <span className="px-2 py-0.5 rounded-lg bg-amber-500/20 text-amber-400 font-extrabold border border-amber-500/40">
-                          Capital: ${cap.toFixed(2)}
+                          Capital: {formatPrice(cap)}
                         </span>
                       )}
                       {prov > 0 && (
                         <span className="px-2 py-0.5 rounded-lg bg-indigo-500/20 text-indigo-300 font-extrabold border border-indigo-500/40">
-                          Provincia: ${prov.toFixed(2)}
+                          Provincia: {formatPrice(prov)}
                         </span>
                       )}
                       {showFree && (
                         <span className="px-2 py-0.5 rounded-lg bg-emerald-500/20 text-emerald-400 font-extrabold border border-emerald-500/40">
-                          Envío Gratis ($0.00)
+                          Envío Gratis (RD$0.00)
                         </span>
                       )}
                       {cap <= 0 && prov <= 0 && !showFree && (

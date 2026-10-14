@@ -4,11 +4,11 @@ import { Heart, MessageCircle, Share2, Bookmark, ShoppingBag, Volume2, VolumeX, 
 import { motion, AnimatePresence } from "motion/react";
 import { MovilVideoPlay, MovilVideoPlayHandle } from "./components/videoplay";
 import { AndroidProgressBar } from "./components/barraprogreso";
-import { AndroidAuthModal } from "./components/AndroidAuthModal";
 import { MovilHamburgerButton, MovilHamburgerMenu } from "./components/MovilHamburgerMenu";
 import { getMediaUrl } from "../../config";
 import { getInicioShareUrl, findReelByInicioParam, navigateTo } from "../../router";
 import { getLocalGuestToken } from "../../utils/guestToken";
+import { formatPrice } from "../../utils/currency";
 
 export interface AndroidInicioProps {
   reels: Reel[];
@@ -194,7 +194,7 @@ export default function Inicio({
   const touchStartY = useRef<number>(0);
   const mouseStartX = useRef<number>(0);
   const isMouseDownRef = useRef<boolean>(false);
-  const isGuest = isGuestUser(currentUser);
+  const isGuest = false;
 
   const [activeMediaIndex, setActiveMediaIndex] = useState(0);
   const prevReelIdRef = useRef<string | null>(null);
@@ -727,7 +727,7 @@ export default function Inicio({
             )}
             {taggedProduct && handleProductSelect && <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }} onClick={() => handleProductSelect(taggedProduct)} className="bg-black/10 backdrop-blur-md border border-white/15 text-white rounded-xl flex items-stretch cursor-pointer hover:bg-black/20 hover:border-amber-500/40 active:scale-[0.98] transition-all shadow-lg overflow-hidden pointer-events-auto select-none mt-2" id={`tagged-product-${currentReel.id}`} style={{ marginLeft: "-4px", width: "285.606px", maxWidth: "100%", height: "68.3438px" }}>
               <div className="w-20 shrink-0 h-full relative overflow-hidden bg-black/10 border-r border-white/10">{taggedProduct.imageUrl || taggedProduct.images?.[0] ? <img src={taggedProduct.imageUrl || taggedProduct.images?.[0]} alt={taggedProduct.name} referrerPolicy="no-referrer" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center bg-slate-800 text-amber-400"><ShoppingBag className="w-5 h-5" /></div>}</div>
-              <div className="flex-1 min-w-0 px-2.5 py-1.5 flex flex-col justify-between bg-black/10"><span className="text-[9.5px] uppercase tracking-wider font-bold text-amber-400 flex items-center"><ShoppingBag className="w-2.5 h-2.5 mr-1 shrink-0" /> Producto Destacado</span><h4 className="text-xs font-bold truncate text-slate-100">{taggedProduct.name}</h4><div className="flex items-center justify-between"><span className="text-xs font-semibold text-emerald-400 font-mono">${(Number(taggedProduct.price) || 0).toFixed(2)}</span><span className="text-[9px] text-amber-400 font-semibold">Ver detalles →</span></div></div>
+              <div className="flex-1 min-w-0 px-2.5 py-1.5 flex flex-col justify-between bg-black/10"><span className="text-[9.5px] uppercase tracking-wider font-bold text-amber-400 flex items-center"><ShoppingBag className="w-2.5 h-2.5 mr-1 shrink-0" /> Producto Destacado</span><h4 className="text-xs font-bold truncate text-slate-100">{taggedProduct.name}</h4><div className="flex items-center justify-between"><span className="text-xs font-semibold text-emerald-400 font-mono">{formatPrice(Number(taggedProduct.price) || 0)}</span><span className="text-[9px] text-amber-400 font-semibold">Ver detalles →</span></div></div>
             </motion.div>}
           </div>
         </div>
@@ -878,10 +878,10 @@ export default function Inicio({
 
                               <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
                                 <span className="text-xs font-mono font-extrabold text-amber-600">
-                                  ${item.product.price.toFixed(2)}
+                                  {formatPrice(item.product.price)}
                                 </span>
                                 <span className="text-[9px] font-bold text-slate-600 bg-slate-200/80 px-1.5 py-0.5 rounded leading-tight">
-                                  Envío: {shippingFee > 0 ? `$${shippingFee.toFixed(2)}` : "Gratis"}
+                                  Envío: {shippingFee > 0 ? formatPrice(shippingFee) : "Gratis"}
                                   {carrierName ? ` (${carrierName})` : ""}
                                 </span>
                               </div>
@@ -950,7 +950,7 @@ export default function Inicio({
                       {selectedCartItems.length} de {cart.length} {cart.length === 1 ? "artículo" : "artículos"}
                     </span>
                   </div>
-                  <span className="text-amber-600 text-base font-black">${cartTotal.toFixed(2)}</span>
+                  <span className="text-amber-600 text-base font-black">{formatPrice(cartTotal)}</span>
                 </div>
                 <button
                   type="button"
@@ -976,7 +976,7 @@ export default function Inicio({
                       ? "Ver tienda"
                       : selectedCartItems.length === 0
                       ? "Selecciona productos para pagar"
-                      : `Completar Compra (${selectedCartItems.length}) - $${cartTotal.toFixed(2)}`}
+                      : `Completar Compra (${selectedCartItems.length}) - ${formatPrice(cartTotal)}`}
                   </span>
                 </button>
               </div>
@@ -1044,21 +1044,6 @@ export default function Inicio({
         )}
       </AnimatePresence>
 
-      <AndroidAuthModal
-        isOpen={showAuthModal}
-        actionDescription={authDescription}
-        onClose={() => setShowAuthModal(false)}
-        onLoginSuccess={() => {
-          setShowAuthModal(false);
-          if (onNavigateToShop) {
-            onNavigateToShop();
-          } else if (onNavigateToTab) {
-            onNavigateToTab('shop');
-          } else {
-            navigateTo('/tienda/catalogo');
-          }
-        }}
-      />
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import mongoose from "mongoose";
-import { MongoOrder, MongoUser, MongoCart } from "../models";
+import { MongoOrder, MongoUser, MongoCart, MongoProduct } from "../models";
 import { Order } from "../../types";
 import { generateId } from "../utils/helpers";
 import { getUsers } from "./userController";
@@ -354,8 +354,21 @@ export async function createOrder(req: Request, res: Response): Promise<void> {
       const mongoOrder = new MongoOrder(newOrder);
       await mongoOrder.save();
       console.log(`💾 Saved order ${newOrder.id} to MongoDB Atlas`);
+
+      // Persistir reducción de stock en MongoDB Atlas
+      for (const item of items) {
+        const prodId = item.productId || item.product?.id;
+        const targetP = products.find((p) => p.id === prodId);
+        if (targetP) {
+          await MongoProduct.updateOne(
+            { id: targetP.id },
+            { $set: { stock: Math.max(0, targetP.stock) } }
+          );
+          console.log(`📦 [Stock] Updated MongoProduct stock for ${targetP.id}: ${targetP.stock}`);
+        }
+      }
     } catch (dbErr) {
-      console.error("❌ Failed to save order to MongoDB Atlas:", dbErr);
+      console.error("❌ Failed to save order or update stock in MongoDB Atlas:", dbErr);
     }
   }
 
@@ -387,15 +400,34 @@ export async function createOrder(req: Request, res: Response): Promise<void> {
  * GET /api/orders
  * Fetch orders with optional query parameters
  */
-export function getOrders(req: Request, res: Response): void {
+export async function getOrders(req: Request, res: Response): Promise<void> {
+  let allOrders = orders;
+  if (mongoose.connection.readyState === 1) {
+    try {
+      const dbOrders = await MongoOrder.find().sort({ createdAt: -1 }).lean();
+      if (dbOrders && dbOrders.length > 0) {
+        const seen = new Set<string>();
+        allOrders = dbOrders.filter((o: any) => {
+          if (!o.id || seen.has(o.id)) return false;
+          seen.add(o.id);
+          return true;
+        }) as any[];
+        // Sync in-memory store
+        setOrders(allOrders);
+      }
+    } catch (err) {
+      console.error("Error fetching MongoOrders in getOrders:", err);
+    }
+  }
+
   const { userId } = req.query;
   if (!userId || typeof userId !== "string") {
-    res.json(orders);
+    res.json(allOrders);
     return;
   }
 
-  const cleanId = userId.toLowerCase();
-  const purchases = orders.filter(
+  const cleanId = userId.toLowerCase().trim();
+  const purchases = allOrders.filter(
     (o) =>
       o.buyerId === userId ||
       (o.buyerId && o.buyerId.toLowerCase() === cleanId) ||
@@ -404,9 +436,9 @@ export function getOrders(req: Request, res: Response): void {
       (userId === "current_user" && (o.buyerId === activeOriginalUserId || o.buyerId === "current_user" || !o.buyerId))
   );
 
-  const sales = orders.filter((o) =>
-    o.items.some(
-      (it) =>
+  const sales = allOrders.filter((o) =>
+    o.items?.some(
+      (it: any) =>
         it.sellerId === userId ||
         (it.sellerId && it.sellerId.toLowerCase() === cleanId) ||
         (it.sellerUsername && it.sellerUsername.toLowerCase() === cleanId) ||
@@ -414,7 +446,7 @@ export function getOrders(req: Request, res: Response): void {
     )
   );
 
-  res.json({ orders, purchases, sales });
+  res.json({ orders: allOrders, purchases, sales });
 }
 
 /**

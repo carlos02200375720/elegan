@@ -392,7 +392,7 @@ async function startServer() {
     app.use((req, res, next) => {
       if (
         req.method === "GET" &&
-        /^\/(inicio|reel|reels|perfil|tienda|catalogo|carrito|checkout|gracia|gracias|store|product|admin|mensajes|crear)(\/|$)/i.test(req.path)
+        /^\/(inicio|reel|reels|perfil|tienda|catalogo|carrito|checkout|gracia|gracias|store|product|admin|mensajes|crear|app|movil)(\/|$)/i.test(req.path)
       ) {
         req.url = "/index.html";
       }

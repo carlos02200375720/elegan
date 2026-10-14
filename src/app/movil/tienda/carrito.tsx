@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useRef, useState, useEffect } from "react";
 import { ArrowRight, ShoppingBag, Check, Trash2, Minus, Plus, CreditCard } from "lucide-react";
 import { Product, CartItem } from "../../../types";
+import { formatPrice } from "../../../utils/currency";
 
 export interface AndroidCarritoProps {
   cart: CartItem[];
@@ -37,30 +38,54 @@ export function CarritoTiendaView({
   onCloseCart,
   onExploreProducts,
 }: AndroidCarritoProps) {
+  const fixedFooterRef = useRef<HTMLDivElement | null>(null);
+  const [footerHeight, setFooterHeight] = useState<number>(160);
+
+  useEffect(() => {
+    if (!fixedFooterRef.current) return;
+    const updateHeight = () => {
+      if (fixedFooterRef.current) {
+        setFooterHeight(fixedFooterRef.current.offsetHeight);
+      }
+    };
+    updateHeight();
+    const observer = new ResizeObserver(updateHeight);
+    observer.observe(fixedFooterRef.current);
+    window.addEventListener("resize", updateHeight);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", updateHeight);
+    };
+  }, [cart.length]);
   return (
     <div className="w-full min-h-screen bg-white text-slate-900 flex flex-col font-sans select-none" id="android-cart-page">
       {/* Cart Top Header */}
       <div
-        className="sticky top-0 z-30 bg-white/95 backdrop-blur-md px-4 pb-3 border-b border-slate-200 flex items-center justify-between"
-        style={{ paddingTop: "max(12px, calc(env(safe-area-inset-top, 0px) + 8px))" }}
+        className="sticky top-0 z-30 bg-white/95 backdrop-blur-md px-3 py-2 border-b border-slate-100 flex items-center justify-between"
+        style={{ paddingTop: "max(8px, env(safe-area-inset-top, 0px))" }}
       >
         <button
           type="button"
           onClick={onCloseCart}
-          className="p-2 rounded-full bg-slate-100 text-slate-900 active:scale-95 cursor-pointer hover:bg-slate-200 transition-colors"
+          className="p-1.5 rounded-full bg-slate-100 text-slate-900 active:scale-95 cursor-pointer hover:bg-slate-200 transition-colors"
           id="android-cart-back-btn"
           title="Volver"
         >
           <ArrowRight className="w-4 h-4 rotate-180" />
         </button>
         <div className="flex-1 text-center">
-          <h1 className="text-sm font-black text-slate-900">Carrito de Compras</h1>
+          <h1 className="text-xs font-black text-slate-900 tracking-tight">Carrito de Compras</h1>
         </div>
-        <div className="w-8" />
+        <div className="w-7" />
       </div>
 
       {/* Cart Items List */}
-      <div className={`flex-1 overflow-y-auto px-4 py-4 space-y-3 ${cart.length > 0 ? "pb-36" : "pb-10"}`}>
+      <div
+        className="flex-1 overflow-y-auto px-4 py-4 space-y-3"
+        style={{
+          paddingBottom: cart.length > 0 ? `${footerHeight + 5}px` : "2.5rem",
+        }}
+      >
         {cart.length === 0 ? (
           <div className="min-h-[50vh] flex flex-col items-center justify-center text-center">
             <div className="w-20 h-20 rounded-full bg-amber-50 flex items-center justify-center border border-amber-100">
@@ -159,10 +184,10 @@ export function CarritoTiendaView({
 
                       <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
                         <span className="text-xs font-mono font-extrabold text-amber-600">
-                          ${item.product.price.toFixed(2)}
+                          {formatPrice(item.product.price)}
                         </span>
                         <span className="text-[9px] font-bold text-slate-600 bg-slate-200/80 px-1.5 py-0.5 rounded leading-tight">
-                          Envío: {shippingFee > 0 ? `$${shippingFee.toFixed(2)}` : "Gratis"}
+                          Envío: {shippingFee > 0 ? formatPrice(shippingFee) : "Gratis"}
                           {carrierName ? ` (${carrierName})` : ""}
                         </span>
                       </div>
@@ -220,25 +245,26 @@ export function CarritoTiendaView({
       {/* Cart Bottom Checkout Summary */}
       {cart.length > 0 && (
         <div
+          ref={fixedFooterRef}
           id="android-cart-footer-summary"
-          className="fixed bottom-0 inset-x-0 z-40 bg-white/98 backdrop-blur-md border-t border-slate-200 px-4 py-3 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]"
+          className="fixed bottom-0 inset-x-0 z-40 bg-white/98 backdrop-blur-md border-t border-slate-200 px-4 py-3"
           style={{ paddingBottom: "max(1rem, calc(env(safe-area-inset-bottom, 0px) + 0.5rem))" }}
         >
           <div className="max-w-md mx-auto w-full">
             <div className="space-y-1 mb-2.5">
               <div className="flex items-center justify-between text-[11px] text-slate-500 font-semibold">
                 <span>Subtotal ({selectedCartItems.length} de {cart.length} selec.):</span>
-                <span className="font-mono text-slate-800 font-bold">${cartSubtotal.toFixed(2)}</span>
+                <span className="font-mono text-slate-800 font-bold">{formatPrice(cartSubtotal)}</span>
               </div>
               <div className="flex items-center justify-between text-[11px] text-slate-500 font-semibold">
                 <span>Costo de Envío:</span>
                 <span className="font-mono font-bold text-emerald-700">
-                  {cartShippingTotal === 0 ? "GRATIS" : `$${cartShippingTotal.toFixed(2)}`}
+                  {cartShippingTotal === 0 ? "GRATIS" : formatPrice(cartShippingTotal)}
                 </span>
               </div>
               <div className="flex items-center justify-between text-sm font-black text-slate-900 pt-1 border-t border-slate-100">
                 <span>Total a pagar</span>
-                <span className="text-base text-amber-600 font-black font-mono">${cartTotal.toFixed(2)}</span>
+                <span className="text-base text-amber-600 font-black font-mono">{formatPrice(cartTotal)}</span>
               </div>
             </div>
             <button
@@ -255,7 +281,7 @@ export function CarritoTiendaView({
               <span>
                 {selectedCartIndices.length === 0
                   ? "Selecciona productos para pagar"
-                  : `Completar Compra (${selectedCartItems.length}) - $${cartTotal.toFixed(2)}`}
+                  : `Completar Compra (${selectedCartItems.length}) - ${formatPrice(cartTotal)}`}
               </span>
             </button>
           </div>

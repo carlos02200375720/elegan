@@ -32,25 +32,10 @@ export interface User {
  */
 export function isGuestUser(user?: Partial<User> | null): boolean {
   if (!user) return true;
-  if (user.isGuest === true) return true;
-  // If explicitly registered (isGuest false and email or assigned username present)
-  if (user.isGuest === false && (Boolean(user.email) || (Boolean(user.username) && user.username !== "invitado" && user.username !== "guest" && user.username !== "current_user"))) return false;
-  const username = (user.username || "").trim().toLowerCase();
-  if (!username) return true;
-  if (
-    username === "invitado" ||
-    username === "guest" ||
-    username === "current_user" ||
-    username === "usuario_actual" ||
-    username.startsWith("invitado_") ||
-    username.startsWith("guest_")
-  ) {
-    if (user.isGuest === false && Boolean(user.email)) return false;
-    return true;
-  }
-  if (user.id === "guest" || (typeof user.id === "string" && user.id.startsWith("guest_") && !user.email)) {
-    return true;
-  }
+  // If the user is identified by their persistent token in the database, they are an authenticated user
+  if (user.guestToken) return false;
+  if (user.isGuest === false) return false;
+  if (user.id && user.id !== "guest" && !user.id.startsWith("guest_") && user.id !== "current_user") return false;
   return false;
 }
 
@@ -198,6 +183,7 @@ export interface Order {
   buyerUsername?: string;
   buyerAvatar?: string;
   buyerEmail?: string;
+  buyerPhone?: string;
   items: OrderItem[];
   total: number;
   shippingCost?: number;

@@ -172,7 +172,7 @@ export function MovilHamburgerMenu({
                 >
                   <UserIcon strokeWidth={2.6} className="w-5 h-5" />
                   <span className="font-black tracking-wide">
-                    {isGuestUser(currentUser) ? "Mi Perfil (Registrarse)" : "Perfil"}
+                    Mi Perfil
                   </span>
                 </button>
 

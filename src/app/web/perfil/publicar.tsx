@@ -892,7 +892,7 @@ export default function PublishView({ currentUser, onBack, onSuccess, userProduc
             description: prodDescription,
             price: parseFloat(prodPrice),
             imageUrl: allProductPhotos[0],
-            stock: parseInt(prodQuantity),
+            stock: Math.max(0, parseInt(prodQuantity, 10) || 0),
             sellerId: currentUser.originalId || currentUser.id,
             sellerOriginalId: currentUser.originalId || "",
             sellerUsername: currentUser.username,

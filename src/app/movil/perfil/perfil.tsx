@@ -1,14 +1,19 @@
 import React, { useState } from "react";
-import { User, Reel, Product, Order, isGuestUser } from "../../types";
+import { User, Reel, Product, Order, isGuestUser } from "../../../types";
 import { Play, ShoppingBag, Bookmark, Settings, LogOut, Edit3, Grid, Camera, Check, Sparkles, UserPlus, UserCheck, X, ExternalLink, Package, Plus, Trash2, ShieldCheck, Truck } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import { androidApiFetch } from "./api";
-import AndroidUserPublicationsFeed from "./components/AndroidUserPublicationsFeed";
-import AndroidPublicationCover from "./components/AndroidPublicationCover";
-import AndroidPublishView from "./publicasion";
-import AndroidLoginView from "./login";
-import { isSuperAdmin } from "../../superAdmin";
-import { navigateTo, parseRoute, getProfilePath, getProfileSavedPath, getProfileCompraPath, getProfileConfigPath, getProfileProductoPath, getProfilePublicacionesPath, getProfilePublicarPath } from "../../router";
+import { androidApiFetch } from "../api";
+import AndroidUserPublicationsFeed from "../components/AndroidUserPublicationsFeed";
+import AndroidPublicationCover from "../components/AndroidPublicationCover";
+import AndroidPublishView from "../publicasion";
+import { isSuperAdmin } from "../../../superAdmin";
+import { navigateTo, parseRoute, getProfilePath, getProfileSavedPath, getProfileCompraPath, getProfileConfigPath, getProfileProductoPath, getProfilePublicacionesPath, getProfilePublicarPath } from "../../../router";
+import { formatPrice } from "../../../utils/currency";
+
+// Sub-components inside src/app/movil/perfil/
+import GuardadoPerfilView from "./guardado";
+import CompraPerfilView from "./compra";
+import ConfigPerfilView from "./config";
 
 export interface AndroidPerfilProps {
   user?: User;
@@ -27,7 +32,6 @@ export interface AndroidPerfilProps {
   unreadCount?: number;
   onOpenPublishModal?: () => void;
   isCurrentUserProfile?: boolean;
-  onNavigateToLogin?: () => void;
   onDeleteReel?: (reelId: string) => void;
   onUpdateReels?: (reels: Reel[]) => void;
   onUpdateProducts?: (products: Product[]) => void;
@@ -72,6 +76,7 @@ export default function Perfil({
   onPublishSuccess,
   initialTab,
   onClearInitialTab,
+  socket,
 }: AndroidPerfilProps) {
   // Determine who we are viewing
   const activeUser =
@@ -90,7 +95,6 @@ export default function Perfil({
   const isAdmin = (currentUser as any)?.role === "admin" || (currentUser as any)?.isAdmin === true;
   const isSellerOrAdmin = Boolean(activeUser.canSell === true || isSuperAdmin(activeUser));
   const canDelete = isMe || isAdmin || !selectedCreatorId;
-  const isGuest = isGuestUser(activeUser) || (isMe && isGuestUser(currentUser));
 
   const [activeTab, setActiveTab] = useState<TabType>(() => {
     if (typeof window !== "undefined") {
@@ -110,7 +114,7 @@ export default function Perfil({
     }
     return initialTab || (isSellerOrAdmin ? "reels" : "saved");
   });
-  const [savedSubTab, setSavedSubTab] = useState<"all" | "products" | "reels">("all");
+
   const [selectedFeedReelId, setSelectedFeedReelId] = useState<string | null>(null);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(() => {
     if (typeof window !== "undefined") {
@@ -136,7 +140,7 @@ export default function Perfil({
     if (typeof window !== "undefined") {
       if (tab === "saved" && isMe) {
         navigateTo(getProfileSavedPath(activeUser));
-      } else if (tab === "orders" && isMe) {
+      } else if (tab === "orders") {
         navigateTo(getProfileCompraPath(activeUser));
       } else if (tab === "products") {
         navigateTo(getProfileProductoPath(activeUser));
@@ -160,12 +164,6 @@ export default function Perfil({
       setActiveTab("saved");
     }
   }, [isSellerOrAdmin, activeTab]);
-
-  // Edit profile form
-  const [editName, setEditName] = useState(activeUser.name);
-  const [editBio, setEditBio] = useState(activeUser.bio || "");
-  const [editAvatar, setEditAvatar] = useState(activeUser.avatar);
-  const [isSaving, setIsSaving] = useState(false);
 
   const [publicationToDelete, setPublicationToDelete] = useState<Reel | null>(null);
   const [isDeletingPublication, setIsDeletingPublication] = useState(false);
@@ -209,23 +207,6 @@ export default function Perfil({
     const target = userReels.find((r) => r.id === reelId) || { id: reelId, description: "Publicación" } as Reel;
     setPublicationToDelete(target);
   };
-
-  if ((isMe && isGuest) || (isGuestUser(currentUser) && (!selectedCreatorId || isMe || selectedCreatorId.toLowerCase().startsWith("invitado")))) {
-    return (
-      <AndroidLoginView
-        users={users}
-        currentUser={currentUser}
-        initialTab="register"
-        restrictionNotice="Para acceder a tu perfil, tus publicaciones guardadas, el historial de tus compras y todas tus interacciones, debes registrarte en la plataforma. Toda tu información previa se transferirá automáticamente a tu cuenta."
-        onRefreshUsers={onRefreshUsers || (() => {})}
-        onLoginSuccess={(loggedUser) => {
-          if (onProfileUpdate) onProfileUpdate(loggedUser);
-          if (onUpdateUser) onUpdateUser(loggedUser);
-          if (onRefreshUsers) onRefreshUsers();
-        }}
-      />
-    );
-  }
 
   const isFollowing = currentUser?.followingUserIds?.includes(activeUser.id) || false;
 
@@ -369,106 +350,20 @@ export default function Perfil({
     });
   }, [products, savedReelIds]);
 
-  const totalSavedCount = savedReels.length + savedProducts.length;
-
-  // Interleaved items for the unified "Todos" view in saved section
-  const unifiedSavedItems = React.useMemo(() => {
-    type UnifiedItem =
-      | { kind: "product"; data: Product; id: string }
-      | { kind: "reel"; data: Reel; id: string };
-
-    const pList = [...savedProducts];
-    const rList = [...savedReels];
-    const items: UnifiedItem[] = [];
-    const maxLen = Math.max(pList.length, rList.length);
-    for (let i = 0; i < maxLen; i++) {
-      if (i < rList.length) {
-        items.push({ kind: "reel", data: rList[i], id: rList[i].id });
-      }
-      if (i < pList.length) {
-        items.push({ kind: "product", data: pList[i], id: pList[i].id });
-      }
-    }
-    return items;
-  }, [savedProducts, savedReels]);
-
-  const userOrders = orders.filter((o) => o.buyerId === activeUser.id || o.buyerId === currentUser.id);
-
-  const handleSaveProfile = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSaving(true);
-    try {
-      const res = await androidApiFetch("/users/current/update", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: activeUser.originalId || activeUser.id,
-          name: editName.trim(),
-          bio: editBio.trim(),
-          avatar: editAvatar,
-        }),
-      });
-
-      if (res.ok) {
-        const updated = { ...activeUser, name: editName.trim(), bio: editBio.trim(), avatar: editAvatar };
-        if (onProfileUpdate) onProfileUpdate(updated);
-        if (onUpdateUser) onUpdateUser(updated);
-        setIsEditProfileOpen(false);
-      }
-    } catch (err) {
-      console.error("Failed to update profile on Android:", err);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
   return (
     <div className="w-full min-h-screen bg-white text-slate-900 flex flex-col font-sans select-none pb-24" id="android-profile-view">
-      {/* Cover and Header */}
-      <div className="relative w-full h-36 bg-gradient-to-r from-amber-500 via-amber-400 to-amber-300">
-        {activeUser.coverPhoto && (
-          <img src={activeUser.coverPhoto} alt="Cover" className="w-full h-full object-cover opacity-60" />
-        )}
-        <div className="absolute top-8 right-4 flex items-center space-x-2">
-          {!isMe && onBackToSelf && (
-            <button
-              onClick={onBackToSelf}
-              className="px-3 py-1.5 rounded-full bg-black/40 text-xs font-semibold text-white backdrop-blur-md active:scale-95 cursor-pointer shadow-sm"
-            >
-              Mi Perfil
-            </button>
-          )}
-          {isMe ? (
-            <button
-              type="button"
-              id="android-profile-logout-btn"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                onLogout();
-              }}
-              title="Cerrar sesión"
-              aria-label="Cerrar sesión"
-              className="z-20 p-2 bg-transparent border-0 shadow-none text-white hover:opacity-80 flex items-center justify-center active:scale-95 cursor-pointer transition-all group"
-            >
-              <LogOut className="w-5 h-5 text-white group-hover:text-red-400 transition-colors drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]" />
-            </button>
-          ) : null}
-        </div>
-      </div>
-
-      {/* Profile Bio Section */}
-      <div className="px-4 relative -mt-12">
+      {/* Profile Bio Section without Cover Container */}
+      <div className="px-4 pt-4">
         <div className="flex items-end justify-between">
           <div className="relative">
             <img
               src={activeUser.avatar}
               alt={activeUser.name}
-              className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-xl bg-white"
+              className="w-20 h-20 rounded-full object-cover border-2 border-slate-200 shadow-sm bg-white"
             />
           </div>
 
-          <div className="flex space-x-2 pb-2">
+          <div className="flex items-center space-x-2 pb-1">
             {isMe ? (
               <>
                 <button
@@ -492,7 +387,15 @@ export default function Perfil({
                 )}
               </>
             ) : (
-              <div className="flex space-x-2">
+              <div className="flex items-center space-x-2">
+                {onBackToSelf && (
+                  <button
+                    onClick={onBackToSelf}
+                    className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold border border-slate-200 active:scale-95 cursor-pointer shadow-sm"
+                  >
+                    Mi Perfil
+                  </button>
+                )}
                 <button
                   onClick={() => onToggleFollowUser?.(activeUser.id)}
                   className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center space-x-1.5 active:scale-95 transition-all cursor-pointer ${
@@ -528,9 +431,6 @@ export default function Perfil({
             )}
           </div>
           <p className="text-xs text-amber-600 font-semibold">@{activeUser.username}</p>
-          {activeUser.bio && (
-            <p className="text-xs text-slate-600 mt-2 leading-relaxed">{activeUser.bio}</p>
-          )}
         </div>
 
         {/* Stats Row - Only for Sellers / Admins */}
@@ -671,7 +571,7 @@ export default function Perfil({
                   <img src={p.imageUrl} alt={p.name} className="w-full aspect-square rounded-xl object-cover mb-2" />
                   <h4 className="text-xs font-bold text-slate-900 line-clamp-1">{p.name}</h4>
                   <div className="flex items-center justify-between gap-1 mt-1.5 pt-1.5 border-t border-slate-100 flex-wrap">
-                    <p className="text-xs font-black text-amber-600">${p.price.toFixed(2)}</p>
+                    <p className="text-xs font-black text-amber-600">{formatPrice(p.price)}</p>
                     <span className={`inline-flex items-center gap-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded border ${
                       Number(p.shippingCost || 0) > 0
                         ? "bg-amber-50 text-amber-800 border-amber-200"
@@ -680,7 +580,7 @@ export default function Perfil({
                       <Truck className="w-2.5 h-2.5" />
                       <span>
                         {Number(p.shippingCost || 0) > 0
-                          ? `+$${Number(p.shippingCost).toFixed(2)}`
+                          ? `+${formatPrice(Number(p.shippingCost))}`
                           : "Gratis"}
                       </span>
                     </span>
@@ -691,293 +591,27 @@ export default function Perfil({
           </div>
         )}
 
+        {/* 3. Guardado (Imported from ./guardado) */}
         {activeTab === "saved" && (
-          <div className="space-y-3">
-            {/* Filter Tabs - Organizados de forma horizontal (nunca uno debajo del otro) */}
-            <div className="flex flex-row items-center gap-2 pb-1 overflow-x-auto no-scrollbar whitespace-nowrap">
-              <button
-                type="button"
-                id="android-saved-filter-all"
-                onClick={() => setSavedSubTab("all")}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 flex items-center space-x-1.5 cursor-pointer whitespace-nowrap ${
-                  savedSubTab === "all"
-                    ? "bg-amber-500 text-slate-950 shadow-xs font-black ring-2 ring-amber-500/20"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                }`}
-              >
-                <Bookmark className="w-3.5 h-3.5" />
-                <span>Todos ({totalSavedCount})</span>
-              </button>
-              <button
-                type="button"
-                id="android-saved-filter-reels"
-                onClick={() => setSavedSubTab("reels")}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 flex items-center space-x-1.5 cursor-pointer whitespace-nowrap ${
-                  savedSubTab === "reels"
-                    ? "bg-amber-500 text-slate-950 shadow-xs font-black ring-2 ring-amber-500/20"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                }`}
-              >
-                <Play className="w-3.5 h-3.5 fill-current" />
-                <span>Publicaciones ({savedReels.length})</span>
-              </button>
-              <button
-                type="button"
-                id="android-saved-filter-products"
-                onClick={() => setSavedSubTab("products")}
-                className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 flex items-center space-x-1.5 cursor-pointer whitespace-nowrap ${
-                  savedSubTab === "products"
-                    ? "bg-amber-500 text-slate-950 shadow-xs font-black ring-2 ring-amber-500/20"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                }`}
-              >
-                <ShoppingBag className="w-3.5 h-3.5" />
-                <span>Productos ({savedProducts.length})</span>
-              </button>
-            </div>
-
-            {totalSavedCount === 0 ? (
-              <div className="py-16 text-center text-xs text-slate-400 flex flex-col items-center">
-                <div className="w-12 h-12 rounded-2xl bg-slate-100 flex items-center justify-center mb-2.5 text-slate-400">
-                  <Bookmark className="w-6 h-6" />
-                </div>
-                <p className="font-bold text-slate-700">No tienes publicaciones ni productos guardados</p>
-                <p className="text-[11px] text-slate-400 mt-1 max-w-xs text-center">
-                  Guarda productos en la tienda o publicaciones tocando el icono de guardado para encontrarlos aquí fácilmente.
-                </p>
-              </div>
-            ) : (
-              <div>
-                {/* 1. Vista Unificada "Todos": Muestra todas las publicaciones, tanto productos como videos, organizadas juntas */}
-                {savedSubTab === "all" && (
-                  <div className="grid grid-cols-2 gap-2.5">
-                    {unifiedSavedItems.map((item, index) => {
-                      if (item.kind === "product") {
-                        const p = item.data;
-                        return (
-                          <div
-                            key={`saved-unified-p-${p.id}-${index}`}
-                            id={`android-saved-product-card-${p.id}`}
-                            onClick={() => onSelectProduct?.(p)}
-                            className="bg-white border border-slate-200 rounded-2xl overflow-hidden flex flex-col justify-between active:scale-[0.98] transition-transform cursor-pointer shadow-xs hover:border-amber-300 relative aspect-[3/4]"
-                          >
-                            <div className="relative flex-1 w-full overflow-hidden bg-slate-100 min-h-0">
-                              <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover" />
-                              <span className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-black/60 backdrop-blur-xs text-[9px] font-bold text-amber-400 flex items-center gap-1">
-                                <ShoppingBag className="w-2.5 h-2.5" />
-                                <span>Producto</span>
-                              </span>
-                              {onToggleSaveReel && (
-                                <button
-                                  type="button"
-                                  id={`android-unsave-prod-${p.id}`}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    onToggleSaveReel(p.id);
-                                  }}
-                                  className="absolute top-2 right-2 p-1.5 rounded-lg bg-black/60 backdrop-blur-xs text-amber-400 hover:bg-black/80 active:scale-90 transition-transform cursor-pointer"
-                                  title="Quitar de guardados"
-                                  aria-label="Quitar de guardados"
-                                >
-                                  <Bookmark className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                                </button>
-                              )}
-                            </div>
-                            <div className="p-2 shrink-0 bg-white border-t border-slate-100 flex flex-col justify-between">
-                              <h4 className="text-xs font-bold text-slate-900 line-clamp-1">{p.name}</h4>
-                              <div className="flex items-center justify-between mt-1 gap-1 flex-wrap">
-                                <span className="text-xs font-black text-amber-600">${p.price.toFixed(2)}</span>
-                                {p.freeShipping && (
-                                  <span className="inline-flex items-center gap-0.5 text-[8px] font-bold px-1.5 py-0.5 rounded border bg-emerald-50 text-emerald-700 border-emerald-200">
-                                    <span>Envío Gratis</span>
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      }
-
-                      const reel = item.data;
-                      return (
-                        <div
-                          key={`saved-unified-r-${reel.id}-${index}`}
-                          id={`android-saved-reel-card-${reel.id}`}
-                          onClick={() => {
-                            if (onSelectReel) onSelectReel(reel);
-                            setSelectedFeedReelId(reel.id);
-                          }}
-                          className="relative aspect-[3/4] rounded-2xl overflow-hidden bg-slate-950 border border-slate-200 cursor-pointer active:scale-[0.98] transition-transform group shadow-xs hover:border-amber-400"
-                        >
-                          <AndroidPublicationCover reel={reel} />
-                          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-transparent to-transparent flex flex-col justify-between p-2 pointer-events-none">
-                            <div className="flex items-center justify-between w-full pointer-events-auto">
-                              <span className="px-2 py-0.5 rounded-md bg-black/60 backdrop-blur-xs text-[9px] font-bold text-white flex items-center gap-1 shadow-xs">
-                                <Play className="w-2.5 h-2.5 fill-current text-amber-400" />
-                                <span>@{reel.creatorUsername || reel.creatorName || "creador"}</span>
-                              </span>
-                              {onToggleSaveReel && (
-                                <button
-                                  type="button"
-                                  id={`android-unsave-reel-${reel.id}`}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    onToggleSaveReel(reel.id);
-                                  }}
-                                  className="p-1.5 rounded-lg bg-black/60 backdrop-blur-xs text-amber-400 hover:bg-black/80 active:scale-90 transition-transform cursor-pointer"
-                                  title="Quitar de guardados"
-                                  aria-label="Quitar de guardados"
-                                >
-                                  <Bookmark className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                                </button>
-                              )}
-                            </div>
-                            <div className="text-[10px] font-bold text-white line-clamp-1 leading-tight">
-                              {reel.description || reel.title || "Publicación"}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {/* 2. Filtro Publicaciones */}
-                {savedSubTab === "reels" && (
-                  <div>
-                    {savedReels.length === 0 ? (
-                      <div className="py-12 text-center text-xs text-slate-400">
-                        No tienes publicaciones guardadas en tu perfil.
-                      </div>
-                    ) : (
-                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-                        {savedReels.map((reel, rIdx) => (
-                          <div
-                            key={`reel-tab-${reel.id}-${rIdx}`}
-                            id={`android-saved-reel-card-${reel.id}`}
-                            onClick={() => {
-                              if (onSelectReel) onSelectReel(reel);
-                              setSelectedFeedReelId(reel.id);
-                            }}
-                            className="relative aspect-[3/4] rounded-2xl overflow-hidden bg-slate-950 border border-slate-200 cursor-pointer active:scale-[0.98] transition-transform group shadow-xs hover:border-amber-400"
-                          >
-                            <AndroidPublicationCover reel={reel} />
-                            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-transparent to-transparent flex flex-col justify-between p-2 pointer-events-none">
-                              <div className="flex items-center justify-between w-full pointer-events-auto">
-                                <span className="px-2 py-0.5 rounded-md bg-black/60 backdrop-blur-xs text-[9px] font-bold text-white flex items-center gap-1 shadow-xs">
-                                  <Play className="w-2.5 h-2.5 fill-current text-amber-400" />
-                                  <span>@{reel.creatorUsername || reel.creatorName || "creador"}</span>
-                                </span>
-                                {onToggleSaveReel && (
-                                  <button
-                                    type="button"
-                                    id={`android-unsave-reel-${reel.id}`}
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      onToggleSaveReel(reel.id);
-                                    }}
-                                    className="p-1.5 rounded-lg bg-black/60 backdrop-blur-xs text-amber-400 hover:bg-black/80 active:scale-90 transition-transform cursor-pointer"
-                                    title="Quitar de guardados"
-                                    aria-label="Quitar de guardados"
-                                  >
-                                    <Bookmark className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                                  </button>
-                                )}
-                              </div>
-                              <div className="text-[10px] font-bold text-white line-clamp-1 leading-tight">
-                                {reel.description || reel.title || "Publicación"}
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* 3. Filtro Productos */}
-                {savedSubTab === "products" && (
-                  <div>
-                    {savedProducts.length === 0 ? (
-                      <div className="py-12 text-center text-xs text-slate-400">
-                        No tienes productos guardados en tu perfil.
-                      </div>
-                    ) : (
-                      <div className="grid grid-cols-2 gap-2.5">
-                        {savedProducts.map((p, pIdx) => (
-                          <div
-                            key={`prod-tab-${p.id}-${pIdx}`}
-                            id={`android-saved-product-card-${p.id}`}
-                            onClick={() => onSelectProduct?.(p)}
-                            className="bg-white border border-slate-200 rounded-2xl overflow-hidden flex flex-col justify-between active:scale-[0.98] transition-transform cursor-pointer shadow-xs hover:border-amber-300 relative aspect-[3/4]"
-                          >
-                            <div className="relative flex-1 w-full overflow-hidden bg-slate-100 min-h-0">
-                              <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover" />
-                              <span className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-black/60 backdrop-blur-xs text-[9px] font-bold text-amber-400 flex items-center gap-1">
-                                <ShoppingBag className="w-2.5 h-2.5" />
-                                <span>{p.category || "Producto"}</span>
-                              </span>
-                              {onToggleSaveReel && (
-                                <button
-                                  type="button"
-                                  id={`android-unsave-prod-${p.id}`}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    onToggleSaveReel(p.id);
-                                  }}
-                                  className="absolute top-2 right-2 p-1.5 rounded-lg bg-black/60 backdrop-blur-xs text-amber-400 hover:bg-black/80 active:scale-90 transition-transform cursor-pointer"
-                                  title="Quitar de guardados"
-                                  aria-label="Quitar de guardados"
-                                >
-                                  <Bookmark className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                                </button>
-                              )}
-                            </div>
-                            <div className="p-2 shrink-0 bg-white border-t border-slate-100 flex flex-col justify-between">
-                              <h4 className="text-xs font-bold text-slate-900 line-clamp-1">{p.name}</h4>
-                              <div className="flex items-center justify-between mt-1 gap-1 flex-wrap">
-                                <span className="text-xs font-black text-amber-600">${p.price.toFixed(2)}</span>
-                                {p.freeShipping && (
-                                  <span className="inline-flex items-center gap-0.5 text-[8px] font-bold px-1.5 py-0.5 rounded border bg-emerald-50 text-emerald-700 border-emerald-200">
-                                    <span>Envío Gratis</span>
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
+          <GuardadoPerfilView
+            savedProducts={savedProducts}
+            savedReels={savedReels}
+            onSelectProduct={onSelectProduct}
+            onSelectReel={onSelectReel}
+            onToggleSaveReel={onToggleSaveReel}
+            onOpenFeed={(reelId) => setSelectedFeedReelId(reelId)}
+          />
         )}
 
+        {/* 4. Compras / Pedidos (Imported from ./compra) */}
         {activeTab === "orders" && (
-          <div className="space-y-3">
-            {userOrders.length === 0 ? (
-              <div className="py-16 text-center text-xs text-slate-400">
-                No has realizado ningún pedido todavía.
-              </div>
-            ) : (
-              userOrders.map((ord, oIdx) => (
-                <div key={`${ord.id || 'order'}-${oIdx}`} className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-bold text-slate-900">Pedido #{ord.id?.slice(0, 8)}</span>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-bold">
-                      {ord.status || "Completado"}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-xs text-slate-600">
-                    <span>{ord.items?.length || 1} producto(s)</span>
-                    <span className="font-black text-amber-600 text-sm">${ord.total?.toFixed(2)}</span>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
+          <CompraPerfilView
+            orders={orders}
+            activeUser={activeUser}
+            currentUser={currentUser}
+            socket={socket}
+            onSelectProduct={onSelectProduct}
+          />
         )}
       </div>
 
@@ -1010,55 +644,18 @@ export default function Perfil({
         />
       )}
 
-      {/* Edit Profile Sheet */}
-      <AnimatePresence>
-        {isEditProfileOpen && (
-          <div className="fixed inset-0 z-50 flex items-end bg-black/40 backdrop-blur-sm">
-            <motion.div
-              initial={{ y: "100%" }}
-              animate={{ y: 0 }}
-              exit={{ y: "100%" }}
-              transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="w-full bg-white border-t border-slate-200 rounded-t-3xl p-5 text-slate-900 shadow-2xl"
-            >
-              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                <span className="text-sm font-bold text-slate-900">Editar Perfil de Android</span>
-                <button onClick={() => setIsEditProfileOpen(false)} className="p-1 text-slate-400 hover:text-slate-700 cursor-pointer">
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              <form onSubmit={handleSaveProfile} className="py-4 space-y-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Nombre</label>
-                  <input
-                    type="text"
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-amber-500 focus:bg-white border border-slate-200 transition-colors"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Biografía</label>
-                  <textarea
-                    value={editBio}
-                    onChange={(e) => setEditBio(e.target.value)}
-                    rows={3}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-amber-500 focus:bg-white border border-slate-200 transition-colors"
-                  />
-                </div>
-                <button
-                  type="submit"
-                  disabled={isSaving}
-                  className="w-full py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs active:scale-95 shadow-sm cursor-pointer"
-                >
-                  {isSaving ? "Guardando..." : "Actualizar Perfil"}
-                </button>
-              </form>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      {/* Edit Profile Sheet (Imported from ./config) */}
+      <ConfigPerfilView
+        isOpen={isEditProfileOpen}
+        activeUser={activeUser}
+        currentUser={currentUser}
+        onProfileUpdate={onProfileUpdate}
+        onUpdateUser={onUpdateUser}
+        onClose={() => {
+          setIsEditProfileOpen(false);
+          navigateTo(getProfilePath(activeUser));
+        }}
+      />
 
       {/* Modal de confirmación de eliminación in-app (evita bloqueos de window.confirm) */}
       <AnimatePresence>
@@ -1125,3 +722,5 @@ export default function Perfil({
     </div>
   );
 }
+
+export { Perfil, Perfil as ProfileView };

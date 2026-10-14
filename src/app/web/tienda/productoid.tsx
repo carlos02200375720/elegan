@@ -16,6 +16,7 @@ import { motion } from "motion/react";
 import { Product, User } from "../../../types";
 import { apiFetch } from "../../../config";
 import { NativeVideoPlayer } from "../components/VideoPlayer";
+import { formatPrice } from "../../../utils/currency";
 
 export interface ShippingOptionItem {
   carrier: string;
@@ -549,7 +550,7 @@ export function ProductoIdTiendaView({
                   className="text-2xl sm:text-3xl font-black font-mono text-slate-950 tracking-tight"
                   id="product-detail-price"
                 >
-                  ${selectedProduct.price.toFixed(2)}
+                  {formatPrice(selectedProduct.price)}
                 </span>
                 <span
                   className={`px-2.5 py-1 rounded-full text-[10px] font-bold border ${
@@ -558,7 +559,9 @@ export function ProductoIdTiendaView({
                       : "bg-rose-50 text-rose-700 border-rose-200/80"
                   }`}
                 >
-                  {selectedProduct.stock > 0 ? `En Stock` : "Agotado"}
+                  {selectedProduct.stock > 0
+                    ? `En Stock: ${selectedProduct.stock} ${selectedProduct.stock === 1 ? "disponible" : "disponibles"}`
+                    : "Agotado"}
                 </span>
               </div>
             </div>
@@ -840,8 +843,8 @@ export function ProductoIdTiendaView({
                               }`}
                             >
                               {option.shippingCost === 0
-                                ? "GRATIS ($0.00)"
-                                : `$${option.shippingCost.toFixed(2)}`}
+                                ? "GRATIS (RD$0.00)"
+                                : formatPrice(option.shippingCost)}
                             </span>
                             {option.aging && (
                               <span

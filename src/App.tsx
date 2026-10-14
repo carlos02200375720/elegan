@@ -257,8 +257,14 @@ export default function App() {
     if (typeof window !== "undefined") {
       const saved = sessionState.getPlatform();
       if (saved === "android" || saved === "web") return saved;
+      try {
+        const lastSaved = localStorage.getItem("mall_last_active_platform");
+        if (lastSaved === "android" || lastSaved === "web") return lastSaved;
+      } catch {}
       if (window.location.search.includes("platform=android")) return "android";
       if (window.location.search.includes("platform=web")) return "web";
+      if (window.location.pathname.startsWith("/app/movil") || window.location.pathname.startsWith("/movil")) return "android";
+      if (window.location.pathname.startsWith("/app/web")) return "web";
       if ((import.meta as any).env?.VITE_APP_TARGET === "android") return "android";
       if ((import.meta as any).env?.VITE_APP_TARGET === "web") return "web";
       const win = window as any;
@@ -268,6 +274,9 @@ export default function App() {
       ) {
         return "android";
       }
+      if (window.innerWidth < 768) {
+        return "android";
+      }
     }
     return "web";
   });
@@ -275,6 +284,9 @@ export default function App() {
   const handleSwitchPlatform = useCallback((target: 'android' | 'web') => {
     setActivePlatform(target);
     sessionState.setPlatform(target);
+    try {
+      localStorage.setItem("mall_last_active_platform", target);
+    } catch {}
   }, []);
 
   // Listen to browser URL route changes (e.g. /product/:id, /reel/:id, /store/:id, /shop, etc.)
@@ -380,6 +392,13 @@ export default function App() {
     } else if (currentRoute.type === 'messages') {
       setActiveTab('messages');
     } else if (currentRoute.type === 'profile') {
+      if (typeof window !== 'undefined' && (window.location.pathname.startsWith('/app/movil') || window.location.pathname.startsWith('/movil'))) {
+        setActivePlatform('android');
+        sessionState.setPlatform('android');
+        try {
+          localStorage.setItem('mall_last_active_platform', 'android');
+        } catch {}
+      }
       setActiveTab('profile');
       if (currentRoute.userId) {
         const cleanRouteUser = decodeURIComponent(currentRoute.userId).toLowerCase().replace(/^@/, '');
@@ -388,20 +407,24 @@ export default function App() {
         const currentUsername = (currentUser?.username || '').toLowerCase().replace(/^@/, '');
         const currentEmail = (currentUser?.email || sessionUser?.email || '').toLowerCase();
         const isConfig = currentRoute.profileTab === 'config';
-        const isAuth = Boolean(
+        const hasSessionOrGuest = Boolean(
           sessionState.isAuthenticated() ||
-          (currentUser && !isGuestUser(currentUser) && currentUser.username !== 'invitado' && currentUser.username !== 'guest') ||
-          (sessionUsername && sessionUsername !== 'invitado' && sessionUsername !== 'guest')
+          currentUser?.guestToken ||
+          currentUser?.originalId ||
+          (currentUser && !isGuestUser(currentUser))
         );
         const isOwnUser =
-          (isConfig && isAuth) ||
-          (isAuth &&
-            (cleanRouteUser === currentUsername ||
-              cleanRouteUser === sessionUsername ||
-              (Boolean(currentEmail) && cleanRouteUser === currentEmail) ||
-              currentRoute.userId === currentUser?.id ||
-              (Boolean(currentUser?.originalId) && currentRoute.userId === currentUser.originalId) ||
-              (Boolean(sessionUser?.originalId) && currentRoute.userId === sessionUser.originalId)));
+          (isConfig && hasSessionOrGuest) ||
+          cleanRouteUser === currentUsername ||
+          cleanRouteUser === sessionUsername ||
+          (Boolean(currentEmail) && cleanRouteUser === currentEmail) ||
+          currentRoute.userId === currentUser?.id ||
+          (Boolean(currentUser?.originalId) && currentRoute.userId === currentUser.originalId) ||
+          (Boolean(currentUser?.guestToken) && currentRoute.userId === currentUser.guestToken) ||
+          (Boolean(sessionUser?.id) && currentRoute.userId === sessionUser.id) ||
+          (Boolean(sessionUser?.originalId) && currentRoute.userId === sessionUser.originalId) ||
+          (Boolean(sessionUser?.guestToken) && currentRoute.userId === sessionUser.guestToken) ||
+          currentRoute.userId === getLocalGuestToken();
         setSelectedCreatorProfileId(isOwnUser ? null : currentRoute.userId);
       } else {
         setSelectedCreatorProfileId(null);
@@ -414,10 +437,11 @@ export default function App() {
     }
   }, [currentRoute, products, reels]);
 
-  // Keep profile URL synchronized with /perfil/:username (or /perfil/:username/guardado, /perfil/:username/compra, /perfil/:username/config, /perfil/:username/producto) of the active user or viewed creator
+  // Keep profile URL synchronized with /perfil/:userId (dominio/perfil/id)
   useEffect(() => {
     if (activeTab !== 'profile' || typeof window === 'undefined') return;
     const parsed = parseRoute(window.location.pathname);
+    const platform = activePlatform === 'android' ? 'android' : 'web';
     const isSavedSubRoute = parsed.type === 'profile' && parsed.profileTab === 'guardado';
     const isCompraSubRoute = parsed.type === 'profile' && parsed.profileTab === 'compra';
     const isConfigSubRoute = parsed.type === 'profile' && parsed.profileTab === 'config';
@@ -436,48 +460,48 @@ export default function App() {
       );
       const targetUser = matchedCreator || selectedCreatorProfileId;
       const expectedPath = isSavedSubRoute
-        ? getProfileSavedPath(targetUser)
+        ? getProfileSavedPath(targetUser, platform)
         : isCompraSubRoute
-        ? getProfileCompraPath(targetUser)
+        ? getProfileCompraPath(targetUser, platform)
         : isConfigSubRoute
-        ? getProfileConfigPath(targetUser)
+        ? getProfileConfigPath(targetUser, platform)
         : isProductoSubRoute
-        ? getProfileProductoPath(targetUser)
+        ? getProfileProductoPath(targetUser, platform)
         : isVentaSubRoute
-        ? getProfileVentaPath(targetUser)
+        ? getProfileVentaPath(targetUser, platform)
         : isPublicacionesSubRoute
-        ? getProfilePublicacionesPath(targetUser)
+        ? getProfilePublicacionesPath(targetUser, platform)
         : isPublicarSubRoute
-        ? getProfilePublicarPath(targetUser)
+        ? getProfilePublicarPath(targetUser, platform)
         : isRendimientoSubRoute
-        ? getProfileRendimientoPath(targetUser)
-        : getProfilePath(targetUser);
+        ? getProfileRendimientoPath(targetUser, platform)
+        : getProfilePath(targetUser, platform);
       if (window.location.pathname !== expectedPath) {
         navigateTo(expectedPath, { replace: true });
       }
     } else {
       const expectedPath = isSavedSubRoute
-        ? getProfileSavedPath(currentUser)
+        ? getProfileSavedPath(currentUser, platform)
         : isCompraSubRoute
-        ? getProfileCompraPath(currentUser)
+        ? getProfileCompraPath(currentUser, platform)
         : isConfigSubRoute
-        ? getProfileConfigPath(currentUser)
+        ? getProfileConfigPath(currentUser, platform)
         : isProductoSubRoute
-        ? getProfileProductoPath(currentUser)
+        ? getProfileProductoPath(currentUser, platform)
         : isVentaSubRoute
-        ? getProfileVentaPath(currentUser)
+        ? getProfileVentaPath(currentUser, platform)
         : isPublicacionesSubRoute
-        ? getProfilePublicacionesPath(currentUser)
+        ? getProfilePublicacionesPath(currentUser, platform)
         : isPublicarSubRoute
-        ? getProfilePublicarPath(currentUser)
+        ? getProfilePublicarPath(currentUser, platform)
         : isRendimientoSubRoute
-        ? getProfileRendimientoPath(currentUser)
-        : getProfilePath(currentUser);
+        ? getProfileRendimientoPath(currentUser, platform)
+        : getProfilePath(currentUser, platform);
       if (window.location.pathname !== expectedPath) {
         navigateTo(expectedPath, { replace: true });
       }
     }
-  }, [activeTab, selectedCreatorProfileId, currentUser, users]);
+  }, [activeTab, selectedCreatorProfileId, currentUser, users, activePlatform]);
 
   // App Startup & Server Connection Splash State (disabled by default on web for instant paint)
   const [isInitialLoading, setIsInitialLoading] = useState(() => {
@@ -931,6 +955,28 @@ export default function App() {
                 return fresh ? { ...p, stock: fresh.stock } : p;
               })
             );
+            break;
+          }
+
+          case "new_order":
+          case "order_created": {
+            if (payload.order && Array.isArray(payload.order.items)) {
+              setProducts((prev) =>
+                prev.map((prod) => {
+                  const purchased = payload.order.items.find(
+                    (it: any) => (it.productId || it.product?.id || it.id) === prod.id
+                  );
+                  if (purchased) {
+                    const qty = purchased.quantity || 1;
+                    return {
+                      ...prod,
+                      stock: Math.max(0, (prod.stock ?? 0) - qty),
+                    };
+                  }
+                  return prod;
+                })
+              );
+            }
             break;
           }
 
@@ -1521,6 +1567,37 @@ export default function App() {
             saveCartToMongo(updated);
             return updated;
           });
+
+          // Reducir inventario en tiempo real del estado de productos
+          if (checkoutItems && checkoutItems.length > 0) {
+            setProducts((prev) =>
+              prev.map((prod) => {
+                const purchased = checkoutItems.find((ci) => ci.product.id === prod.id);
+                if (purchased) {
+                  const qty = purchased.quantity || 1;
+                  return {
+                    ...prod,
+                    stock: Math.max(0, (prod.stock ?? 0) - qty),
+                  };
+                }
+                return prod;
+              })
+            );
+          }
+
+          // Guardar orden creada localmente para el comprador
+          try {
+            if (data && data.id) {
+              const uId = currentUser.originalId || currentUser.id || userId;
+              const cacheKey = `mall_user_orders_${uId}`;
+              const prevSaved = JSON.parse(localStorage.getItem(cacheKey) || "[]");
+              const updatedOrders = [data, ...prevSaved.filter((o: any) => o.id !== data.id)];
+              localStorage.setItem(cacheKey, JSON.stringify(updatedOrders));
+              localStorage.setItem("mall_last_order", JSON.stringify(data));
+              window.dispatchEvent(new CustomEvent("mall_order_created", { detail: data }));
+            }
+          } catch {}
+
           onComplete(data);
         } else {
           alert(data.error);
@@ -1593,15 +1670,15 @@ export default function App() {
     );
     const targetUser = matchedCreator || creatorId;
     const isOwn =
-      currentUser &&
-      !isGuestUser(currentUser) &&
-      (creatorId === currentUser.id ||
-        (Boolean(currentUser.originalId) && creatorId === currentUser.originalId) ||
-        (matchedCreator && (matchedCreator.id === currentUser.id || (Boolean(currentUser.originalId) && matchedCreator.originalId === currentUser.originalId))) ||
-        (Boolean(currentUser.username) && (matchedCreator?.username?.toLowerCase() === currentUser.username.toLowerCase())));
+      (creatorId === currentUser?.id ||
+        (Boolean(currentUser?.originalId) && creatorId === currentUser.originalId) ||
+        (Boolean(currentUser?.guestToken) && creatorId === currentUser.guestToken) ||
+        (matchedCreator && (matchedCreator.id === currentUser?.id || (Boolean(currentUser?.originalId) && matchedCreator.originalId === currentUser.originalId))) ||
+        (Boolean(currentUser?.username) && (matchedCreator?.username?.toLowerCase() === currentUser.username.toLowerCase())));
     setSelectedCreatorProfileId(isOwn ? null : (matchedCreator?.id || creatorId));
     setActiveTab('profile');
-    navigateTo(getProfilePath(isOwn ? currentUser : targetUser));
+    const platform = activePlatform === 'android' ? 'android' : 'web';
+    navigateTo(getProfilePath(isOwn ? currentUser : targetUser, platform));
   };
 
   const handleProductDetailsLink = (product: Product) => {

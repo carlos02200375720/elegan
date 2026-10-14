@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { sessionState } from '../utils/sessionState';
+import { getLocalGuestToken, getOrCreateGuestToken } from '../utils/guestToken';
 
 export type AppRoute =
   | { type: 'inicio'; reelId?: string; reelSlug?: string }
@@ -255,9 +256,7 @@ export function isGenericProfileUser(rawUser?: string): boolean {
     lower === 'invitado' ||
     lower === 'guest' ||
     lower === 'current_user' ||
-    lower === 'usuario_actual' ||
-    lower.startsWith('invitado_') ||
-    lower.startsWith('guest_')
+    lower === 'usuario_actual'
   );
 }
 
@@ -364,9 +363,9 @@ export function parseRoute(pathname: string): AppRoute {
     return { type: 'messages' };
   }
 
-  // /perfil/:userId/guardado or /perfil/guardado or /app/web/perfil/guardado
+  // /perfil/:userId/guardado or /app/movil/perfil/:userId/guardado or /app/web/perfil/:userId/guardado
   const profileSavedMatch = normalized.match(
-    /^\/(?:src\/app\/web\/|app\/web\/)?(?:perfil|profile)(?:\/([^/]+))?\/guardados?$/i
+    /^\/(?:src\/app\/(?:web|movil)\/|app\/(?:web|movil)\/)?(?:perfil|profile)(?:\/([^/]+))?\/guardados?$/i
   );
   if (profileSavedMatch) {
     const rawUser = profileSavedMatch[1] ? decodeURIComponent(profileSavedMatch[1]) : undefined;
@@ -378,9 +377,9 @@ export function parseRoute(pathname: string): AppRoute {
     };
   }
 
-  // /perfil/:userId/compra or /perfil/compra or /app/web/perfil/compra
+  // /perfil/:userId/compra or /app/movil/perfil/:userId/compra or /app/web/perfil/:userId/compra
   const profileCompraMatch = normalized.match(
-    /^\/(?:src\/app\/web\/|app\/web\/)?(?:perfil|profile)(?:\/([^/]+))?\/compras?$/i
+    /^\/(?:src\/app\/(?:web|movil)\/|app\/(?:web|movil)\/)?(?:perfil|profile)(?:\/([^/]+))?\/compras?$/i
   );
   if (profileCompraMatch) {
     const rawUser = profileCompraMatch[1] ? decodeURIComponent(profileCompraMatch[1]) : undefined;
@@ -392,9 +391,9 @@ export function parseRoute(pathname: string): AppRoute {
     };
   }
 
-  // /perfil/:userId/config or /perfil/config or /app/web/perfil/config
+  // /perfil/:userId/config or /app/movil/perfil/:userId/config or /app/web/perfil/:userId/config
   const profileConfigMatch = normalized.match(
-    /^\/(?:src\/app\/web\/|app\/web\/)?(?:perfil|profile)(?:\/([^/]+))?\/(?:config|configuracion)$/i
+    /^\/(?:src\/app\/(?:web|movil)\/|app\/(?:web|movil)\/)?(?:perfil|profile)(?:\/([^/]+))?\/(?:config|configuracion)$/i
   );
   if (profileConfigMatch) {
     const rawUser = profileConfigMatch[1] ? decodeURIComponent(profileConfigMatch[1]) : undefined;
@@ -406,9 +405,9 @@ export function parseRoute(pathname: string): AppRoute {
     };
   }
 
-  // /perfil/:userId/producto or /perfil/:userId/productos or /app/web/perfil/productos
+  // /perfil/:userId/producto or /app/movil/perfil/:userId/producto or /app/web/perfil/:userId/producto
   const profileProductoMatch = normalized.match(
-    /^\/(?:src\/app\/web\/|app\/web\/)?(?:perfil|profile)(?:\/([^/]+))?\/productos?$/i
+    /^\/(?:src\/app\/(?:web|movil)\/|app\/(?:web|movil)\/)?(?:perfil|profile)(?:\/([^/]+))?\/productos?$/i
   );
   if (profileProductoMatch) {
     const rawUser = profileProductoMatch[1] ? decodeURIComponent(profileProductoMatch[1]) : undefined;
@@ -420,9 +419,9 @@ export function parseRoute(pathname: string): AppRoute {
     };
   }
 
-  // /perfil/:userId/venta or /perfil/:userId/ventas or /app/web/perfil/venta
+  // /perfil/:userId/venta or /app/movil/perfil/:userId/venta or /app/web/perfil/:userId/venta
   const profileVentaMatch = normalized.match(
-    /^\/(?:src\/app\/web\/|app\/web\/)?(?:perfil|profile)(?:\/([^/]+))?\/ventas?$/i
+    /^\/(?:src\/app\/(?:web|movil)\/|app\/(?:web|movil)\/)?(?:perfil|profile)(?:\/([^/]+))?\/ventas?$/i
   );
   if (profileVentaMatch) {
     const rawUser = profileVentaMatch[1] ? decodeURIComponent(profileVentaMatch[1]) : undefined;
@@ -434,9 +433,9 @@ export function parseRoute(pathname: string): AppRoute {
     };
   }
 
-  // /perfil/:userId/publicaciones or /perfil/:userId/publicacion or /app/web/perfil/publicaciones
+  // /perfil/:userId/publicaciones or /app/movil/perfil/:userId/publicaciones or /app/web/perfil/:userId/publicaciones
   const profilePublicacionesMatch = normalized.match(
-    /^\/(?:src\/app\/web\/|app\/web\/)?(?:perfil|profile)(?:\/([^/]+))?\/publicacion(?:es)?$/i
+    /^\/(?:src\/app\/(?:web|movil)\/|app\/(?:web|movil)\/)?(?:perfil|profile)(?:\/([^/]+))?\/publicacion(?:es)?$/i
   );
   if (profilePublicacionesMatch) {
     const rawUser = profilePublicacionesMatch[1] ? decodeURIComponent(profilePublicacionesMatch[1]) : undefined;
@@ -448,9 +447,9 @@ export function parseRoute(pathname: string): AppRoute {
     };
   }
 
-  // /perfil/:userId/publicar or /app/web/perfil/publicar
+  // /perfil/:userId/publicar or /app/movil/perfil/:userId/publicar or /app/web/perfil/:userId/publicar
   const profilePublicarMatch = normalized.match(
-    /^\/(?:src\/app\/web\/|app\/web\/)?(?:perfil|profile)(?:\/([^/]+))?\/publicar$/i
+    /^\/(?:src\/app\/(?:web|movil)\/|app\/(?:web|movil)\/)?(?:perfil|profile)(?:\/([^/]+))?\/publicar$/i
   );
   if (profilePublicarMatch) {
     const rawUser = profilePublicarMatch[1] ? decodeURIComponent(profilePublicarMatch[1]) : undefined;
@@ -462,9 +461,9 @@ export function parseRoute(pathname: string): AppRoute {
     };
   }
 
-  // /perfil/:userId/rendimiento or /app/web/perfil/usuario/rendimiento or /app/web/perfil/rendimiento
+  // /perfil/:userId/rendimiento or /app/movil/perfil/:userId/rendimiento or /app/web/perfil/:userId/rendimiento
   const profileRendimientoMatch = normalized.match(
-    /^\/(?:src\/app\/web\/|app\/web\/)?(?:perfil|profile)(?:\/([^/]+))?\/rendimientos?$/i
+    /^\/(?:src\/app\/(?:web|movil)\/|app\/(?:web|movil)\/)?(?:perfil|profile)(?:\/([^/]+))?\/rendimientos?$/i
   );
   if (profileRendimientoMatch) {
     const rawUser = profileRendimientoMatch[1] ? decodeURIComponent(profileRendimientoMatch[1]) : undefined;
@@ -476,8 +475,10 @@ export function parseRoute(pathname: string): AppRoute {
     };
   }
 
-  // /perfil or /perfil/:userId (also supports legacy /profile or /profile/:userId)
-  const profileMatch = normalized.match(/^\/(?:perfil|profile)(?:\/([^/]+))?$/i);
+  // /perfil, /perfil/:userId, /app/movil/perfil/:userId, /app/movil/perfil, /app/web/perfil/:userId, etc.
+  const profileMatch = normalized.match(
+    /^\/(?:src\/app\/(?:web|movil)\/|app\/(?:web|movil)\/)?(?:perfil|profile)(?:\/([^/]+))?$/i
+  );
   if (profileMatch) {
     const rawUser = profileMatch[1] ? decodeURIComponent(profileMatch[1]) : undefined;
     const isGenericUser = isGenericProfileUser(rawUser);
@@ -590,191 +591,183 @@ export function routeToPath(route: AppRoute): string {
 }
 
 /**
- * Returns the profile URL path `/perfil/:id/` for a registered user or user ID,
- * or `/perfil` if the user is a guest / not registered.
+ * Returns the profile URL path `/perfil/:id` (dominio/perfil/id)
+ * for a registered or guest active user, ensuring the user's ID is always included.
  */
 export function getProfilePath(
-  usernameOrUser?: string | { id?: string; originalId?: string; username?: string; name?: string; isGuest?: boolean } | null
+  usernameOrUser?: string | { id?: string; originalId?: string; username?: string; name?: string; isGuest?: boolean; guestToken?: string } | null,
+  platform?: 'android' | 'web'
 ): string {
-  if (!usernameOrUser) return '/perfil';
+  // Mobile and Web profiles share the clean canonical route: dominio/perfil/id
+  const basePrefix = '/perfil';
 
   let rawId: string | null = null;
 
   if (typeof usernameOrUser === 'string') {
     let clean = usernameOrUser.trim().replace(/^@/, '');
-    if (!clean || isGenericProfileUser(clean)) {
-      return '/perfil';
+    if (clean && !isGenericProfileUser(clean)) {
+      rawId = clean;
     }
-    rawId = clean;
-  } else {
-    if (usernameOrUser.isGuest) return '/perfil';
-
-    // Prioritize user's persistent unique database ID over username
+  } else if (usernameOrUser && typeof usernameOrUser === 'object') {
+    // 1. Check valid persistent originalId (e.g. database persistent id "usr_xxx" or "guest_tok_xxx")
     const validOriginalId =
-      usernameOrUser.originalId &&
-      usernameOrUser.originalId !== 'current_user' &&
-      usernameOrUser.originalId !== 'guest' &&
-      usernameOrUser.originalId !== 'invitado'
+      usernameOrUser.originalId && !isGenericProfileUser(usernameOrUser.originalId)
         ? usernameOrUser.originalId
         : null;
 
+    // 2. Check id
     const validId =
-      usernameOrUser.id &&
-      usernameOrUser.id !== 'current_user' &&
-      usernameOrUser.id !== 'guest' &&
-      usernameOrUser.id !== 'invitado'
+      usernameOrUser.id && !isGenericProfileUser(usernameOrUser.id)
         ? usernameOrUser.id
         : null;
 
-    if (validOriginalId) {
-      rawId = validOriginalId;
-    } else if (validId) {
+    // 3. Check guestToken
+    const validToken =
+      usernameOrUser.guestToken &&
+      typeof usernameOrUser.guestToken === 'string' &&
+      !isGenericProfileUser(usernameOrUser.guestToken)
+        ? usernameOrUser.guestToken.trim()
+        : null;
+
+    // 4. Check username
+    const validUsername =
+      usernameOrUser.username && !isGenericProfileUser(usernameOrUser.username)
+        ? usernameOrUser.username.trim().replace(/^@/, '')
+        : null;
+
+    if (validId) {
       rawId = validId;
-    } else {
-      // Check sessionState user for persistent id if user object had placeholder id
-      if (typeof window !== 'undefined') {
+    } else if (validOriginalId) {
+      rawId = validOriginalId;
+    } else if (validToken) {
+      rawId = validToken;
+    } else if (validUsername) {
+      rawId = validUsername;
+    }
+  }
+
+  // Fallback: check session or generate/read persistent active guest token
+  if (!rawId) {
+    if (typeof window !== 'undefined') {
+      try {
+        const sessionUser = sessionState.getUser();
+        if (sessionUser) {
+          const sid =
+            sessionUser.id && !isGenericProfileUser(sessionUser.id)
+              ? sessionUser.id
+              : sessionUser.originalId && !isGenericProfileUser(sessionUser.originalId)
+              ? sessionUser.originalId
+              : sessionUser.guestToken && !isGenericProfileUser(sessionUser.guestToken)
+              ? sessionUser.guestToken
+              : sessionUser.username && !isGenericProfileUser(sessionUser.username)
+              ? sessionUser.username
+              : null;
+          if (sid) rawId = sid;
+        }
+      } catch {}
+
+      if (!rawId) {
         try {
-          const sessionUser = sessionState.getUser();
-          if (sessionUser && !sessionUser.isGuest) {
-            const sid =
-              sessionUser.originalId &&
-              sessionUser.originalId !== 'current_user' &&
-              sessionUser.originalId !== 'guest' &&
-              sessionUser.originalId !== 'invitado'
-                ? sessionUser.originalId
-                : sessionUser.id &&
-                  sessionUser.id !== 'current_user' &&
-                  sessionUser.id !== 'guest' &&
-                  sessionUser.id !== 'invitado'
-                ? sessionUser.id
-                : null;
-            if (sid) rawId = sid;
-          }
+          const localTok = getLocalGuestToken() || getOrCreateGuestToken();
+          if (localTok) rawId = localTok;
         } catch {}
-      }
-      if (!rawId && usernameOrUser.username && !isGenericProfileUser(usernameOrUser.username)) {
-        rawId = usernameOrUser.username.trim().replace(/^@/, '');
       }
     }
   }
 
   if (!rawId || isGenericProfileUser(rawId)) {
-    return '/perfil';
+    return basePrefix;
   }
 
-  // Format as requested: dominio/perfil/id del usuario/
-  return `/perfil/${encodeURIComponent(rawId)}/`;
+  // Format as requested: dominio/perfil/id
+  return `${basePrefix}/${encodeURIComponent(rawId)}`;
 }
 
 /**
- * Returns the saved publications URL path `/perfil/:id/guardado`
- * (or `/perfil/usuario/guardado` if the user is a guest / has no username).
+ * Returns the saved publications URL path `/perfil/:id/guardado` (or `/app/movil/perfil/:id/guardado`)
  */
 export function getProfileSavedPath(
-  usernameOrUser?: string | { id?: string; originalId?: string; username?: string; name?: string; isGuest?: boolean } | null
+  usernameOrUser?: string | { id?: string; originalId?: string; username?: string; name?: string; isGuest?: boolean; guestToken?: string } | null,
+  platform?: 'android' | 'web'
 ): string {
-  const basePath = getProfilePath(usernameOrUser).replace(/\/+$/, '');
-  if (basePath === '/perfil') {
-    return '/perfil/usuario/guardado';
-  }
+  const basePath = getProfilePath(usernameOrUser, platform).replace(/\/+$/, '');
   return `${basePath}/guardado`;
 }
 
 /**
- * Returns the purchases URL path `/perfil/:id/compra`
- * (or `/perfil/usuario/compra` if the user is a guest / has no username).
+ * Returns the purchases URL path `/perfil/:id/compra` (or `/app/movil/perfil/:id/compra`)
  */
 export function getProfileCompraPath(
-  usernameOrUser?: string | { id?: string; originalId?: string; username?: string; name?: string; isGuest?: boolean } | null
+  usernameOrUser?: string | { id?: string; originalId?: string; username?: string; name?: string; isGuest?: boolean; guestToken?: string } | null,
+  platform?: 'android' | 'web'
 ): string {
-  const basePath = getProfilePath(usernameOrUser).replace(/\/+$/, '');
-  if (basePath === '/perfil') {
-    return '/perfil/usuario/compra';
-  }
+  const basePath = getProfilePath(usernameOrUser, platform).replace(/\/+$/, '');
   return `${basePath}/compra`;
 }
 
 /**
- * Returns the profile configuration URL path `/perfil/:id/config`
- * (or `/perfil/usuario/config` if the user is a guest / has no username).
+ * Returns the profile configuration URL path `/perfil/:id/config` (or `/app/movil/perfil/:id/config`)
  */
 export function getProfileConfigPath(
-  usernameOrUser?: string | { id?: string; originalId?: string; username?: string; name?: string; isGuest?: boolean } | null
+  usernameOrUser?: string | { id?: string; originalId?: string; username?: string; name?: string; isGuest?: boolean; guestToken?: string } | null,
+  platform?: 'android' | 'web'
 ): string {
-  const basePath = getProfilePath(usernameOrUser).replace(/\/+$/, '');
-  if (basePath === '/perfil') {
-    return '/perfil/usuario/config';
-  }
+  const basePath = getProfilePath(usernameOrUser, platform).replace(/\/+$/, '');
   return `${basePath}/config`;
 }
 
 /**
- * Returns the profile products URL path `/perfil/:id/producto`
- * (or `/perfil/usuario/producto` if the user is a guest / has no username).
+ * Returns the profile products URL path `/perfil/:id/producto` (or `/app/movil/perfil/:id/producto`)
  */
 export function getProfileProductoPath(
-  usernameOrUser?: string | { id?: string; originalId?: string; username?: string; name?: string; isGuest?: boolean } | null
+  usernameOrUser?: string | { id?: string; originalId?: string; username?: string; name?: string; isGuest?: boolean; guestToken?: string } | null,
+  platform?: 'android' | 'web'
 ): string {
-  const basePath = getProfilePath(usernameOrUser).replace(/\/+$/, '');
-  if (basePath === '/perfil') {
-    return '/perfil/usuario/producto';
-  }
+  const basePath = getProfilePath(usernameOrUser, platform).replace(/\/+$/, '');
   return `${basePath}/producto`;
 }
 
 /**
- * Returns the profile incoming sales URL path `/perfil/:id/venta`
- * (or `/perfil/usuario/venta` if the user is a guest / has no username).
+ * Returns the profile incoming sales URL path `/perfil/:id/venta` (or `/app/movil/perfil/:id/venta`)
  */
 export function getProfileVentaPath(
-  usernameOrUser?: string | { id?: string; originalId?: string; username?: string; name?: string; isGuest?: boolean } | null
+  usernameOrUser?: string | { id?: string; originalId?: string; username?: string; name?: string; isGuest?: boolean; guestToken?: string } | null,
+  platform?: 'android' | 'web'
 ): string {
-  const basePath = getProfilePath(usernameOrUser).replace(/\/+$/, '');
-  if (basePath === '/perfil') {
-    return '/perfil/usuario/venta';
-  }
+  const basePath = getProfilePath(usernameOrUser, platform).replace(/\/+$/, '');
   return `${basePath}/venta`;
 }
 
 /**
- * Returns the profile publications URL path `/perfil/:id/publicaciones`
- * (or `/perfil/usuario/publicaciones` if the user is a guest / has no username).
+ * Returns the profile publications URL path `/perfil/:id/publicaciones` (or `/app/movil/perfil/:id/publicaciones`)
  */
 export function getProfilePublicacionesPath(
-  usernameOrUser?: string | { id?: string; originalId?: string; username?: string; name?: string; isGuest?: boolean } | null
+  usernameOrUser?: string | { id?: string; originalId?: string; username?: string; name?: string; isGuest?: boolean; guestToken?: string } | null,
+  platform?: 'android' | 'web'
 ): string {
-  const basePath = getProfilePath(usernameOrUser).replace(/\/+$/, '');
-  if (basePath === '/perfil') {
-    return '/perfil/usuario/publicaciones';
-  }
+  const basePath = getProfilePath(usernameOrUser, platform).replace(/\/+$/, '');
   return `${basePath}/publicaciones`;
 }
 
 /**
- * Returns the profile publish URL path `/perfil/:id/publicar`
- * (or `/perfil/usuario/publicar` if the user is a guest / has no username).
+ * Returns the profile publish URL path `/perfil/:id/publicar` (or `/app/movil/perfil/:id/publicar`)
  */
 export function getProfilePublicarPath(
-  usernameOrUser?: string | { id?: string; originalId?: string; username?: string; name?: string; isGuest?: boolean } | null
+  usernameOrUser?: string | { id?: string; originalId?: string; username?: string; name?: string; isGuest?: boolean; guestToken?: string } | null,
+  platform?: 'android' | 'web'
 ): string {
-  const basePath = getProfilePath(usernameOrUser).replace(/\/+$/, '');
-  if (basePath === '/perfil') {
-    return '/perfil/usuario/publicar';
-  }
+  const basePath = getProfilePath(usernameOrUser, platform).replace(/\/+$/, '');
   return `${basePath}/publicar`;
 }
 
 /**
- * Returns the profile performance URL path `/perfil/:id/rendimiento`
- * (or `/perfil/usuario/rendimiento` if the user is a guest / has no username).
+ * Returns the profile performance URL path `/perfil/:id/rendimiento` (or `/app/movil/perfil/:id/rendimiento`)
  */
 export function getProfileRendimientoPath(
-  usernameOrUser?: string | { id?: string; originalId?: string; username?: string; name?: string; isGuest?: boolean } | null
+  usernameOrUser?: string | { id?: string; originalId?: string; username?: string; name?: string; isGuest?: boolean; guestToken?: string } | null,
+  platform?: 'android' | 'web'
 ): string {
-  const basePath = getProfilePath(usernameOrUser).replace(/\/+$/, '');
-  if (basePath === '/perfil') {
-    return '/perfil/usuario/rendimiento';
-  }
+  const basePath = getProfilePath(usernameOrUser, platform).replace(/\/+$/, '');
   return `${basePath}/rendimiento`;
 }
 

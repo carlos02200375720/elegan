@@ -1,6 +1,7 @@
 import React from "react";
 import { Sparkles, ShoppingBag } from "lucide-react";
 import { CartItem } from "../../../types";
+import { formatPrice } from "../../../utils/currency";
 
 export interface AndroidGraciaProps {
   lastOrderItems: CartItem[];
@@ -30,7 +31,7 @@ export function GraciaTiendaView({
     <div className="w-full min-h-screen bg-white text-slate-900 flex flex-col font-sans select-none overflow-x-hidden overflow-y-auto">
       <div
         className="relative z-10 px-4 py-8 flex flex-col min-h-screen bg-white"
-        style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 18px)" }}
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 80px)" }}
       >
         <div className="flex items-center justify-center mt-4">
           <div className="relative">
@@ -84,12 +85,12 @@ export function GraciaTiendaView({
                         {item.product.name}
                       </span>
                       <span className="text-xs font-black text-slate-900 whitespace-nowrap">
-                        ${(item.product.price * (item.quantity || 1)).toFixed(2)}
+                        {formatPrice(item.product.price * (item.quantity || 1))}
                       </span>
                     </div>
                     <div className="flex items-center justify-between mt-1 text-[11px] text-slate-500">
                       <span>Cantidad: {item.quantity || 1}</span>
-                      <span>${item.product.price.toFixed(2)} c/u</span>
+                      <span>{formatPrice(item.product.price)} c/u</span>
                     </div>
                   </div>
                 </div>
@@ -124,30 +125,47 @@ export function GraciaTiendaView({
             </div>
             <div className="flex items-center justify-between pt-2.5 border-t border-slate-200 text-sm font-black">
               <span className="text-slate-800">Total</span>
-              <span className="text-slate-950">${thankYouTotal.toFixed(2)}</span>
+              <span className="text-slate-950">{formatPrice(thankYouTotal)}</span>
             </div>
           </div>
         </div>
 
-        <div className="mt-6 flex flex-col sm:flex-row gap-3 items-center justify-center">
+      </div>
+
+      {/* Pie de página fijo horizontal con los dos botones */}
+      <div
+        className="fixed bottom-0 left-0 right-0 z-30 bg-white/95 backdrop-blur-md border-t border-slate-200 px-3.5 py-2.5 flex flex-row items-center justify-between gap-2.5 shadow-[0_-4px_16px_rgba(0,0,0,0.06)]"
+        style={{ paddingBottom: "max(10px, calc(env(safe-area-inset-bottom, 0px) + 8px))" }}
+      >
+        {onNavigateToHistory ? (
+          <>
+            <button
+              type="button"
+              onClick={onNavigateToHistory}
+              className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-800 font-bold text-xs rounded-xl shadow-2xs flex items-center justify-center space-x-1.5 active:scale-95 transition-transform cursor-pointer truncate"
+            >
+              <ShoppingBag className="w-4 h-4 text-slate-700 shrink-0" />
+              <span className="truncate">Historial de Pedidos</span>
+            </button>
+            <button
+              type="button"
+              onClick={onContinueShopping}
+              className="flex-1 py-3 bg-slate-950 hover:bg-slate-900 text-white font-black text-xs rounded-xl shadow-md flex items-center justify-center space-x-1.5 active:scale-95 transition-transform cursor-pointer truncate"
+            >
+              <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
+              <span className="truncate">Seguir Comprando</span>
+            </button>
+          </>
+        ) : (
           <button
+            type="button"
             onClick={onContinueShopping}
-            className="w-full max-w-xs py-3.5 bg-slate-950 hover:bg-slate-900 text-white font-black rounded-2xl shadow-md flex items-center justify-center space-x-2 active:scale-95 transition-transform cursor-pointer"
+            className="w-full py-3 bg-slate-950 hover:bg-slate-900 text-white font-black text-xs rounded-xl shadow-md flex items-center justify-center space-x-2 active:scale-95 transition-transform cursor-pointer"
           >
-            <Sparkles className="w-4 h-4 text-amber-400" />
+            <Sparkles className="w-4 h-4 text-amber-400 shrink-0" />
             <span>Seguir Comprando</span>
           </button>
-          {onNavigateToHistory && (
-            <button
-              onClick={onNavigateToHistory}
-              className="w-full max-w-xs py-3.5 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-900 font-black rounded-2xl shadow-2xs flex items-center justify-center space-x-2 active:scale-95 transition-transform cursor-pointer"
-              style={{ marginBottom: "calc(env(safe-area-inset-bottom, 0px) + 3px)" }}
-            >
-              <ShoppingBag className="w-4 h-4 text-slate-700" />
-              <span>Historial de Pedidos</span>
-            </button>
-          )}
-        </div>
+        )}
       </div>
     </div>
   );

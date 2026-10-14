@@ -4,13 +4,12 @@ import { User, Reel, Product, CartItem, Order, ChatMessage, NavigationTab, isGue
 import Inicio from "./Inicio";
 import Tienda from "./tienda";
 import SocialPanel from "./SocialPanel";
-import Perfil from "./Perfil";
-import AndroidLoginView from "./login";
+import Perfil from "./perfil";
 import AdminView from "../admin/resumen";
 import { isSuperAdmin } from "../../superAdmin";
 import { motion, AnimatePresence } from "motion/react";
 import { sessionState } from "../../utils/sessionState";
-import { navigateTo, getProfilePath, getProductPath, getInicioPath } from "../../router";
+import { navigateTo, getProfilePath, getProfileCompraPath, getProductPath, getInicioPath } from "../../router";
 
 export interface AndroidAppProps {
   activeTab: NavigationTab;
@@ -127,7 +126,7 @@ export default function AndroidApp({
   openPrivateChatDirectly,
   socket,
 }: AndroidAppProps) {
-  const isUserLoggedIn = (isLoggedIn && !isGuestUser(currentUser)) || (!isGuestUser(currentUser) && Boolean(currentUser.username));
+  const isUserLoggedIn = true;
   const isHomeActive = activeTab === 'inicio' || activeTab === 'reels';
   const isDarkNavActive = isHomeActive;
   const [navBarHeight, setNavBarHeight] = React.useState(56);
@@ -251,9 +250,7 @@ export default function AndroidApp({
                   setActiveTab('profile');
                   navigateTo(getProfilePath(currentUser));
                 }}
-                onGuestInteraction={(action) => {
-                  setGuestInteractionAlert(`Para ${action} en esta publicación, por favor inicia sesión.`);
-                }}
+                onGuestInteraction={() => {}}
                 initialReelId={targetReelId}
                 onActiveReelChange={(reelId) => {
                   const activeReel = reels.find((r) => r.id === reelId);
@@ -281,7 +278,7 @@ export default function AndroidApp({
                   setSelectedCreatorProfileId(null);
                   setProfileInitialTab('orders');
                   setActiveTab('profile');
-                  navigateTo(getProfilePath(currentUser));
+                  navigateTo(getProfileCompraPath(currentUser));
                 }}
                 onToggleDetailView={setIsProductDetailOpen}
                 onToggleCart={setIsCartPageOpen}
@@ -314,34 +311,10 @@ export default function AndroidApp({
                 className="w-full bg-white min-h-screen"
                 id="android-profile-container"
                 style={{
-                  paddingBottom: (!isUserLoggedIn && !selectedCreatorProfileId)
-                    ? `${navBarHeight}px`
-                    : `${navBarHeight + 3}px`
+                  paddingBottom: `${navBarHeight + 3}px`
                 }}
               >
-                {(!isUserLoggedIn && !selectedCreatorProfileId) ? (
-                  <AndroidLoginView
-                    users={users}
-                    currentUser={currentUser}
-                    initialTab="register"
-                    bottomNavHeight={navBarHeight}
-                    restrictionNotice="Para acceder a tu perfil, tus publicaciones guardadas, el historial de tus compras y todas tus interacciones, debes registrarte en la plataforma. Toda tu información previa se transferirá automáticamente a tu cuenta."
-                    onRefreshUsers={refreshAllData}
-                    onLoginSuccess={(loggedUser) => {
-                      setCurrentUser(loggedUser);
-                      setIsLoggedIn(true);
-                      sessionState.setAuthenticated(true);
-                      sessionState.setUsername(loggedUser.username);
-                      sessionState.setUser(loggedUser);
-                      refreshAllData();
-                      setSelectedCreatorProfileId(null);
-                      setActiveTab('shop');
-                      setShopInitialStep('catalog');
-                      navigateTo('/tienda/catalogo');
-                    }}
-                  />
-                ) : (
-                  <Perfil
+                <Perfil
                     currentUser={currentUser}
                     selectedCreatorId={selectedCreatorProfileId}
                     users={users}
@@ -378,7 +351,6 @@ export default function AndroidApp({
                     onLogout={handleLogout}
                     socket={socket}
                   />
-                )}
               </div>
             )}
 

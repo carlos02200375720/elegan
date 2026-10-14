@@ -14,6 +14,7 @@ import ProductoIdTiendaView, { getManualShippingOptions } from "./productoid";
 import CarritoTiendaView from "./carrito";
 import VerificacionTiendaView, { AndroidCheckoutForm } from "./verificacion";
 import GraciaTiendaView from "./gracia";
+import { formatPrice } from "../../../utils/currency";
 
 export interface AndroidShopProps {
   products: Product[];
@@ -827,6 +828,16 @@ export default function Catalogo({
       phone: checkoutForm.phone || (currentUser as any).phone || "Sin teléfono",
     });
 
+    // Decrement stock in selectedProduct if purchased
+    if (selectedProduct) {
+      const purchasedMatch = itemsToCheckout.find((it) => it.product.id === selectedProduct.id);
+      if (purchasedMatch) {
+        const qty = purchasedMatch.quantity || 1;
+        const currentStk = typeof selectedProduct.stock === "number" ? selectedProduct.stock : parseInt(String(selectedProduct.stock || 0), 10) || 0;
+        setSelectedProduct((prev) => prev ? { ...prev, stock: Math.max(0, currentStk - qty) } : null);
+      }
+    }
+
     onClearCart?.();
     onOrderPlaced?.();
     setTimeout(() => {
@@ -849,6 +860,16 @@ export default function Catalogo({
         shippingAddress,
         cartShippingTotal,
         (newOrder) => {
+          try {
+            if (newOrder) {
+              const uId = currentUser.originalId || currentUser.id;
+              const cacheKey = `mall_user_orders_${uId}`;
+              const prevSaved = JSON.parse(localStorage.getItem(cacheKey) || "[]");
+              const updated = [newOrder, ...prevSaved.filter((o: any) => o.id !== (newOrder as any).id)];
+              localStorage.setItem(cacheKey, JSON.stringify(updated));
+              window.dispatchEvent(new CustomEvent("mall_order_created", { detail: newOrder }));
+            }
+          } catch {}
           finalizeOrder(shippingAddress, effectiveCheckoutItems);
         },
         effectiveCheckoutItems,
@@ -883,6 +904,18 @@ export default function Catalogo({
       });
 
       if (res.ok) {
+        try {
+          const resData = await res.json().catch(() => null);
+          const createdOrder = resData?.order;
+          if (createdOrder) {
+            const uId = currentUser.originalId || currentUser.id;
+            const cacheKey = `mall_user_orders_${uId}`;
+            const prevSaved = JSON.parse(localStorage.getItem(cacheKey) || "[]");
+            const updated = [createdOrder, ...prevSaved.filter((o: any) => o.id !== createdOrder.id)];
+            localStorage.setItem(cacheKey, JSON.stringify(updated));
+            window.dispatchEvent(new CustomEvent("mall_order_created", { detail: createdOrder }));
+          }
+        } catch {}
         finalizeOrder(shippingAddress, effectiveCheckoutItems);
       }
     } catch (err) {
@@ -982,9 +1015,15 @@ export default function Catalogo({
 
   // 4. Product Detail Page
   if (selectedProduct) {
+    const liveProd = products.find((p) => p.id === selectedProduct.id) || selectedProduct;
+    const currentDetailProduct = {
+      ...selectedProduct,
+      stock: liveProd.stock !== undefined ? liveProd.stock : selectedProduct.stock,
+      price: liveProd.price !== undefined ? liveProd.price : selectedProduct.price,
+    };
     return (
       <ProductoIdTiendaView
-        selectedProduct={selectedProduct}
+        selectedProduct={currentDetailProduct}
         onAddToCart={onAddToCart}
         cart={cart}
         users={users}
@@ -1231,7 +1270,7 @@ export default function Catalogo({
 
                 <div className="flex items-center justify-between mt-0 px-2.5 pb-2.5 pt-2 border-t border-slate-100 gap-1">
                   <div className="flex flex-col">
-                    <span className="text-xs font-black text-amber-500">${p.price.toFixed(2)}</span>
+                    <span className="text-xs font-black text-amber-500">{formatPrice(p.price)}</span>
                     {Boolean(p.freeShipping) && (
                       <span className="text-[9px] font-bold text-emerald-700">
                         Envío Gratis

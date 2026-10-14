@@ -1,6 +1,7 @@
 import React, { useRef, useState, useEffect } from "react";
 import { ArrowRight, ShoppingBag, CreditCard } from "lucide-react";
 import { CartItem } from "../../../types";
+import { formatPrice } from "../../../utils/currency";
 
 export interface AndroidCheckoutForm {
   fullName: string;
@@ -58,23 +59,24 @@ export function VerificacionTiendaView({
 
   return (
     <div className="w-full min-h-screen bg-white text-slate-900 flex flex-col font-sans select-none">
+      {/* Checkout Top Header */}
       <div
-        className="sticky top-0 z-30 bg-white/95 backdrop-blur-md px-4 pb-3 border-b border-slate-200 flex items-center justify-between"
-        style={{ paddingTop: "max(12px, calc(env(safe-area-inset-top, 0px) + 8px))" }}
+        className="sticky top-0 z-30 bg-white/95 backdrop-blur-md px-3 py-2 border-b border-slate-100 flex items-center justify-between"
+        style={{ paddingTop: "max(8px, env(safe-area-inset-top, 0px))" }}
       >
         <button
           type="button"
           onClick={onBackToCart}
-          className="p-2 rounded-full bg-slate-100 text-slate-900 active:scale-95 cursor-pointer hover:bg-slate-200 transition-colors"
+          className="p-1.5 rounded-full bg-slate-100 text-slate-900 active:scale-95 cursor-pointer hover:bg-slate-200 transition-colors"
           id="android-checkout-back-btn"
           title="Volver al carrito"
         >
           <ArrowRight className="w-4 h-4 rotate-180" />
         </button>
         <div className="flex-1 text-center">
-          <h1 className="text-sm font-black text-slate-900">Checkout</h1>
+          <h1 className="text-xs font-black text-slate-900 tracking-tight">Checkout</h1>
         </div>
-        <div className="w-8" />
+        <div className="w-7" />
       </div>
 
       <div
@@ -229,12 +231,12 @@ export function VerificacionTiendaView({
                         {item.product.name}
                       </span>
                       <span className="text-[11px] font-black text-amber-600">
-                        ${(item.product.price * (item.quantity || 1)).toFixed(2)}
+                        {formatPrice(item.product.price * (item.quantity || 1))}
                       </span>
                     </div>
                     <div className="flex items-center justify-between mt-1">
                       <span className="text-[10px] text-slate-500">Cantidad: {item.quantity || 1}</span>
-                      <span className="text-[10px] text-slate-500">${item.product.price.toFixed(2)} c/u</span>
+                      <span className="text-[10px] text-slate-500">{formatPrice(item.product.price)} c/u</span>
                     </div>
                   </div>
                 </div>
@@ -244,17 +246,17 @@ export function VerificacionTiendaView({
           <div className="mt-4 border-t border-slate-200 pt-3 space-y-1.5 text-xs">
             <div className="flex justify-between items-center text-slate-600 font-semibold">
               <span>Subtotal</span>
-              <span className="font-mono">${cartSubtotal.toFixed(2)}</span>
+              <span className="font-mono">{formatPrice(cartSubtotal)}</span>
             </div>
             <div className="flex justify-between items-center text-slate-600 font-semibold">
               <span>Costo de Envío</span>
               <span className="font-mono font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/70">
-                {cartShippingTotal === 0 ? "GRATIS" : `$${cartShippingTotal.toFixed(2)}`}
+                {cartShippingTotal === 0 ? "GRATIS" : formatPrice(cartShippingTotal)}
               </span>
             </div>
             <div className="flex justify-between items-center text-sm font-black text-slate-900 pt-1.5 border-t border-slate-100">
               <span>Total</span>
-              <span className="text-amber-600 font-mono">${cartTotal.toFixed(2)}</span>
+              <span className="text-amber-600 font-mono">{formatPrice(cartTotal)}</span>
             </div>
           </div>
         </div>
@@ -263,7 +265,7 @@ export function VerificacionTiendaView({
         <div
           ref={fixedFooterRef}
           id="android-checkout-footer-action"
-          className="fixed bottom-0 inset-x-0 z-40 bg-white/98 backdrop-blur-md border-t border-slate-200 px-4 py-3 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]"
+          className="fixed bottom-0 inset-x-0 z-40 bg-white/98 backdrop-blur-md border-t border-slate-200 px-4 py-3"
           style={{ paddingBottom: "max(1rem, calc(env(safe-area-inset-bottom, 0px) + 0.5rem))" }}
         >
           <div className="max-w-md mx-auto w-full">
@@ -277,7 +279,7 @@ export function VerificacionTiendaView({
               <span>
                 {isCheckingOut
                   ? "Procesando..."
-                  : `Completar Compra (${effectiveCheckoutItems.length}) - $${cartTotal.toFixed(2)}`}
+                  : `Completar Compra (${effectiveCheckoutItems.length}) - ${formatPrice(cartTotal)}`}
               </span>
             </button>
           </div>
