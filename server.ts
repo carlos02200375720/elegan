@@ -365,10 +365,10 @@ async function startServer() {
     }
   );
 
-  app.get(["/app-icon.jpg", "/icon-512.jpg", "/icon-192.jpg"], (req, res) => {
-    const iconPath = path.join(process.cwd(), "public", "app-icon.jpg");
+  app.get(["/icon.png", "/assets/icon.png", "/favicon.ico", "/favicon.svg", "/apple-touch-icon.png", "/icon-192.png", "/icon-512.png", "/app-icon.png", "/app-icon.jpg"], (req, res) => {
+    const iconPath = path.join(process.cwd(), "assets", "icon.png");
     if (fs.existsSync(iconPath)) {
-      res.setHeader("Content-Type", "image/jpeg");
+      res.setHeader("Content-Type", "image/png");
       res.setHeader("Cache-Control", "public, max-age=86400");
       res.sendFile(iconPath);
     } else {
@@ -376,14 +376,14 @@ async function startServer() {
     }
   });
 
-  app.get("/favicon.svg", (req, res) => {
-    const svgPath = path.join(process.cwd(), "public", "favicon.svg");
-    if (fs.existsSync(svgPath)) {
-      res.setHeader("Content-Type", "image/svg+xml");
+  app.get("/manifest.json", (req, res) => {
+    const manifestPath = path.join(process.cwd(), "src", "app", "web", "manifest.json");
+    if (fs.existsSync(manifestPath)) {
+      res.setHeader("Content-Type", "application/json");
       res.setHeader("Cache-Control", "public, max-age=86400");
-      res.sendFile(svgPath);
+      res.sendFile(manifestPath);
     } else {
-      res.status(404).send("Favicon not found");
+      res.status(404).send("Manifest not found");
     }
   });
 

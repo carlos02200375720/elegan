@@ -27,7 +27,6 @@ if git diff --quiet "$PREV" "$CURR" -- \
   src/App.tsx \
   src/main.tsx \
   src/index.css \
-  public/ \
   index.html \
   vite.config.ts \
   vercel.json; then

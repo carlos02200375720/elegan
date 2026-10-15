@@ -22,10 +22,7 @@ const directCopies = [
   path.join(rootDir, 'assets', 'icon-only.png'),
   path.join(rootDir, 'assets', 'icon-foreground.png'),
   path.join(rootDir, 'assets', 'icon-background.png'),
-  path.join(rootDir, 'assets', 'logo.png'),
-  path.join(rootDir, 'public', 'icon.png'),
-  path.join(rootDir, 'public', 'assets', 'icon.png'),
-  path.join(rootDir, 'public', 'app-icon.png')
+  path.join(rootDir, 'assets', 'logo.png')
 ];
 
 directCopies.forEach(file => {

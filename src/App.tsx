@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Capacitor } from "@capacitor/core";
+import { StatusBar, Style } from "@capacitor/status-bar";
 import { User, Reel, Product, CartItem, Order, ChatMessage, LiveSession, NavigationTab, isGuestUser } from "./types";
-import { WebApp, SplashScreen, AuthModal } from "./app/web";
+import { WebApp, AuthModal } from "./app/web";
 import { AndroidApp } from "./app/movil";
 import { getApiUrl, getWebSocketUrl, BACKEND_URL, apiFetch } from "./config";
 import { isSuperAdmin } from "./superAdmin";
@@ -503,16 +504,9 @@ export default function App() {
     }
   }, [activeTab, selectedCreatorProfileId, currentUser, users, activePlatform]);
 
-  // App Startup & Server Connection Splash State (disabled by default on web for instant paint)
-  const [isInitialLoading, setIsInitialLoading] = useState(() => {
-    try {
-      if (typeof window !== "undefined" && typeof Capacitor !== "undefined" && Capacitor?.isNativePlatform && Capacitor.isNativePlatform()) {
-        return true;
-      }
-    } catch {}
-    return false;
-  });
-  const [splashStatus, setSplashStatus] = useState("¡Bienvenido a MallSocial!");
+  // App Startup State: Pantallas intermedias eliminadas para renderizado inmediato
+  const [isInitialLoading, setIsInitialLoading] = useState(false);
+  const [splashStatus, setSplashStatus] = useState("");
   const [splashHasError, setSplashHasError] = useState(false);
   const loadAttemptsRef = useRef(0);
 
@@ -544,6 +538,23 @@ export default function App() {
     // Set document background color to seamlessly blend with native status and nav bars
     document.documentElement.style.backgroundColor = currentThemeColor;
     document.body.style.backgroundColor = currentThemeColor;
+
+    // Sincronizar plugin nativo StatusBar de Capacitor en celulares
+    try {
+      if (typeof window !== "undefined" && Capacitor.isPluginAvailable("StatusBar")) {
+        if (activeTab === "profile") {
+          StatusBar.setOverlaysWebView({ overlay: false }).catch(() => {});
+          StatusBar.setBackgroundColor({ color: "#ffffff" }).catch(() => {});
+          StatusBar.setStyle({ style: Style.Light }).catch(() => {});
+        } else if (isDark) {
+          StatusBar.setBackgroundColor({ color: "#000000" }).catch(() => {});
+          StatusBar.setStyle({ style: Style.Dark }).catch(() => {});
+        } else {
+          StatusBar.setBackgroundColor({ color: "#ffffff" }).catch(() => {});
+          StatusBar.setStyle({ style: Style.Light }).catch(() => {});
+        }
+      }
+    } catch {}
   }, [activeTab]);
 
   // Refresh functions to ensure feed is live without refreshing browser
@@ -1801,15 +1812,6 @@ export default function App() {
 
   return (
     <div className={`w-full ${isDarkNavActive ? "h-dvh max-h-dvh overflow-hidden bg-slate-950 text-slate-100" : "min-h-screen bg-white text-slate-900"} font-sans flex flex-col justify-between selection:bg-amber-500 selection:text-slate-950`}>
-      
-      {/* App Launch & Cloud Run Connection Splash Screen */}
-      <SplashScreen
-        isLoading={isInitialLoading}
-        statusMessage={splashStatus}
-        hasError={splashHasError}
-        onRetry={() => loadInitialData()}
-        onContinueAnyway={() => setIsInitialLoading(false)}
-      />
 
       {/* Botones fijos para alternar rápidamente entre versión Web y versión Móvil / Android */}
       {typeof window !== "undefined" && !(typeof (window as any).Capacitor !== "undefined" && (window as any).Capacitor?.isNativePlatform?.()) && (

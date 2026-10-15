@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { StatusBar, Style } from "@capacitor/status-bar";
+import { Capacitor } from "@capacitor/core";
 import { User, Reel, Product, Order, isGuestUser } from "../../../types";
 import { Play, ShoppingBag, Bookmark, Settings, LogOut, Edit3, Grid, Camera, Check, Sparkles, UserPlus, UserCheck, X, ExternalLink, Package, Plus, Trash2, ShieldCheck, Truck } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
@@ -95,6 +97,35 @@ export default function Perfil({
   const isAdmin = (currentUser as any)?.role === "admin" || (currentUser as any)?.isAdmin === true;
   const isSellerOrAdmin = Boolean(activeUser.canSell === true || isSuperAdmin(activeUser));
   const canDelete = isMe || isAdmin || !selectedCreatorId;
+
+  // Configuración de la barra de estado nativa en celulares para la página de perfil:
+  // Fondo blanco sólido (#ffffff, sin transparencia) y texto/iconos oscuros legibles
+  useEffect(() => {
+    const applyProfileStatusBar = async () => {
+      try {
+        if (typeof window !== "undefined" && Capacitor.isPluginAvailable("StatusBar")) {
+          await StatusBar.setOverlaysWebView({ overlay: false });
+          await StatusBar.setBackgroundColor({ color: "#ffffff" });
+          await StatusBar.setStyle({ style: Style.Light });
+        }
+      } catch (e) {
+        console.warn("StatusBar setup in Perfil:", e);
+      }
+
+      // Sincronizar theme-color en el DOM para la barra de estado nativa
+      const themeMeta = document.getElementById("theme-color-meta") || document.querySelector('meta[name="theme-color"]');
+      if (themeMeta) {
+        themeMeta.setAttribute("content", "#ffffff");
+      }
+      document.querySelectorAll('meta[name="theme-color"]').forEach((tag) => {
+        tag.setAttribute("content", "#ffffff");
+      });
+      document.documentElement.style.backgroundColor = "#ffffff";
+      document.body.style.backgroundColor = "#ffffff";
+    };
+
+    applyProfileStatusBar();
+  }, []);
 
   const [activeTab, setActiveTab] = useState<TabType>(() => {
     if (typeof window !== "undefined") {
@@ -351,9 +382,33 @@ export default function Perfil({
   }, [products, savedReelIds]);
 
   return (
-    <div className="w-full min-h-screen bg-white text-slate-900 flex flex-col font-sans select-none pb-24" id="android-profile-view">
-      {/* Profile Bio Section without Cover Container */}
-      <div className="px-4 pt-4">
+    <div
+      className="w-full min-h-screen bg-white text-slate-900 flex flex-col font-sans select-none pb-24"
+      id="android-profile-view"
+      style={{
+        backgroundColor: "#ffffff",
+      }}
+    >
+      {/* Barra de estado fija y sólida blanca en la parte superior (elimina cualquier transparencia) */}
+      <div
+        className="w-full bg-white select-none pointer-events-none sticky top-0 z-40 transition-colors"
+        style={{
+          height: "env(safe-area-inset-top, 0px)",
+          minHeight: "env(safe-area-inset-top, 0px)",
+          backgroundColor: "#ffffff",
+        }}
+        aria-hidden="true"
+      />
+
+      {/* Contenedor del contenido con separación exacta de 2 píxeles de margen respecto a la barra de estado de los celulares */}
+      <div
+        className="w-full flex-1 flex flex-col"
+        style={{
+          marginTop: "2px",
+        }}
+      >
+        {/* Profile Bio Section without Cover Container */}
+        <div className="px-4 pt-1">
         <div className="flex items-end justify-between">
           <div className="relative">
             <img
@@ -613,6 +668,7 @@ export default function Perfil({
             onSelectProduct={onSelectProduct}
           />
         )}
+      </div>
       </div>
 
       {/* Publications Feed Modal */}

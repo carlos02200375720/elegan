@@ -7,7 +7,6 @@ on:
       - 'src/app/web/**'
       - 'src/router/**'
       - 'index.html'
-      - 'public/**'
       - 'vite.config.ts'
       - 'vercel.json'
       - '.github/workflows/build-web.yml'
