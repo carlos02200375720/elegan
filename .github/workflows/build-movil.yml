@@ -45,14 +45,20 @@ jobs:
           npm run build:android
           test -f dist/index.html
 
-      - name: Inicializar y sincronizar Capacitor
+      - name: Inicializar y sincronizar Capacitor y generar íconos
         run: |
-          npm install @capacitor/cli @capacitor/core @capacitor/android @capacitor/status-bar
+          npm install @capacitor/cli @capacitor/core @capacitor/android @capacitor/status-bar @capacitor/assets --save-dev
           npx cap add android || true
           npx cap sync android
           if [ -f "src/app/movil/AndroidManifest.xml" ] && [ -d "android/app/src/main" ]; then
             cp src/app/movil/AndroidManifest.xml android/app/src/main/AndroidManifest.xml
           fi
+          if [ -f "icon.png" ]; then
+            npx capacitor-assets generate --iconPath icon.png --android
+          fi
+          
+
+      
 
       - name: Corregir clases duplicadas de Kotlin
         run: |
