@@ -1,6 +1,6 @@
 {
   "appId": "com.mall.app",
-  "appName": "Mall",
+  "appName": "elegan",
   "webDir": "dist",
   "bundledWebRuntime": false,
   "android": {
