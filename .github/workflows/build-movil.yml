@@ -47,19 +47,20 @@ jobs:
 
     
 
-      - name: Inicializar Capacitor y aplicar ícono único (assets/icon.png) eliminando por completo los íconos por defecto de Capacitor
+      - name: Inicializar Capacitor y aplicar ícono único (assets/icon.png) eliminando los íconos por defecto
         run: |
-          npm install @capacitor/cli @capacitor/core @capacitor/android @capacitor/status-bar @capacitor/assets --save-dev
           npx cap add android || true
-          node scripts/apply-movil-icons.cjs
-          npx cap sync android
           if [ -d "src/app/movil/res" ] && [ -d "android/app/src/main/res" ]; then
             cp -r src/app/movil/res/* android/app/src/main/res/
           fi
           if [ -f "src/app/movil/AndroidManifest.xml" ] && [ -d "android/app/src/main" ]; then
             cp src/app/movil/AndroidManifest.xml android/app/src/main/AndroidManifest.xml
           fi
-          node scripts/apply-movil-icons.cjs
+          npx cap sync android
+          if [ -d "src/app/movil/res" ] && [ -d "android/app/src/main/res" ]; then
+            cp -r src/app/movil/res/* android/app/src/main/res/
+          fi
+          node scripts/apply-movil-icons.cjs || true
           
           
 
