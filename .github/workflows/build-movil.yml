@@ -21,10 +21,10 @@ jobs:
       - name: Descargar código actual
         uses: actions/checkout@v4
 
-      - name: Configurar Node.js
+      - name: Configurar Node.js (LTS >=22 para Capacitor CLI)
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Configurar Java
         uses: actions/setup-java@v4
