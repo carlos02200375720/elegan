@@ -56,7 +56,8 @@ jobs:
             cp src/app/movil/AndroidManifest.xml android/app/src/main/AndroidManifest.xml
           fi
           if [ -f "icon.png" ]; then
-            npx @capacitor/assets generate --android
+            npx @capacitor/assets generate --android --assetPath assets
+                        
           fi
           
           
