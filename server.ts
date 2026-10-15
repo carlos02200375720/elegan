@@ -334,7 +334,37 @@ async function startServer() {
     res.sendFile(manifestPath);
   });
 
-  // Serve app icon assets directly
+  // Serve app icon assets directly (supporting assets/icon.png for mobile installation)
+  app.get(
+    [
+      "/icon.png",
+      "/assets/icon.png",
+      "/apple-touch-icon.png",
+      "/app-icon.png",
+      "/icon-512.png",
+      "/icon-192.png",
+    ],
+    (req, res) => {
+      const requestedFile = path.basename(req.path);
+      const publicPath = path.join(process.cwd(), "public", requestedFile);
+      const assetsPath = path.join(process.cwd(), "assets", "icon.png");
+
+      const finalPath = fs.existsSync(publicPath)
+        ? publicPath
+        : fs.existsSync(assetsPath)
+        ? assetsPath
+        : null;
+
+      if (finalPath) {
+        res.setHeader("Content-Type", "image/png");
+        res.setHeader("Cache-Control", "public, max-age=86400");
+        res.sendFile(finalPath);
+      } else {
+        res.status(404).send("Icon not found");
+      }
+    }
+  );
+
   app.get(["/app-icon.jpg", "/icon-512.jpg", "/icon-192.jpg"], (req, res) => {
     const iconPath = path.join(process.cwd(), "public", "app-icon.jpg");
     if (fs.existsSync(iconPath)) {

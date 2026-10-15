@@ -68,7 +68,7 @@ export default function AndroidSplashScreen({
           <div className="absolute -inset-4 bg-amber-500/20 rounded-3xl blur-xl animate-pulse" />
           <div className="relative w-24 h-24 rounded-2xl bg-gradient-to-br from-slate-900 to-black border border-amber-500/30 p-2 shadow-2xl flex items-center justify-center">
             <img
-              src="/app-icon.jpg"
+              src="/icon.png"
               alt="MallSocial"
               className="w-full h-full object-contain rounded-xl"
               onError={(e) => {

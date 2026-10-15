@@ -470,7 +470,7 @@ export function CompraPerfilView({
 
                         return (
                           <div
-                            key={`ord-item-${it.productId || it.product?.id || itIdx}`}
+                            key={`ord-item-${ord.id || oIdx}-${it.productId || it.product?.id || "item"}-${itIdx}`}
                             className="flex items-center justify-between gap-2.5 py-1"
                           >
                             <div className="flex items-center gap-2.5 min-w-0">
