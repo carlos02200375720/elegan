@@ -1,4 +1,6 @@
-import React from "react";
+import React, { useEffect } from "react";
+import { StatusBar, Style } from "@capacitor/status-bar";
+import { Capacitor } from "@capacitor/core";
 import { Sparkles, ShoppingBag } from "lucide-react";
 import { CartItem } from "../../../types";
 import { formatPrice } from "../../../utils/currency";
@@ -13,6 +15,9 @@ export interface AndroidGraciaProps {
   };
   onContinueShopping: () => void;
   onNavigateToHistory?: () => void;
+  lastShippingCost?: number;
+  lastShippingCarrier?: string;
+  orderTotal?: number;
 }
 
 export function GraciaTiendaView({
@@ -21,17 +26,84 @@ export function GraciaTiendaView({
   lastContactInfo,
   onContinueShopping,
   onNavigateToHistory,
+  lastShippingCost,
+  lastShippingCarrier,
+  orderTotal,
 }: AndroidGraciaProps) {
-  const thankYouTotal = lastOrderItems.reduce(
+  const subtotal = lastOrderItems.reduce(
     (sum, item) => sum + item.product.price * (item.quantity || 1),
     0
   );
 
+  const fallbackShipping = lastOrderItems.reduce((sum, item) => {
+    const fee =
+      item.selectedShippingCost !== undefined
+        ? Number(item.selectedShippingCost)
+        : item.product.shippingCost !== undefined
+        ? Number(item.product.shippingCost)
+        : 0;
+    return sum + (Number.isNaN(fee) ? 0 : fee) * (item.quantity || 1);
+  }, 0);
+
+  const effectiveShipping =
+    lastShippingCost !== undefined ? Number(lastShippingCost) || 0 : fallbackShipping;
+
+  const thankYouTotal =
+    orderTotal !== undefined && orderTotal > 0 ? orderTotal : subtotal + effectiveShipping;
+
+  // Configuración de la barra de estado nativa en blanco sólido (#ffffff) y respeto del margen superior
+  useEffect(() => {
+    const applyStatusBar = async () => {
+      try {
+        if (typeof window !== "undefined" && Capacitor.isPluginAvailable("StatusBar")) {
+          await StatusBar.setOverlaysWebView({ overlay: false });
+          await StatusBar.setBackgroundColor({ color: "#ffffff" });
+          await StatusBar.setStyle({ style: Style.Light });
+        }
+      } catch (e) {
+        console.warn("StatusBar setup in Gracia:", e);
+      }
+
+      const themeMeta = document.getElementById("theme-color-meta") || document.querySelector('meta[name="theme-color"]');
+      if (themeMeta) {
+        themeMeta.setAttribute("content", "#ffffff");
+      }
+      document.querySelectorAll('meta[name="theme-color"]').forEach((tag) => {
+        tag.setAttribute("content", "#ffffff");
+      });
+      document.documentElement.style.backgroundColor = "#ffffff";
+      document.body.style.backgroundColor = "#ffffff";
+    };
+
+    applyStatusBar();
+
+    // Restablecer scroll al inicio
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+    if (document.documentElement) document.documentElement.scrollTop = 0;
+    if (document.body) document.body.scrollTop = 0;
+  }, []);
+
   return (
     <div className="w-full min-h-screen bg-white text-slate-900 flex flex-col font-sans select-none overflow-x-hidden overflow-y-auto">
+      {/* Barra de estado nativa en color blanco sólido (elimina cualquier transparencia) */}
       <div
-        className="relative z-10 px-4 py-8 flex flex-col min-h-screen bg-white"
-        style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 80px)" }}
+        className="w-full bg-white select-none pointer-events-none sticky top-0 z-40 shrink-0 transition-colors"
+        style={{
+          height: "env(safe-area-inset-top, 0px)",
+          minHeight: "env(safe-area-inset-top, 0px)",
+          backgroundColor: "#ffffff",
+        }}
+        aria-hidden="true"
+      />
+
+      {/* Contenedor del contenido con margen de separación respecto a la barra de estado de los celulares */}
+      <div
+        className="relative z-10 px-4 flex flex-col flex-1 bg-white"
+        style={{
+          marginTop: "4px",
+          paddingTop: "12px",
+          paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 85px)",
+        }}
       >
         <div className="flex items-center justify-center mt-4">
           <div className="relative">
@@ -123,9 +195,37 @@ export function GraciaTiendaView({
                 {lastContactInfo.phone}
               </span>
             </div>
+
+            {/* Desglose de Subtotal y Envío */}
+            <div className="flex items-center justify-between text-slate-600 pt-2.5 border-t border-slate-200/80">
+              <span>Subtotal productos</span>
+              <span className="font-semibold text-slate-900">
+                {formatPrice(subtotal)}
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between text-slate-600">
+              <span className="flex items-center gap-1.5">
+                <span>Precio de envío</span>
+                {lastShippingCarrier && (
+                  <span className="text-[10px] text-slate-500 font-medium">
+                    ({lastShippingCarrier})
+                  </span>
+                )}
+                {effectiveShipping === 0 && (
+                  <span className="text-[9px] bg-emerald-50 text-emerald-700 font-bold px-1.5 py-0.5 rounded-full border border-emerald-200/80">
+                    Gratis
+                  </span>
+                )}
+              </span>
+              <span className={`font-semibold ${effectiveShipping === 0 ? "text-emerald-700 font-bold" : "text-slate-900"}`}>
+                {effectiveShipping === 0 ? "Envío Gratis" : formatPrice(effectiveShipping)}
+              </span>
+            </div>
+
             <div className="flex items-center justify-between pt-2.5 border-t border-slate-200 text-sm font-black">
               <span className="text-slate-800">Total</span>
-              <span className="text-slate-950">{formatPrice(thankYouTotal)}</span>
+              <span className="text-slate-950 font-mono text-base">{formatPrice(thankYouTotal)}</span>
             </div>
           </div>
         </div>

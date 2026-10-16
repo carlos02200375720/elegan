@@ -120,6 +120,13 @@ export default function Perfil({
       document.querySelectorAll('meta[name="theme-color"]').forEach((tag) => {
         tag.setAttribute("content", "#ffffff");
       });
+
+      // Configurar apple-mobile-web-app-status-bar-style a default para eliminar translucidez
+      const appleStatusMeta = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
+      if (appleStatusMeta) {
+        appleStatusMeta.setAttribute("content", "default");
+      }
+
       document.documentElement.style.backgroundColor = "#ffffff";
       document.body.style.backgroundColor = "#ffffff";
     };
@@ -383,28 +390,38 @@ export default function Perfil({
 
   return (
     <div
-      className="w-full min-h-screen bg-white text-slate-900 flex flex-col font-sans select-none pb-24"
+      className="w-full min-h-screen bg-white text-slate-900 flex flex-col font-sans select-none pb-24 relative"
       id="android-profile-view"
       style={{
         backgroundColor: "#ffffff",
       }}
     >
-      {/* Barra de estado fija y sólida blanca en la parte superior (elimina cualquier transparencia) */}
+      {/* Barra de estado fija en blanco sólido 100% opaco para eliminar cualquier fondo transparente en celulares */}
       <div
-        className="w-full bg-white select-none pointer-events-none sticky top-0 z-40 transition-colors"
+        className="w-full bg-white fixed top-0 inset-x-0 z-50 pointer-events-none transition-colors"
         style={{
-          height: "env(safe-area-inset-top, 0px)",
-          minHeight: "env(safe-area-inset-top, 0px)",
+          height: "max(24px, env(safe-area-inset-top, 24px))",
           backgroundColor: "#ffffff",
         }}
         aria-hidden="true"
       />
 
-      {/* Contenedor del contenido con separación exacta de 2 píxeles de margen respecto a la barra de estado de los celulares */}
+      {/* Espaciador que respeta la barra de estado nativa y garantiza el margen de separación para que no se mezcle con el contenido */}
+      <div
+        className="w-full bg-white shrink-0 pointer-events-none transition-all"
+        style={{
+          height: "max(24px, env(safe-area-inset-top, 24px))",
+          marginBottom: "8px",
+          backgroundColor: "#ffffff",
+        }}
+        aria-hidden="true"
+      />
+
+      {/* Contenedor del contenido del perfil que respeta la barra de estado y no se mezcla */}
       <div
         className="w-full flex-1 flex flex-col"
         style={{
-          marginTop: "2px",
+          marginTop: "0px",
         }}
       >
         {/* Profile Bio Section without Cover Container */}

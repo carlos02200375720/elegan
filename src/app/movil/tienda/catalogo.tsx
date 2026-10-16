@@ -224,6 +224,19 @@ export default function Catalogo({
     return null;
   });
 
+  // Asegurar que al abrir un producto el scroll se restablezca arriba en la galería
+  useEffect(() => {
+    if (selectedProduct) {
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+      if (document.documentElement) document.documentElement.scrollTop = 0;
+      if (document.body) document.body.scrollTop = 0;
+      const appLayout = document.getElementById("android-app-layout");
+      if (appLayout) appLayout.scrollTop = 0;
+      const mainEl = document.querySelector("main");
+      if (mainEl) mainEl.scrollTop = 0;
+    }
+  }, [selectedProduct?.id]);
+
   const [isCartOpen, setIsCartOpen] = useState(() => {
     if (initialStep === "cart") return true;
     if (
@@ -404,6 +417,8 @@ export default function Catalogo({
 
   const [lastOrderItems, setLastOrderItems] = useState<CartItem[]>([]);
   const [lastDeliveryAddress, setLastDeliveryAddress] = useState("");
+  const [lastShippingCost, setLastShippingCost] = useState(0);
+  const [lastShippingCarrier, setLastShippingCarrier] = useState("");
   const [lastContactInfo, setLastContactInfo] = useState({
     fullName: "",
     email: "",
@@ -822,6 +837,9 @@ export default function Catalogo({
     const address = shippingAddress || "Dirección Android Principal";
     setLastOrderItems(itemsToCheckout.map((item) => ({ ...item, product: { ...item.product } })));
     setLastDeliveryAddress(address);
+    setLastShippingCost(cartShippingTotal);
+    const carrierName = itemsToCheckout.find((it) => it.selectedCarrier)?.selectedCarrier || "";
+    setLastShippingCarrier(carrierName);
     setLastContactInfo({
       fullName: checkoutForm.fullName || currentUser.name || "Cliente",
       email: checkoutForm.email || currentUser.email || `${currentUser.username}@android.mallsocial`,
@@ -931,6 +949,8 @@ export default function Catalogo({
         lastOrderItems={lastOrderItems}
         lastDeliveryAddress={lastDeliveryAddress}
         lastContactInfo={lastContactInfo}
+        lastShippingCost={lastShippingCost}
+        lastShippingCarrier={lastShippingCarrier}
         onContinueShopping={() => {
           setShowThankYouPage(false);
           setShowCheckoutPage(false);
@@ -1203,8 +1223,8 @@ export default function Catalogo({
         </div>
       </div>
 
-      {/* Product Grid */}
-      <div className="p-4 grid grid-cols-2 gap-3 flex-1">
+      {/* Product Grid con separación de 4px entre tarjetas y 4px en laterales */}
+      <div className="px-[4px] py-2 grid grid-cols-2 gap-[4px] flex-1">
         {isLoading && products.length === 0 ? (
           Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="bg-slate-900 border border-slate-800 rounded-2xl p-3 flex flex-col animate-pulse">
@@ -1247,6 +1267,14 @@ export default function Catalogo({
               <div
                 key={`${p._renderKey || p.id}-${pIdx}`}
                 onClick={() => {
+                  window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+                  if (document.documentElement) document.documentElement.scrollTop = 0;
+                  if (document.body) document.body.scrollTop = 0;
+                  const appLayout = document.getElementById("android-app-layout");
+                  if (appLayout) appLayout.scrollTop = 0;
+                  const mainEl = document.querySelector("main");
+                  if (mainEl) mainEl.scrollTop = 0;
+
                   setSelectedProduct(p);
                   if (onSelectProduct) {
                     onSelectProduct(p);
@@ -1254,21 +1282,22 @@ export default function Catalogo({
                     navigateTo(getProductPath(p));
                   }
                 }}
-                className="bg-white border border-slate-200 rounded-2xl overflow-hidden flex flex-col justify-between active:scale-[0.98] transition-transform cursor-pointer shadow-sm hover:border-amber-300"
+                className="bg-white rounded-2xl overflow-hidden flex flex-col justify-between active:scale-[0.98] transition-transform cursor-pointer"
               >
                 <div className="relative w-full aspect-square overflow-hidden bg-slate-100">
                   <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover" />
-                  <span className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-black/60 backdrop-blur-sm text-[9px] font-bold text-amber-400">
-                    {p.category}
-                  </span>
                 </div>
 
                 <div className="p-2.5">
                   <h3 className="text-xs font-bold text-slate-900 line-clamp-1">{p.name}</h3>
-                  <p className="text-[10px] text-slate-500 line-clamp-1 mt-0.5">{p.description}</p>
+                  {p.category && (
+                    <p className="text-[10px] font-bold text-amber-600 line-clamp-1 mt-0.5">
+                      {p.category}
+                    </p>
+                  )}
                 </div>
 
-                <div className="flex items-center justify-between mt-0 px-2.5 pb-2.5 pt-2 border-t border-slate-100 gap-1">
+                <div className="flex items-center justify-between mt-0 px-2.5 pb-2.5 pt-1 gap-1">
                   <div className="flex flex-col">
                     <span className="text-xs font-black text-amber-500">{formatPrice(p.price)}</span>
                     {Boolean(p.freeShipping) && (
@@ -1284,17 +1313,13 @@ export default function Catalogo({
                       e.stopPropagation();
                       onToggleSave?.(p.id);
                     }}
-                    className={`p-1.5 rounded-lg active:scale-90 transition-all font-bold cursor-pointer flex items-center justify-center ${
-                      isSaved
-                        ? "bg-amber-500 text-slate-950 shadow-sm"
-                        : "bg-slate-100 text-slate-500 hover:text-slate-800 hover:bg-slate-200"
-                    }`}
+                    className="p-1 active:scale-90 transition-transform cursor-pointer flex items-center justify-center bg-transparent border-0"
                     title={isSaved ? "Guardado en publicaciones" : "Guardar en publicaciones"}
                     aria-label={isSaved ? "Quitar de publicaciones guardadas" : "Guardar en publicaciones"}
                   >
                     <Bookmark
-                      className={`w-3.5 h-3.5 transition-transform duration-200 ${
-                        isSaved ? "fill-slate-950 stroke-slate-950 scale-105" : "stroke-[2.2]"
+                      className={`w-4 h-4 transition-transform duration-200 ${
+                        isSaved ? "fill-amber-500 stroke-amber-500 scale-105" : "text-slate-400 hover:text-slate-600 stroke-[2.2]"
                       }`}
                     />
                   </button>

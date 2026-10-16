@@ -182,6 +182,48 @@ export function ProductoIdTiendaView({
     return () => observer.disconnect();
   }, []);
 
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+  const rootContainerRef = useRef<HTMLDivElement | null>(null);
+
+  // Asegurar que al entrar a la página de detalle del producto, la vista inicie siempre arriba en la galería
+  useEffect(() => {
+    const scrollToTop = () => {
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+      if (document.documentElement) document.documentElement.scrollTop = 0;
+      if (document.body) document.body.scrollTop = 0;
+
+      if (scrollContainerRef.current) {
+        scrollContainerRef.current.scrollTop = 0;
+      }
+      if (rootContainerRef.current) {
+        rootContainerRef.current.scrollTop = 0;
+      }
+
+      const appLayout = document.getElementById("android-app-layout");
+      if (appLayout) appLayout.scrollTop = 0;
+      const mainEl = document.querySelector("main");
+      if (mainEl) mainEl.scrollTop = 0;
+      const shopView = document.getElementById("android-shop-view");
+      if (shopView) shopView.scrollTop = 0;
+
+      if (gallerySliderRef.current) {
+        gallerySliderRef.current.scrollLeft = 0;
+      }
+      setDetailGalleryIndex(0);
+    };
+
+    scrollToTop();
+    const f1 = requestAnimationFrame(scrollToTop);
+    const f2 = requestAnimationFrame(() => requestAnimationFrame(scrollToTop));
+    const timer = setTimeout(scrollToTop, 60);
+
+    return () => {
+      cancelAnimationFrame(f1);
+      cancelAnimationFrame(f2);
+      clearTimeout(timer);
+    };
+  }, [selectedProduct?.id]);
+
   // Set native status bar to white with dark icons while viewing product detail
   useEffect(() => {
     try {
@@ -370,7 +412,7 @@ export function ProductoIdTiendaView({
   }, []);
 
   return (
-    <div className="w-full min-h-screen bg-white text-slate-900 flex flex-col font-sans select-none relative">
+    <div ref={rootContainerRef} className="w-full min-h-screen bg-white text-slate-900 flex flex-col font-sans select-none relative">
       {/* Barra de estado nativa en blanco */}
       <div
         className="w-full bg-white shrink-0 z-40 fixed top-0 inset-x-0 pointer-events-none"
@@ -464,6 +506,8 @@ export function ProductoIdTiendaView({
 
       {/* Scrollable Body - Inicia después de la barra de estado del celular */}
       <div
+        ref={scrollContainerRef}
+        id="android-product-detail-scroll-container"
         className="flex-1 overflow-y-auto"
         style={{
           paddingTop: "env(safe-area-inset-top, 0px)",
@@ -620,23 +664,23 @@ export function ProductoIdTiendaView({
           </h1>
 
           {/* Price Section */}
-          <div className="flex items-center justify-between gap-3 bg-slate-50/80 p-3 rounded-xl border border-slate-100 flex-wrap">
+          <div className="flex items-center justify-between gap-2 bg-slate-50/80 px-2.5 py-2 rounded-xl border border-slate-100 flex-nowrap">
             <span
-              className="text-2xl font-black font-mono text-slate-950 tracking-tight"
+              className="text-lg sm:text-xl font-black font-mono text-slate-950 tracking-tight shrink-0"
               id="android-product-detail-price"
             >
               {formatPrice(selectedProduct.price)}
             </span>
             <span
               id="android-product-stock-badge"
-              className={`px-2.5 py-1 rounded-full text-[10px] font-bold border transition-colors ${
+              className={`px-2 py-0.5 rounded-full text-[9.5px] font-bold border transition-colors shrink-0 whitespace-nowrap ${
                 availableStock > 0
                   ? "bg-emerald-50 text-emerald-700 border-emerald-200/80"
                   : "bg-rose-50 text-rose-700 border-rose-200/80"
               }`}
             >
               {availableStock > 0
-                ? `En Stock: ${availableStock} ${availableStock === 1 ? "disponible" : "disponibles"}`
+                ? `En Stock: ${availableStock}`
                 : "Agotado"}
             </span>
           </div>
