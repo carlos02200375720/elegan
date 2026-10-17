@@ -11,29 +11,6 @@ if (!fs.existsSync(sourceIcon)) {
 
 console.log('=== Sincronizando ícono exclusivo de src/app/movil desde assets/icon.png ===');
 
-// 1. Asegurar copia de assets/icon.png en la raíz y en assets clave
-try {
-  fs.copyFileSync(sourceIcon, path.join(rootDir, 'icon.png'));
-} catch (e) {
-  console.warn('Aviso copia icon.png:', e.message);
-}
-
-const directCopies = [
-  path.join(rootDir, 'assets', 'icon-only.png'),
-  path.join(rootDir, 'assets', 'icon-foreground.png'),
-  path.join(rootDir, 'assets', 'icon-background.png'),
-  path.join(rootDir, 'assets', 'logo.png')
-];
-
-directCopies.forEach(file => {
-  try {
-    const dir = path.dirname(file);
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    fs.copyFileSync(sourceIcon, file);
-  } catch (e) {
-    console.warn('Aviso copia:', file, e.message);
-  }
-});
 
 // Función de copia recursiva robusta
 function copyDirRecursive(srcDir, destDir) {
