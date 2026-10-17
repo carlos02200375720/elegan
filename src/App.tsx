@@ -508,6 +508,34 @@ export default function App() {
   const [isInitialLoading, setIsInitialLoading] = useState(false);
   const [splashStatus, setSplashStatus] = useState("");
   const [splashHasError, setSplashHasError] = useState(false);
+
+  // Sincronizar automáticamente usuario y carrito recuperados desde el login con correo
+  useEffect(() => {
+    const handleUserChanged = (e: any) => {
+      const newUser = e.detail;
+      if (newUser && newUser.id) {
+        setCurrentUser(newUser);
+        setIsLoggedIn(true);
+        if (newUser.savedReelIds) {
+          setSavedReelIds(newUser.savedReelIds);
+        }
+      }
+    };
+
+    const handleCartUpdated = (e: any) => {
+      const newCart = e.detail;
+      if (Array.isArray(newCart)) {
+        setCart(newCart);
+      }
+    };
+
+    window.addEventListener("mall_user_changed", handleUserChanged);
+    window.addEventListener("mall_cart_updated", handleCartUpdated);
+    return () => {
+      window.removeEventListener("mall_user_changed", handleUserChanged);
+      window.removeEventListener("mall_cart_updated", handleCartUpdated);
+    };
+  }, []);
   const loadAttemptsRef = useRef(0);
 
   // WebSocket reference

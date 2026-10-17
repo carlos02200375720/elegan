@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import mongoose from "mongoose";
 import crypto from "crypto";
 import { User, Reel } from "../../types";
-import { MongoUser, MongoReel, MongoProduct, MongoOrder } from "../models";
+import { MongoUser, MongoReel, MongoProduct, MongoOrder, MongoCart } from "../models";
 import { generateId } from "../utils/helpers";
 import { uploadBase64ToGCS } from "../services/mediaStorage";
 import { bucketName } from "../config/storage";
@@ -1189,7 +1189,7 @@ export async function toggleFollow(req: Request, res: Response): Promise<void> {
  * POST /api/users/current/update
  */
 export async function updateCurrentUser(req: Request, res: Response): Promise<void> {
-  const { name, username, bio, avatar, coverPhoto, password, privacyPolicy, userId, currentUsername } = req.body;
+  const { name, username, bio, avatar, coverPhoto, password, privacyPolicy, userId, currentUsername, email, address, shippingAddress, city, country, phone } = req.body;
   const headerUsername = (req.headers["x-user-username"] as string)?.trim().toLowerCase();
   const headerUserId = (req.headers["x-user-id"] as string)?.trim();
   let currentUserObj: any = null;
@@ -1228,6 +1228,12 @@ export async function updateCurrentUser(req: Request, res: Response): Promise<vo
   if (bio !== undefined) updateFields.bio = bio;
   if (password !== undefined) updateFields.password = password;
   if (privacyPolicy !== undefined) updateFields.privacyPolicy = privacyPolicy;
+  if (email !== undefined) updateFields.email = email;
+  if (address !== undefined) updateFields.address = address;
+  if (shippingAddress !== undefined) updateFields.shippingAddress = shippingAddress;
+  if (city !== undefined) updateFields.city = city;
+  if (country !== undefined) updateFields.country = country;
+  if (phone !== undefined) updateFields.phone = phone;
 
   if (avatar !== undefined) {
     if (avatar && avatar.startsWith("data:")) {
@@ -1866,5 +1872,121 @@ export async function adminDeleteUser(req: Request, res: Response): Promise<void
   } catch (err: any) {
     console.error("❌ Error deleting user as admin:", err);
     res.status(500).json({ error: "Error al eliminar usuario", details: err.message });
+  }
+}
+
+/**
+ * POST /api/auth/email-login or POST /api/users/current/email-login
+ * Iniciar sesión directamente con correo para recuperar perfil, pedidos, carrito y guardados
+ */
+export async function loginWithEmail(req: Request, res: Response): Promise<void> {
+  try {
+    const rawEmail = req.body?.email || req.body?.targetEmail || req.body?.username;
+    if (!rawEmail || typeof rawEmail !== "string") {
+      res.status(400).json({ error: "Debe ingresar un correo electrónico válido." });
+      return;
+    }
+    const cleanEmail = rawEmail.trim().toLowerCase();
+    const escapedEmail = cleanEmail.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+    let user: any = null;
+    if (mongoose.connection.readyState === 1) {
+      user = await MongoUser.findOne({
+        $or: [
+          { email: { $regex: new RegExp(`^${escapedEmail}$`, "i") } },
+          { username: cleanEmail }
+        ],
+        id: { $ne: "current_user" }
+      });
+    }
+
+    if (!user) {
+      const allUsers = await getUsers();
+      user = allUsers.find(
+        (u) =>
+          u.email?.trim().toLowerCase() === cleanEmail ||
+          u.username?.trim().toLowerCase() === cleanEmail
+      );
+    }
+
+    if (!user) {
+      res.status(404).json({
+        error: "No encontramos ninguna cuenta con este correo electrónico. Por favor verifica que esté bien escrito o regístralo primero en tu perfil."
+      });
+      return;
+    }
+
+    setActiveOriginalUserId(user.id);
+
+    // Recuperar historial de compras / pedidos de este usuario en MongoDB Atlas
+    let userOrders: any[] = [];
+    if (mongoose.connection.readyState === 1 && MongoOrder) {
+      try {
+        userOrders = await MongoOrder.find({
+          $or: [
+            { userId: user.id },
+            { "buyer.email": { $regex: new RegExp(`^${escapedEmail}$`, "i") } },
+            { buyerEmail: { $regex: new RegExp(`^${escapedEmail}$`, "i") } },
+            { "contactInfo.email": { $regex: new RegExp(`^${escapedEmail}$`, "i") } }
+          ]
+        }).sort({ createdAt: -1 }).lean();
+      } catch (orderErr) {
+        console.warn("Error cargando pedidos para email-login:", orderErr);
+      }
+    }
+
+    // Recuperar carrito guardado en MongoDB Atlas
+    let userCart: any[] = [];
+    if (mongoose.connection.readyState === 1 && MongoCart) {
+      try {
+        const cartDoc = await MongoCart.findOne({ userId: user.id });
+        if (cartDoc && Array.isArray(cartDoc.items)) {
+          userCart = cartDoc.items;
+        }
+      } catch (cartErr) {
+        console.warn("Error cargando carrito para email-login:", cartErr);
+      }
+    }
+
+    const formattedUser: User = {
+      id: user.id,
+      originalId: user._id ? user._id.toString() : user.id,
+      username: user.username,
+      name: user.name,
+      bio: user.bio || "",
+      avatar: user.avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80",
+      coverPhoto: user.coverPhoto || "",
+      followers: user.followers || 0,
+      following: user.following || 0,
+      followingUserIds: user.followingUserIds || [],
+      savedReelIds: user.savedReelIds || [],
+      savedProductIds: user.savedProductIds || [],
+      isGuest: false,
+      isOnline: true,
+      email: user.email || cleanEmail,
+      address: user.address || "",
+      shippingAddress: user.shippingAddress || user.address || "",
+      city: user.city || "",
+      country: user.country || "",
+      phone: user.phone || "",
+      canSell: user.canSell === true || isConfiguredSuperadmin(user),
+      isAdmin: isConfiguredSuperadmin(user),
+      role: isConfiguredSuperadmin(user) ? "superadmin" : (user.canSell ? "seller" : "user")
+    };
+
+    console.log(`📱 Sesión iniciada con correo: ${cleanEmail} -> @${user.username} (Pedidos: ${userOrders.length}, Carrito: ${userCart.length})`);
+
+    res.json({
+      success: true,
+      user: formattedUser,
+      orders: userOrders,
+      cart: userCart,
+      savedReelIds: formattedUser.savedReelIds || [],
+      savedProductIds: formattedUser.savedProductIds || [],
+      message: `¡Bienvenido/a de nuevo, ${formattedUser.name}! Tu perfil, historial de compras, carrito y dirección han sido restaurados.`
+    });
+  } catch (err: any) {
+    console.error("❌ Error en email-login:", err);
+    res.status(500).json({ error: "Error al iniciar sesión con correo", details: err.message });
   }
 }

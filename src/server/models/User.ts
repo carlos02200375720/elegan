@@ -21,6 +21,11 @@ const UserSchema = new mongoose.Schema({
   visitCount: { type: Number, default: 1 },
   password: { type: String },
   email: { type: String, unique: true, sparse: true, lowercase: true, trim: true },
+  address: { type: String, default: "" },
+  shippingAddress: { type: String, default: "" },
+  city: { type: String, default: "" },
+  country: { type: String, default: "" },
+  phone: { type: String, default: "" },
   privacyPolicy: { type: String, default: "" },
   canSell: { type: Boolean, default: false }
 }, { timestamps: true });

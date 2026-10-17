@@ -19,6 +19,11 @@ export interface User {
   lastSeenAt?: string;
   password?: string;
   email?: string;
+  address?: string;
+  shippingAddress?: string;
+  city?: string;
+  country?: string;
+  phone?: string;
   privacyPolicy?: string;
   role?: string;
   isAdmin?: boolean;

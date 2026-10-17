@@ -12,6 +12,7 @@ import {
   getUserCanonicalReelsFromMongo,
 } from "./services/reelService";
 import { isConfiguredSuperadmin, handleGuestSession } from "./controllers/userController";
+import { MongoCart } from "./models";
 
 export interface AndroidRouterDependencies {
   MongoUser: any;
@@ -527,10 +528,121 @@ export function createAndroidRouter(deps: AndroidRouterDependencies): Router {
 
   router.post(["/auth/register", "/users/register"], handleAndroidRegister);
 
+  // Android: Iniciar sesión y recuperar perfil completo con correo
+  router.post(["/auth/email-login", "/auth/login-email", "/users/current/email-login"], async (req: Request, res: Response) => {
+    try {
+      const rawEmail = req.body?.email || req.body?.targetEmail || req.body?.username;
+      if (!rawEmail || typeof rawEmail !== "string") {
+        res.status(400).json({ error: "Debe ingresar un correo electrónico válido." });
+        return;
+      }
+      const cleanEmail = rawEmail.trim().toLowerCase();
+      const escapedEmail = cleanEmail.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+      let user: any = null;
+      if (mongoose.connection.readyState === 1) {
+        user = await MongoUser.findOne({
+          $or: [
+            { email: { $regex: new RegExp(`^${escapedEmail}$`, "i") } },
+            { username: cleanEmail }
+          ],
+          id: { $ne: "current_user" }
+        });
+      }
+
+      if (!user && getUsers) {
+        const allUsers = await getUsers();
+        user = allUsers.find(
+          (u) =>
+            u.email?.trim().toLowerCase() === cleanEmail ||
+            u.username?.trim().toLowerCase() === cleanEmail
+        );
+      }
+
+      if (!user) {
+        res.status(404).json({
+          error: "No encontramos ninguna cuenta con este correo electrónico. Por favor verifica que esté bien escrito o regístralo primero en tu perfil."
+        });
+        return;
+      }
+
+      // Recuperar historial de compras / pedidos de este usuario en MongoDB Atlas
+      let userOrders: any[] = [];
+      if (mongoose.connection.readyState === 1 && MongoOrder) {
+        try {
+          userOrders = await MongoOrder.find({
+            $or: [
+              { userId: user.id },
+              { "buyer.email": { $regex: new RegExp(`^${escapedEmail}$`, "i") } },
+              { buyerEmail: { $regex: new RegExp(`^${escapedEmail}$`, "i") } },
+              { "contactInfo.email": { $regex: new RegExp(`^${escapedEmail}$`, "i") } }
+            ]
+          }).sort({ createdAt: -1 }).lean();
+        } catch (orderErr) {
+          console.warn("Error cargando pedidos para email-login:", orderErr);
+        }
+      }
+
+      // Recuperar carrito guardado en MongoDB Atlas
+      let userCart: any[] = [];
+      if (mongoose.connection.readyState === 1) {
+        try {
+          const cartDoc = await MongoCart.findOne({ userId: user.id });
+          if (cartDoc && Array.isArray(cartDoc.items)) {
+            userCart = cartDoc.items;
+          }
+        } catch (cartErr) {
+          console.warn("Error cargando carrito para email-login:", cartErr);
+        }
+      }
+
+      const formattedUser: User = {
+        id: user.id,
+        originalId: user._id ? user._id.toString() : user.id,
+        username: user.username,
+        name: user.name,
+        bio: user.bio || "",
+        avatar: user.avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80",
+        coverPhoto: user.coverPhoto || "",
+        followers: user.followers || 0,
+        following: user.following || 0,
+        followingUserIds: user.followingUserIds || [],
+        savedReelIds: user.savedReelIds || [],
+        savedProductIds: user.savedProductIds || [],
+        isGuest: false,
+        isOnline: true,
+        email: user.email || cleanEmail,
+        address: user.address || "",
+        shippingAddress: user.shippingAddress || user.address || "",
+        city: user.city || "",
+        country: user.country || "",
+        phone: user.phone || "",
+        canSell: user.canSell === true || isConfiguredSuperadmin(user),
+        isAdmin: isConfiguredSuperadmin(user),
+        role: isConfiguredSuperadmin(user) ? "superadmin" : (user.canSell ? "seller" : "user")
+      };
+
+      console.log(`📱 [Android Gateway] Sesión iniciada con correo: ${cleanEmail} -> @${user.username} (Pedidos: ${userOrders.length}, Carrito: ${userCart.length})`);
+
+      res.json({
+        success: true,
+        user: formattedUser,
+        orders: userOrders,
+        cart: userCart,
+        savedReelIds: formattedUser.savedReelIds || [],
+        savedProductIds: formattedUser.savedProductIds || [],
+        message: `¡Bienvenido/a de nuevo, ${formattedUser.name}! Tu perfil, historial de compras, carrito y dirección han sido restaurados.`
+      });
+    } catch (err: any) {
+      console.error("❌ Error en email-login:", err);
+      res.status(500).json({ error: "Error al iniciar sesión con correo", details: err.message });
+    }
+  });
+
   // Android: Update profile
   router.post("/users/current/update", async (req: Request, res: Response) => {
     try {
-      const { userId, name, bio, avatar } = req.body;
+      const { userId, name, bio, avatar, email, address, shippingAddress, city, country, phone } = req.body;
       const targetId = userId || req.headers["x-user-id"];
 
       if (!targetId) {
@@ -541,7 +653,29 @@ export function createAndroidRouter(deps: AndroidRouterDependencies): Router {
       const updateFields: any = {};
       if (name) updateFields.name = name.trim();
       if (bio !== undefined) updateFields.bio = bio.trim();
-      if (avatar) updateFields.avatar = avatar;
+      if (email !== undefined) updateFields.email = email.trim();
+      if (address !== undefined) updateFields.address = address.trim();
+      if (shippingAddress !== undefined) updateFields.shippingAddress = shippingAddress.trim();
+      if (city !== undefined) updateFields.city = city.trim();
+      if (country !== undefined) updateFields.country = country.trim();
+      if (phone !== undefined) updateFields.phone = phone.trim();
+
+      if (avatar) {
+        if (typeof avatar === "string" && avatar.startsWith("data:") && deps.uploadBase64ToGCS) {
+          try {
+            const savedAvatar = await deps.uploadBase64ToGCS(avatar, "avatars");
+            if (savedAvatar && !savedAvatar.startsWith("data:")) {
+              updateFields.avatar = savedAvatar;
+            } else {
+              updateFields.avatar = avatar;
+            }
+          } catch {
+            updateFields.avatar = avatar;
+          }
+        } else {
+          updateFields.avatar = avatar;
+        }
+      }
 
       let updated = null;
       if (mongoose.connection.readyState === 1) {
@@ -552,7 +686,7 @@ export function createAndroidRouter(deps: AndroidRouterDependencies): Router {
         );
       }
 
-      console.log(`📱 [Android Gateway] Perfil actualizado para ${targetId}`);
+      console.log(`📱 [Android Gateway] Perfil actualizado para ${targetId}:`, updateFields);
       res.json({ success: true, user: updated || { id: targetId, ...updateFields } });
     } catch (err: any) {
       console.error("❌ [Android Gateway] Error al actualizar perfil:", err);

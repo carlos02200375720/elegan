@@ -8,6 +8,7 @@ export interface AndroidCheckoutForm {
   email: string;
   phone: string;
   shippingAddress: string;
+  city?: string;
   country: string;
   postalCode: string;
   cardName: string;
@@ -133,7 +134,16 @@ export function VerificacionTiendaView({
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-[11px] font-black text-slate-700">País de residencia</label>
+                <label className="text-[11px] font-black text-slate-700">Ciudad</label>
+                <input
+                  value={checkoutForm.city || ""}
+                  onChange={(e) => setCheckoutForm({ ...checkoutForm, city: e.target.value })}
+                  className="w-full mt-1 px-3 py-2.5 border border-slate-200 rounded-2xl text-xs text-slate-900 bg-slate-50 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                  placeholder="Ciudad"
+                />
+              </div>
+              <div>
+                <label className="text-[11px] font-black text-slate-700">País</label>
                 <input
                   value={checkoutForm.country}
                   onChange={(e) => setCheckoutForm({ ...checkoutForm, country: e.target.value })}
@@ -141,15 +151,15 @@ export function VerificacionTiendaView({
                   placeholder="País"
                 />
               </div>
-              <div>
-                <label className="text-[11px] font-black text-slate-700">Código postal</label>
-                <input
-                  value={checkoutForm.postalCode}
-                  onChange={(e) => setCheckoutForm({ ...checkoutForm, postalCode: e.target.value })}
-                  className="w-full mt-1 px-3 py-2.5 border border-slate-200 rounded-2xl text-xs text-slate-900 bg-slate-50 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                  placeholder="00000"
-                />
-              </div>
+            </div>
+            <div>
+              <label className="text-[11px] font-black text-slate-700">Código postal</label>
+              <input
+                value={checkoutForm.postalCode}
+                onChange={(e) => setCheckoutForm({ ...checkoutForm, postalCode: e.target.value })}
+                className="w-full mt-1 px-3 py-2.5 border border-slate-200 rounded-2xl text-xs text-slate-900 bg-slate-50 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                placeholder="00000"
+              />
             </div>
           </div>
         </div>

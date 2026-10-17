@@ -425,18 +425,35 @@ export default function Catalogo({
     phone: "",
   });
 
-  const [checkoutForm, setCheckoutForm] = useState<AndroidCheckoutForm>({
-    fullName: "",
-    email: "",
-    phone: "",
-    shippingAddress: "",
-    country: "",
-    postalCode: "",
-    cardName: "",
+  const [checkoutForm, setCheckoutForm] = useState<AndroidCheckoutForm>(() => ({
+    fullName: currentUser?.name || "",
+    email: currentUser?.email || "",
+    phone: (currentUser as any)?.phone || "",
+    shippingAddress: (currentUser as any)?.shippingAddress || (currentUser as any)?.address || "",
+    city: (currentUser as any)?.city || "",
+    country: (currentUser as any)?.country || "República Dominicana",
+    postalCode: (currentUser as any)?.postalCode || "",
+    cardName: currentUser?.name || "",
     cardNumber: "",
     expiry: "",
     cvv: "",
-  });
+  }));
+
+  // Sincronizar automáticamente los datos guardados en el perfil para autocompletar el checkout
+  useEffect(() => {
+    if (currentUser) {
+      setCheckoutForm((prev) => ({
+        ...prev,
+        fullName: prev.fullName || currentUser.name || "",
+        email: prev.email || currentUser.email || "",
+        phone: prev.phone || (currentUser as any)?.phone || "",
+        shippingAddress: prev.shippingAddress || (currentUser as any)?.shippingAddress || (currentUser as any)?.address || "",
+        city: prev.city || (currentUser as any)?.city || "",
+        country: prev.country || (currentUser as any)?.country || "República Dominicana",
+        cardName: prev.cardName || currentUser.name || "",
+      }));
+    }
+  }, [currentUser]);
 
   // Cart Shockwave state
   const [isCartShockwave, setIsCartShockwave] = useState(false);
@@ -834,9 +851,13 @@ export default function Catalogo({
   };
 
   const finalizeOrder = (shippingAddress: string, itemsToCheckout: CartItem[]) => {
-    const address = shippingAddress || "Dirección Android Principal";
+    const fullAddress = [
+      shippingAddress || checkoutForm.shippingAddress,
+      checkoutForm.city,
+      checkoutForm.country,
+    ].filter(Boolean).join(", ") || "Dirección Android Principal";
     setLastOrderItems(itemsToCheckout.map((item) => ({ ...item, product: { ...item.product } })));
-    setLastDeliveryAddress(address);
+    setLastDeliveryAddress(fullAddress);
     setLastShippingCost(cartShippingTotal);
     const carrierName = itemsToCheckout.find((it) => it.selectedCarrier)?.selectedCarrier || "";
     setLastShippingCarrier(carrierName);

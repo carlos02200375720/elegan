@@ -74,6 +74,7 @@ export function createApiRouter(): Router {
   router.post("/users/current/update", userController.updateCurrentUser);
   router.post("/users/register", userController.registerUser);
   router.post("/users/current/switch", userController.switchUser);
+  router.post(["/auth/email-login", "/users/current/email-login"], userController.loginWithEmail);
   router.post("/users/current/logout", userController.logoutUser);
 
   // Reels routes

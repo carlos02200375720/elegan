@@ -212,6 +212,29 @@ export const androidApi = {
     return readResponseBody(res);
   },
 
+  loginWithEmail: async (email: string) => {
+    let res = await androidApiFetch("/auth/email-login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    });
+    if (!res.ok) {
+      res = await fetch("/api/android/auth/email-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+    }
+    if (!res.ok) {
+      res = await fetch("/api/auth/email-login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+    }
+    return readResponseBody(res);
+  },
+
   logoutUser: async () => {
     const res = await androidApiFetch("/users/current/logout", {
       method: "POST",
