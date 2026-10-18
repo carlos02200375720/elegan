@@ -16,6 +16,7 @@ import {
 import { motion, AnimatePresence } from "motion/react";
 import { androidApiFetch } from "../api";
 import { isSuperAdmin } from "../../../superAdmin";
+import { sessionState } from "../../../utils/sessionState";
 
 export interface ConfigPerfilProps {
   activeUser: User;
@@ -34,26 +35,88 @@ export function ConfigPerfilView({
   onClose,
   isOpen = true,
 }: ConfigPerfilProps) {
-  const [editName, setEditName] = useState(activeUser.name || currentUser.name || "");
-  const [editEmail, setEditEmail] = useState(activeUser.email || currentUser.email || "");
+  const getCachedUserData = () => {
+    if (typeof window === "undefined") return null;
+    try {
+      return JSON.parse(localStorage.getItem("mall_user") || "{}");
+    } catch {
+      return null;
+    }
+  };
+
+  const cached = getCachedUserData();
+  const sessionU = sessionState.getUser();
+
+  const [editName, setEditName] = useState(
+    activeUser.name || currentUser.name || sessionU?.name || cached?.name || ""
+  );
+  const [editEmail, setEditEmail] = useState(
+    activeUser.email || currentUser.email || sessionU?.email || cached?.email || ""
+  );
   const [editAddress, setEditAddress] = useState(
     (activeUser as any).shippingAddress ||
       (activeUser as any).address ||
       (currentUser as any).shippingAddress ||
       (currentUser as any).address ||
+      sessionU?.shippingAddress ||
+      sessionU?.address ||
+      cached?.shippingAddress ||
+      cached?.address ||
       ""
   );
   const [editCity, setEditCity] = useState(
-    (activeUser as any).city || (currentUser as any).city || ""
+    (activeUser as any).city || (currentUser as any).city || sessionU?.city || cached?.city || ""
   );
   const [editCountry, setEditCountry] = useState(
-    (activeUser as any).country || (currentUser as any).country || "República Dominicana"
+    (activeUser as any).country ||
+      (currentUser as any).country ||
+      sessionU?.country ||
+      cached?.country ||
+      "República Dominicana"
   );
-  const [editPhone, setEditPhone] = useState((activeUser as any).phone || (currentUser as any).phone || "");
-  const [editAvatar, setEditAvatar] = useState(activeUser.avatar || currentUser.avatar || "");
+  const [editPhone, setEditPhone] = useState(
+    (activeUser as any).phone || (currentUser as any).phone || sessionU?.phone || cached?.phone || ""
+  );
+  const [editAvatar, setEditAvatar] = useState(
+    activeUser.avatar || currentUser.avatar || sessionU?.avatar || cached?.avatar || ""
+  );
   const [isSaving, setIsSaving] = useState(false);
   const [statusMessage, setStatusMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Sincronizar campos si los datos del usuario se cargan o actualizan después de abrir la ventana
+  React.useEffect(() => {
+    const fresh = sessionState.getUser() || getCachedUserData();
+    const source = activeUser || currentUser || fresh;
+    if (!source) return;
+
+    const resolvedAddress =
+      (source as any).shippingAddress ||
+      (source as any).address ||
+      fresh?.shippingAddress ||
+      fresh?.address;
+    if (resolvedAddress && !editAddress) {
+      setEditAddress(resolvedAddress);
+    }
+
+    const resolvedCity = (source as any).city || fresh?.city;
+    if (resolvedCity && !editCity) {
+      setEditCity(resolvedCity);
+    }
+
+    const resolvedCountry = (source as any).country || fresh?.country;
+    if (resolvedCountry && editCountry === "República Dominicana" && resolvedCountry !== "República Dominicana") {
+      setEditCountry(resolvedCountry);
+    }
+
+    const resolvedPhone = (source as any).phone || fresh?.phone;
+    if (resolvedPhone && !editPhone) {
+      setEditPhone(resolvedPhone);
+    }
+
+    if (source.name && !editName) setEditName(source.name);
+    if (source.email && !editEmail) setEditEmail(source.email);
+  }, [activeUser, currentUser]);
 
   // Manejar selección de foto desde la galería local del celular o navegador
   const handleSelectFromGallery = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -84,9 +147,11 @@ export function ConfigPerfilView({
     setStatusMessage(null);
 
     const targetUserId = activeUser.originalId || activeUser.id || currentUser.originalId || currentUser.id;
+    const currentUsername = activeUser.username || currentUser.username || sessionState.getUsername();
 
     const payload = {
       userId: targetUserId,
+      currentUsername,
       name: editName.trim(),
       avatar: editAvatar.trim(),
       email: editEmail.trim(),
@@ -137,11 +202,13 @@ export function ConfigPerfilView({
           phone: editPhone.trim(),
         };
 
-        // Guardar en caché local para que el checkout de la tienda lo autocomplete inmediatamente
+        // Guardar en sesión de ejecución y persistencia de dispositivo
+        sessionState.setUser(updated);
         try {
-          const stored = JSON.parse(localStorage.getItem("mall_user") || "{}");
-          localStorage.setItem("mall_user", JSON.stringify({ ...stored, ...updated }));
+          localStorage.setItem("mall_user", JSON.stringify(updated));
         } catch {}
+
+        window.dispatchEvent(new CustomEvent("mall_user_changed", { detail: updated }));
 
         if (onProfileUpdate) onProfileUpdate(updated);
         if (onUpdateUser) onUpdateUser(updated);

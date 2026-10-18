@@ -426,14 +426,49 @@ export default function Perfil({
       >
         {/* Profile Bio Section without Cover Container */}
         <div className="px-4 pt-1">
-        <div className="flex items-end justify-between">
-          <div className="relative">
-            <img
-              src={activeUser.avatar}
-              alt={activeUser.name}
-              className="w-20 h-20 rounded-full object-cover border-2 border-slate-200 shadow-sm bg-white"
-            />
+          {/* Barra superior con botón para cerrar sesión en la esquina superior derecha */}
+          <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100">
+            <div className="flex items-center gap-2">
+              {onBackToSelf && !isMe && (
+                <button
+                  type="button"
+                  onClick={onBackToSelf}
+                  className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold border border-slate-200 active:scale-95 cursor-pointer shadow-2xs"
+                >
+                  ← Mi Perfil
+                </button>
+              )}
+              <span className="text-xs font-black text-slate-500 tracking-wide uppercase">
+                {isMe ? "Mi Perfil" : `@${activeUser.username}`}
+              </span>
+            </div>
+
+            {onLogout && (
+              <button
+                type="button"
+                onClick={() => {
+                  onLogout();
+                  navigateTo("/perfil/login?mode=login");
+                }}
+                id="mobile-profile-logout-btn"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 active:bg-rose-200 text-rose-600 border border-rose-200/80 active:scale-95 transition-all cursor-pointer shadow-2xs group"
+                title="Cerrar sesión"
+                aria-label="Cerrar sesión"
+              >
+                <LogOut className="w-3.5 h-3.5 text-rose-600 group-hover:scale-110 transition-transform" />
+                <span className="text-xs font-bold text-rose-700">Cerrar sesión</span>
+              </button>
+            )}
           </div>
+
+          <div className="flex items-end justify-between">
+            <div className="relative">
+              <img
+                src={activeUser.avatar}
+                alt={activeUser.name}
+                className="w-20 h-20 rounded-full object-cover border-2 border-slate-200 shadow-sm bg-white"
+              />
+            </div>
 
           <div className="flex items-center space-x-2 pb-1">
             {isMe ? (

@@ -131,6 +131,14 @@ export function createAndroidRouter(deps: AndroidRouterDependencies): Router {
           savedReelIds: u.savedReelIds || [],
           isGuest: false,
           email: u.email || "",
+          address: u.address || "",
+          shippingAddress: u.shippingAddress || u.address || "",
+          city: u.city || "",
+          country: u.country || "",
+          phone: u.phone || "",
+          canSell: u.canSell === true || isConfiguredSuperadmin(u),
+          isAdmin: isConfiguredSuperadmin(u),
+          role: isConfiguredSuperadmin(u) ? "superadmin" : (u.canSell ? "seller" : "user")
         }));
 
         res.json(users);
@@ -320,6 +328,11 @@ export function createAndroidRouter(deps: AndroidRouterDependencies): Router {
         isGuest: false,
         isOnline: true,
         email: user.email || "",
+        address: user.address || "",
+        shippingAddress: user.shippingAddress || user.address || "",
+        city: user.city || "",
+        country: user.country || "",
+        phone: user.phone || "",
         canSell: user.canSell === true || isConfiguredSuperadmin(user),
         isAdmin: isConfiguredSuperadmin(user),
         role: isConfiguredSuperadmin(user) ? "superadmin" : (user.canSell ? "seller" : "user")
@@ -394,6 +407,11 @@ export function createAndroidRouter(deps: AndroidRouterDependencies): Router {
         isGuest: false,
         isOnline: true,
         email: targetUser.email || "",
+        address: targetUser.address || "",
+        shippingAddress: targetUser.shippingAddress || targetUser.address || "",
+        city: targetUser.city || "",
+        country: targetUser.country || "",
+        phone: targetUser.phone || "",
         canSell: targetUser.canSell === true || isConfiguredSuperadmin(targetUser),
         isAdmin: isConfiguredSuperadmin(targetUser),
         role: isConfiguredSuperadmin(targetUser) ? "superadmin" : (targetUser.canSell ? "seller" : "user")
@@ -786,11 +804,13 @@ export function createAndroidRouter(deps: AndroidRouterDependencies): Router {
   // Android: Update profile
   router.post("/users/current/update", async (req: Request, res: Response) => {
     try {
-      const { userId, name, bio, avatar, email, address, shippingAddress, city, country, phone } = req.body;
-      const targetId = userId || req.headers["x-user-id"];
+      const { userId, name, bio, avatar, email, address, shippingAddress, city, country, phone, currentUsername } = req.body;
+      const headerUsername = (req.headers["x-user-username"] as string)?.trim().toLowerCase();
+      const headerUserId = (req.headers["x-user-id"] as string)?.trim();
+      const targetId = userId || headerUserId;
 
-      if (!targetId) {
-        res.status(400).json({ error: "ID de usuario requerido para actualización" });
+      if (!targetId && !currentUsername && !headerUsername && !email) {
+        res.status(400).json({ error: "Identificador de usuario requerido para actualización" });
         return;
       }
 
@@ -821,17 +841,60 @@ export function createAndroidRouter(deps: AndroidRouterDependencies): Router {
         }
       }
 
+      const searchCriteria: any[] = [];
+      if (targetId && targetId !== "current_user") {
+        searchCriteria.push({ id: targetId });
+        if (mongoose.isValidObjectId(targetId)) searchCriteria.push({ _id: targetId });
+      }
+      if (headerUserId && headerUserId !== "current_user" && headerUserId !== targetId) {
+        searchCriteria.push({ id: headerUserId });
+        if (mongoose.isValidObjectId(headerUserId)) searchCriteria.push({ _id: headerUserId });
+      }
+      const resolvedUsername = (currentUsername || headerUsername || "").toLowerCase();
+      if (resolvedUsername && resolvedUsername !== "invitado") {
+        searchCriteria.push({ username: resolvedUsername });
+      }
+      if (email && email.includes("@")) {
+        searchCriteria.push({ email: email.trim().toLowerCase() });
+      }
+
       let updated = null;
-      if (mongoose.connection.readyState === 1) {
+      if (mongoose.connection.readyState === 1 && searchCriteria.length > 0) {
         updated = await MongoUser.findOneAndUpdate(
-          { $or: [{ id: targetId }, { _id: mongoose.isValidObjectId(targetId) ? targetId : undefined }] },
+          { $or: searchCriteria },
           { $set: updateFields },
           { returnDocument: "after" }
         );
       }
 
-      console.log(`📱 [Android Gateway] Perfil actualizado para ${targetId}:`, updateFields);
-      res.json({ success: true, user: updated || { id: targetId, ...updateFields } });
+      console.log(`📱 [Android Gateway] Perfil actualizado para ${targetId || resolvedUsername}:`, updateFields);
+
+      const returnedUser: User = updated ? {
+        id: updated.id,
+        originalId: updated._id ? updated._id.toString() : updated.id,
+        username: updated.username,
+        name: updated.name,
+        bio: updated.bio || "",
+        avatar: updated.avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80",
+        coverPhoto: updated.coverPhoto || "",
+        followers: updated.followers || 0,
+        following: updated.following || 0,
+        followingUserIds: updated.followingUserIds || [],
+        savedReelIds: updated.savedReelIds || [],
+        isGuest: false,
+        isOnline: true,
+        email: updated.email || "",
+        address: updated.address || address || "",
+        shippingAddress: updated.shippingAddress || shippingAddress || address || "",
+        city: updated.city || city || "",
+        country: updated.country || country || "",
+        phone: updated.phone || phone || "",
+        canSell: updated.canSell === true || isConfiguredSuperadmin(updated),
+        isAdmin: isConfiguredSuperadmin(updated),
+        role: isConfiguredSuperadmin(updated) ? "superadmin" : (updated.canSell ? "seller" : "user")
+      } : { id: targetId || "current_user", ...updateFields };
+
+      res.json({ success: true, user: returnedUser });
     } catch (err: any) {
       console.error("❌ [Android Gateway] Error al actualizar perfil:", err);
       res.status(500).json({ error: "Error al actualizar perfil", details: err.message });
@@ -870,6 +933,15 @@ export function createAndroidRouter(deps: AndroidRouterDependencies): Router {
             savedReelIds: user.savedReelIds || [],
             isGuest: false,
             isOnline: true,
+            email: user.email || "",
+            address: user.address || "",
+            shippingAddress: user.shippingAddress || user.address || "",
+            city: user.city || "",
+            country: user.country || "",
+            phone: user.phone || "",
+            canSell: user.canSell === true || isConfiguredSuperadmin(user),
+            isAdmin: isConfiguredSuperadmin(user),
+            role: isConfiguredSuperadmin(user) ? "superadmin" : (user.canSell ? "seller" : "user"),
           },
         });
         return;
