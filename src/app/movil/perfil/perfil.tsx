@@ -457,6 +457,7 @@ export default function Perfil({
                     <span>Publicar</span>
                   </button>
                 )}
+              </>
             ) : (
               <div className="flex items-center space-x-2">
                 {onBackToSelf && (
