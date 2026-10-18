@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const { spawnSync } = require('child_process');
 
 const rootDir = path.resolve(__dirname, '..');
 const sourceIcon = path.join(rootDir, 'assets', 'icon.png');
@@ -11,6 +12,21 @@ if (!fs.existsSync(sourceIcon)) {
 
 console.log('=== Sincronizando ícono exclusivo de src/app/movil desde assets/icon.png ===');
 
+const movilResDir = path.join(rootDir, 'src', 'app', 'movil', 'res');
+const androidMainRes = path.join(rootDir, 'android', 'app', 'src', 'main', 'res');
+const imageGenerator = path.join(__dirname, 'generate-movil-icons.ps1');
+const powershell = process.platform === 'win32' ? 'powershell.exe' : 'pwsh';
+const generation = spawnSync(
+  powershell,
+  ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', imageGenerator, sourceIcon, movilResDir],
+  { stdio: 'inherit' }
+);
+
+if (generation.error || generation.status !== 0) {
+  console.error('ERROR: no se pudieron generar los íconos Android desde assets/icon.png.');
+  if (generation.error) console.error(generation.error.message);
+  process.exit(generation.status || 1);
+}
 
 // Función de copia recursiva robusta
 function copyDirRecursive(srcDir, destDir) {
@@ -29,9 +45,6 @@ function copyDirRecursive(srcDir, destDir) {
 }
 
 // 2. Si android/app/src/main/res existe, sobreescribir inmediatamente todos los mipmaps
-const movilResDir = path.join(rootDir, 'src', 'app', 'movil', 'res');
-const androidMainRes = path.join(rootDir, 'android', 'app', 'src', 'main', 'res');
-
 if (fs.existsSync(movilResDir) && fs.existsSync(androidMainRes)) {
   console.log('Sobrescribiendo recursos nativos en android/app/src/main/res...');
   copyDirRecursive(movilResDir, androidMainRes);
