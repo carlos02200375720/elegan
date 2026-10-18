@@ -102,7 +102,7 @@ export async function syncGuestSession(
     const data: GuestSessionResult = await res.json();
     if (data && data.guestToken) {
       setLocalGuestToken(data.guestToken);
-      if (data.user) {
+      if (data.user && !sessionState.isAuthenticated()) {
         sessionState.setUser(data.user);
       }
       return data;

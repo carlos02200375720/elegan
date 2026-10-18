@@ -227,14 +227,14 @@ export const androidApi = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email }),
     });
-    if (!res.ok) {
+    if (!res.ok && res.status === 404) {
       res = await fetch("/api/android/auth/email-login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       });
     }
-    if (!res.ok) {
+    if (!res.ok && res.status === 404) {
       res = await fetch("/api/auth/email-login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -268,14 +268,14 @@ export const androidApi = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(registerData),
     });
-    if (!res.ok) {
+    if (!res.ok && res.status === 404) {
       res = await fetch("/api/android/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(registerData),
       });
     }
-    if (!res.ok) {
+    if (!res.ok && res.status === 404) {
       res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

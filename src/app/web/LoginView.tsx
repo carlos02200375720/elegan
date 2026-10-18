@@ -98,6 +98,7 @@ export default function LoginView({
       
       const data = await response.json();
       if (response.ok && data.success) {
+        sessionState.setUser(data.user);
         sessionState.setAuthenticated(true);
         sessionState.setUsername(data.user?.username || cleanEmail);
         

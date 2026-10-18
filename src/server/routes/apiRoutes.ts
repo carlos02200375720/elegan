@@ -72,8 +72,8 @@ export function createApiRouter(): Router {
   router.post("/users/current/save", userController.toggleSaveReel);
   router.post("/users/:targetUserId/follow", userController.toggleFollow);
   router.post("/users/current/update", userController.updateCurrentUser);
-  router.post("/users/register", userController.registerUser);
-  router.post("/users/current/switch", userController.switchUser);
+  router.post(["/users/register", "/auth/register"], userController.registerUser);
+  router.post(["/auth/login", "/users/login", "/users/current/switch"], userController.switchUser);
   router.post(["/auth/email-login", "/users/current/email-login"], userController.loginWithEmail);
   router.post("/users/current/logout", userController.logoutUser);
 

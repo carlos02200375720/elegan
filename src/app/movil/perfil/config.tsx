@@ -12,12 +12,10 @@ import {
   User as UserIcon,
   Building2,
   Globe,
-  Sparkles,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { androidApiFetch } from "../api";
 import { isSuperAdmin } from "../../../superAdmin";
-import { navigateTo } from "../../../router";
 
 export interface ConfigPerfilProps {
   activeUser: User;
@@ -366,31 +364,6 @@ export function ConfigPerfilView({
                   <span>Guardar y Actualizar Información</span>
                 )}
               </button>
-
-              {/* Sección para registrar cuenta o iniciar sesión previa */}
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-3 bg-slate-50 p-3 rounded-2xl border border-slate-200/80">
-                <div>
-                  <p className="text-xs font-black text-slate-800">¿Deseas guardar tu cuenta?</p>
-                  <p className="text-[10px] text-slate-500">Crea tu cuenta o inicia sesión para vincular todas tus compras y carrito.</p>
-                </div>
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => navigateTo("/perfil/login?mode=register")}
-                    className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-[11px] rounded-xl active:scale-95 transition-transform cursor-pointer shadow-xs"
-                  >
-                    Registrarse
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => navigateTo("/perfil/login?mode=login")}
-                    className="px-2.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-[11px] rounded-xl active:scale-95 transition-transform cursor-pointer shadow-xs flex items-center gap-1"
-                  >
-                    <Sparkles className="w-3 h-3 text-amber-400" />
-                    <span>Entrar</span>
-                  </button>
-                </div>
-              </div>
             </form>
           </motion.div>
         </div>

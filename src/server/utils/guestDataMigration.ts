@@ -72,40 +72,49 @@ export async function migrateGuestReelInteractions(
   const uniqueGuestIds = Array.from(new Set(guestIds.filter((id) => id && id !== user.id)));
   if (uniqueGuestIds.length === 0) return;
 
-  await MongoReel.updateMany(
-    { likedBy: { $in: uniqueGuestIds } },
-    [
-      {
-        $set: {
-          likedBy: {
-            $setUnion: [
-              {
-                $filter: {
-                  input: { $ifNull: ["$likedBy", []] },
-                  as: "userId",
-                  cond: { $not: [{ $in: ["$$userId", uniqueGuestIds] }] },
+  try {
+    await MongoReel.updateMany(
+      { likedBy: { $in: uniqueGuestIds } },
+      [
+        {
+          $set: {
+            likedBy: {
+              $setUnion: [
+                {
+                  $filter: {
+                    input: { $ifNull: ["$likedBy", []] },
+                    as: "userId",
+                    cond: { $not: [{ $in: ["$$userId", uniqueGuestIds] }] },
+                  },
                 },
-              },
-              [user.id],
-            ],
+                [user.id],
+              ],
+            },
           },
         },
-      },
-      { $set: { likes: { $size: "$likedBy" } } },
-    ]
-  );
+        { $set: { likes: { $size: "$likedBy" } } },
+      ],
+      { updatePipeline: true }
+    );
+  } catch (err) {
+    console.warn("⚠️ [migrateGuestReelInteractions] Error migrando likes de reels:", err);
+  }
 
-  await MongoReel.updateMany(
-    { "comments.userId": { $in: uniqueGuestIds } },
-    {
-      $set: {
-        "comments.$[comment].userId": user.id,
-        "comments.$[comment].username": user.username,
-        "comments.$[comment].avatar": user.avatar,
+  try {
+    await MongoReel.updateMany(
+      { "comments.userId": { $in: uniqueGuestIds } },
+      {
+        $set: {
+          "comments.$[comment].userId": user.id,
+          "comments.$[comment].username": user.username,
+          "comments.$[comment].avatar": user.avatar,
+        },
       },
-    },
-    { arrayFilters: [{ "comment.userId": { $in: uniqueGuestIds } }] }
-  );
+      { arrayFilters: [{ "comment.userId": { $in: uniqueGuestIds } }] }
+    );
+  } catch (err) {
+    console.warn("⚠️ [migrateGuestReelInteractions] Error migrando comentarios en reels:", err);
+  }
 }
 
 export async function migrateGuestChatHistory(
@@ -116,24 +125,30 @@ export async function migrateGuestChatHistory(
   const uniqueGuestIds = Array.from(new Set(guestIds.filter((id) => id && id !== userId)));
   if (!MongoChatMessage || uniqueGuestIds.length === 0) return;
 
-  await MongoChatMessage.updateMany(
-    {
-      $or: [
-        { senderId: { $in: uniqueGuestIds } },
-        { receiverId: { $in: uniqueGuestIds } },
-      ],
-    },
-    [
+  try {
+    await MongoChatMessage.updateMany(
       {
-        $set: {
-          senderId: {
-            $cond: [{ $in: ["$senderId", uniqueGuestIds] }, userId, "$senderId"],
-          },
-          receiverId: {
-            $cond: [{ $in: ["$receiverId", uniqueGuestIds] }, userId, "$receiverId"],
+        $or: [
+          { senderId: { $in: uniqueGuestIds } },
+          { receiverId: { $in: uniqueGuestIds } },
+        ],
+      },
+      [
+        {
+          $set: {
+            senderId: {
+              $cond: [{ $in: ["$senderId", uniqueGuestIds] }, userId, "$senderId"],
+            },
+            receiverId: {
+              $cond: [{ $in: ["$receiverId", uniqueGuestIds] }, userId, "$receiverId"],
+            },
           },
         },
-      },
-    ]
-  );
+      ],
+      { updatePipeline: true }
+    );
+  } catch (err) {
+    console.warn("⚠️ [migrateGuestChatHistory] Error migrando historial de chat:", err);
+  }
 }
+
