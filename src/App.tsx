@@ -32,7 +32,7 @@ export default function App() {
       if (route.type === 'product' || route.type === 'shop' || route.type === 'checkout' || route.type === 'cart' || route.type === 'thankyou') {
         return 'shop';
       }
-      if (route.type === 'store' || route.type === 'profile') {
+      if (route.type === 'store' || route.type === 'profile' || route.type === 'login') {
         return 'profile';
       }
       if (route.type === 'messages') {
@@ -392,6 +392,9 @@ export default function App() {
       }
     } else if (currentRoute.type === 'messages') {
       setActiveTab('messages');
+    } else if (currentRoute.type === 'login') {
+      setActiveTab('profile');
+      setSelectedCreatorProfileId(null);
     } else if (currentRoute.type === 'profile') {
       if (typeof window !== 'undefined' && (window.location.pathname.startsWith('/app/movil') || window.location.pathname.startsWith('/movil'))) {
         setActivePlatform('android');
@@ -442,6 +445,7 @@ export default function App() {
   useEffect(() => {
     if (activeTab !== 'profile' || typeof window === 'undefined') return;
     const parsed = parseRoute(window.location.pathname);
+    if (parsed.type === 'login' && (!isLoggedIn || isGuestUser(currentUser))) return;
     const platform = activePlatform === 'android' ? 'android' : 'web';
     const isSavedSubRoute = parsed.type === 'profile' && parsed.profileTab === 'guardado';
     const isCompraSubRoute = parsed.type === 'profile' && parsed.profileTab === 'compra';
@@ -502,7 +506,7 @@ export default function App() {
         navigateTo(expectedPath, { replace: true });
       }
     }
-  }, [activeTab, selectedCreatorProfileId, currentUser, users, activePlatform]);
+  }, [activeTab, selectedCreatorProfileId, currentUser, users, activePlatform, isLoggedIn]);
 
   // App Startup State: Pantallas intermedias eliminadas para renderizado inmediato
   const [isInitialLoading, setIsInitialLoading] = useState(false);

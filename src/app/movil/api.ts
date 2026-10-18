@@ -212,6 +212,15 @@ export const androidApi = {
     return readResponseBody(res);
   },
 
+  loginUser: async (username: string, password: string) => {
+    const res = await androidApiFetch("/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
+    });
+    return readResponseBody(res);
+  },
+
   loginWithEmail: async (email: string) => {
     let res = await androidApiFetch("/auth/email-login", {
       method: "POST",
@@ -230,6 +239,47 @@ export const androidApi = {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
+      });
+    }
+    return readResponseBody(res);
+  },
+
+  registerUser: async (registerData: {
+    name: string;
+    email: string;
+    password?: string;
+    username?: string;
+    avatar?: string;
+    coverPhoto?: string;
+    bio?: string;
+    guestToken?: string;
+    guestId?: string;
+    guestUsername?: string;
+    savedReelIds?: string[];
+    cart?: CartItem[];
+    address?: string;
+    shippingAddress?: string;
+    city?: string;
+    country?: string;
+    phone?: string;
+  }) => {
+    let res = await androidApiFetch("/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(registerData),
+    });
+    if (!res.ok) {
+      res = await fetch("/api/android/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(registerData),
+      });
+    }
+    if (!res.ok) {
+      res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(registerData),
       });
     }
     return readResponseBody(res);
@@ -264,6 +314,14 @@ export const androidApi = {
   getCart: async (userId: string): Promise<{ items: CartItem[] }> => {
     const res = await androidApiFetch(`/cart/${encodeURIComponent(userId)}`);
     return readResponseBody(res);
+  },
+
+  getUserOrders: async (userId: string): Promise<Order[]> => {
+    const res = await androidApiFetch(`/orders?userId=${encodeURIComponent(userId)}`);
+    const data = await readResponseBody(res);
+    if (Array.isArray(data)) return data;
+    if (Array.isArray(data?.purchases)) return data.purchases;
+    throw new Error("El servidor devolvió un formato inesperado al cargar tus compras.");
   },
 
   saveCart: async (userId: string, items: CartItem[]) => {

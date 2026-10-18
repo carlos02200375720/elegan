@@ -5,6 +5,7 @@ import Inicio from "./Inicio";
 import Tienda from "./tienda";
 import SocialPanel from "./SocialPanel";
 import Perfil from "./perfil";
+import PerfilLogin from "./perfil/login";
 import AdminView from "../admin/resumen";
 import { isSuperAdmin } from "../../superAdmin";
 import { motion, AnimatePresence } from "motion/react";
@@ -127,6 +128,8 @@ export default function AndroidApp({
   socket,
 }: AndroidAppProps) {
   const isUserLoggedIn = true;
+  const hasActiveAccount = (isLoggedIn ?? sessionState.isAuthenticated()) && !isGuestUser(currentUser);
+  const requiresLogin = !hasActiveAccount;
   const isHomeActive = activeTab === 'inicio' || activeTab === 'reels';
   const isDarkNavActive = isHomeActive;
   const [navBarHeight, setNavBarHeight] = React.useState(56);
@@ -306,7 +309,45 @@ export default function AndroidApp({
               />
             )}
 
-            {activeTab === 'profile' && (
+            {activeTab === 'profile' &&
+              requiresLogin &&
+              (!selectedCreatorProfileId ||
+                (typeof window !== "undefined" && window.location.pathname.replace(/\/+$/, "") === "/perfil/login")) && (
+              <PerfilLogin
+                currentUser={currentUser}
+                cart={cart}
+                savedReelIds={savedReelIds}
+                onBack={() => {
+                  setSelectedCreatorProfileId(null);
+                  setActiveTab('inicio');
+                  navigateTo('/inicio');
+                }}
+                onSuccess={(user) => {
+                  sessionState.setUser(user);
+                  sessionState.setAuthenticated(true);
+                  sessionState.setUsername(user.username);
+                  setCurrentUser(user);
+                  setIsLoggedIn(true);
+                  setUsers((previous) => {
+                    const existingIndex = previous.findIndex(
+                      (item) =>
+                        item.id === user.id ||
+                        item.username.toLowerCase() === user.username.toLowerCase()
+                    );
+                    if (existingIndex >= 0) {
+                      const next = [...previous];
+                      next[existingIndex] = user;
+                      return next;
+                    }
+                    return [...previous, user];
+                  });
+                  setSelectedCreatorProfileId(null);
+                  navigateTo(getProfilePath(user));
+                }}
+              />
+            )}
+
+            {activeTab === 'profile' && (hasActiveAccount || selectedCreatorProfileId) && (
               <div
                 className="w-full bg-white min-h-screen"
                 id="android-profile-container"
@@ -478,7 +519,7 @@ export default function AndroidApp({
               onClick={() => {
                 setSelectedCreatorProfileId(null);
                 setActiveTab('profile');
-                navigateTo(getProfilePath(currentUser));
+                navigateTo(requiresLogin ? "/perfil/login" : getProfilePath(currentUser));
               }}
               className={`flex flex-col items-center justify-center py-1 px-3 rounded-2xl transition-all active:bg-amber-500/10 cursor-pointer ${
                 activeTab === 'profile'

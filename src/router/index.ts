@@ -12,6 +12,7 @@ export type AppRoute =
   | { type: 'thankyou'; orderId?: string }
   | { type: 'cart' }
   | { type: 'messages' }
+  | { type: 'login' }
   | { type: 'profile'; userId?: string; profileTab?: string }
   | { type: 'admin'; adminTab?: string };
 
@@ -302,6 +303,10 @@ export function parseRoute(pathname: string): AppRoute {
     return { type: 'shop' };
   }
 
+  if (/^\/(?:app\/movil\/)?perfil\/login$/i.test(normalized)) {
+    return { type: 'login' };
+  }
+
   // /tienda/:slug/:productId or /shop/:slug/:productId (two segments)
   const shopTwoSegmentMatch = normalized.match(/^\/(?:tienda|shop)\/([^/]+)\/([^/]+)$/i);
   if (shopTwoSegmentMatch) {
@@ -557,6 +562,8 @@ export function routeToPath(route: AppRoute): string {
       return '/tienda/carrito';
     case 'messages':
       return '/messages';
+    case 'login':
+      return '/perfil/login';
     case 'profile':
       if (route.profileTab === 'guardado') {
         return getProfileSavedPath(route.userId);

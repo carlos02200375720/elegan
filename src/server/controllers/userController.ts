@@ -2,13 +2,18 @@ import { Request, Response } from "express";
 import mongoose from "mongoose";
 import crypto from "crypto";
 import { User, Reel } from "../../types";
-import { MongoUser, MongoReel, MongoProduct, MongoOrder, MongoCart } from "../models";
+import { MongoUser, MongoReel, MongoProduct, MongoOrder, MongoCart, MongoChatMessage } from "../models";
 import { generateId } from "../utils/helpers";
 import { uploadBase64ToGCS } from "../services/mediaStorage";
 import { bucketName } from "../config/storage";
 import { getCachedDefaultAvatar, getCachedDefaultCoverPhoto } from "./settingsController";
 import { formatReelDTO } from "../utils/reelUtils";
 import { getUserCanonicalReelsFromMongo } from "../services/reelService";
+import {
+  mergeGuestCartItems,
+  migrateGuestChatHistory,
+  migrateGuestReelInteractions,
+} from "../utils/guestDataMigration";
 import {
   activeOriginalUserId,
   setActiveOriginalUserId,
@@ -1428,14 +1433,52 @@ export async function registerUser(req: Request, res: Response): Promise<void> {
     }
 
     let guestSavedReels: string[] = [];
-    if (headerGuestToken && mongoose.connection.readyState === 1) {
+    let priorGuest: any = null;
+    const guestId = (req.body?.guestId || req.headers["x-user-id"] || "").toString().trim();
+    const guestUsername = (req.body?.guestUsername || req.headers["x-user-username"] || "").toString().trim();
+
+    if (mongoose.connection.readyState === 1) {
       try {
-        const priorGuest = await MongoUser.findOne({ guestToken: headerGuestToken });
+        const guestOrConditions: any[] = [];
+        if (headerGuestToken) guestOrConditions.push({ guestToken: headerGuestToken });
+        if (guestId && guestId !== "current_user" && guestId !== "user_guest") {
+          guestOrConditions.push({ id: guestId });
+          if (mongoose.isValidObjectId(guestId)) guestOrConditions.push({ _id: guestId });
+        }
+        if (guestUsername && guestUsername !== "invitado" && guestUsername !== "guest") {
+          guestOrConditions.push({ username: guestUsername.toLowerCase() });
+        }
+        if (guestOrConditions.length > 0) {
+          priorGuest = await MongoUser.findOne({ isGuest: true, $or: guestOrConditions });
+        }
         if (priorGuest && Array.isArray(priorGuest.savedReelIds)) {
           guestSavedReels = priorGuest.savedReelIds;
         }
-      } catch (e) {}
+      } catch (e) {
+        console.error("Error buscando el perfil invitado para migrar:", e);
+        res.status(500).json({ error: "No se pudo localizar la información de invitado para migrarla." });
+        return;
+      }
     }
+
+    const clientSavedReelIds = Array.isArray(req.body?.savedReelIds) ? req.body.savedReelIds : [];
+    const mergedSavedReels = Array.from(new Set([...guestSavedReels, ...clientSavedReelIds]));
+
+    const guestIdCandidates = Array.from(new Set([
+      guestId,
+      priorGuest?.id,
+      priorGuest?.guestToken,
+      priorGuest?._id?.toString()
+    ])).filter((id): id is string =>
+      Boolean(id && id.trim() && !["current_user", "user_guest", "usuario_invitado", "usuario_actual"].includes(id))
+    );
+
+    const guestUsernameCandidates = Array.from(new Set([
+      guestUsername,
+      priorGuest?.username
+    ])).filter((username): username is string =>
+      Boolean(username && username.trim() && !["invitado", "guest", "current_user", "usuario_actual"].includes(username.toLowerCase()))
+    );
 
     const newUserId = "user_" + generateId();
     const newUser: User = {
@@ -1444,18 +1487,22 @@ export async function registerUser(req: Request, res: Response): Promise<void> {
       name: String(name).trim(),
       username: cleanUsername,
       email: cleanEmail,
-      bio: bio || "Nuevo creador de contenido en la plataforma",
+      bio: bio || priorGuest?.bio || "Nuevo creador de contenido en la plataforma",
       avatar: resolvedAvatar,
       coverPhoto: resolvedCoverPhoto,
       followers: 0,
-      following: 0,
-      followingUserIds: [],
-      savedReelIds: guestSavedReels,
-      guestToken: headerGuestToken || undefined,
+      following: priorGuest?.followingUserIds?.length || 0,
+      followingUserIds: priorGuest?.followingUserIds || [],
+      savedReelIds: mergedSavedReels,
       isOnline: true,
       password: password || "",
       isGuest: false,
-      canSell: false
+      canSell: false,
+      address: req.body?.address || priorGuest?.address || "",
+      shippingAddress: req.body?.shippingAddress || req.body?.address || priorGuest?.shippingAddress || priorGuest?.address || "",
+      city: req.body?.city || priorGuest?.city || "",
+      country: req.body?.country || priorGuest?.country || "República Dominicana",
+      phone: req.body?.phone || priorGuest?.phone || "",
     };
 
     if (mongoose.connection.readyState !== 1) {
@@ -1472,6 +1519,86 @@ export async function registerUser(req: Request, res: Response): Promise<void> {
     console.log(`💾 Successfully registered exactly 1 user @${newUser.username} (${newUser.email}) with id=${newUser.id} in MongoDB Atlas!`);
     setActiveOriginalUserId(newUser.id);
 
+    // Migración de pedidos del invitado
+    let migratedOrders: any[] = [];
+    if (MongoOrder) {
+      try {
+        const orderOrQueries: any[] = [
+          { buyerId: { $in: guestIdCandidates } },
+          { userId: { $in: guestIdCandidates } },
+          { buyerUsername: { $in: guestUsernameCandidates } },
+          ...guestUsernameCandidates.map((guestName) => ({
+            buyerUsername: { $regex: new RegExp(`^${guestName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "i") },
+          })),
+        ];
+        if (cleanEmail) {
+          const escapedEmail = cleanEmail.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+          orderOrQueries.push({ buyerEmail: { $regex: new RegExp(`^${escapedEmail}$`, "i") } });
+          orderOrQueries.push({ "buyer.email": { $regex: new RegExp(`^${escapedEmail}$`, "i") } });
+          orderOrQueries.push({ "contactInfo.email": { $regex: new RegExp(`^${escapedEmail}$`, "i") } });
+        }
+
+        await MongoOrder.updateMany(
+          { $or: orderOrQueries },
+          {
+            $set: {
+              buyerId: newUser.id,
+              buyerName: newUser.name,
+              buyerUsername: newUser.username,
+              buyerEmail: newUser.email || cleanEmail
+            }
+          }
+        );
+
+        migratedOrders = await MongoOrder.find({
+          $or: [
+            { buyerId: newUser.id },
+            { buyerUsername: newUser.username },
+            ...(cleanEmail ? [{ buyerEmail: cleanEmail }] : [])
+          ]
+        }).sort({ createdAt: -1 }).lean();
+        console.log(`📦 [Server Register] Migrados ${migratedOrders.length} pedidos a @${newUser.username}`);
+      } catch (ordErr) {
+        console.error("Error migrando pedidos en registerUser:", ordErr);
+        throw ordErr;
+      }
+    }
+
+    // Migración de carrito del invitado
+    let userCart: any[] = [];
+    if (MongoCart) {
+      try {
+        const priorCarts = await MongoCart.find({ userId: { $in: guestIdCandidates } }).lean();
+        const clientCart = Array.isArray(req.body?.cart) ? req.body.cart : [];
+        const mergedCart = mergeGuestCartItems([
+          ...priorCarts.map((priorCart: any) => priorCart.items),
+          clientCart,
+        ]);
+        if (mergedCart.length > 0) {
+          await MongoCart.findOneAndUpdate(
+            { userId: newUser.id },
+            { $set: { items: mergedCart, updatedAt: new Date() } },
+            { upsert: true, returnDocument: "after" }
+          );
+          userCart = mergedCart;
+        }
+      } catch (cartErr) {
+        console.error("Error migrando carrito en registerUser:", cartErr);
+        throw cartErr;
+      }
+    }
+
+    await migrateGuestReelInteractions(MongoReel, guestIdCandidates, newUser);
+    await migrateGuestChatHistory(MongoChatMessage, guestIdCandidates, newUser.id);
+
+    if (MongoCart) {
+      await MongoCart.deleteMany({ userId: { $in: guestIdCandidates.filter(id => id !== newUser.id) } });
+    }
+
+    if (priorGuest && priorGuest._id && priorGuest._id.toString() !== newUserId) {
+      await MongoUser.deleteOne({ _id: priorGuest._id, isGuest: true });
+    }
+
     const returnedUser = {
       ...newUser,
       id: newUser.id,
@@ -1479,7 +1606,14 @@ export async function registerUser(req: Request, res: Response): Promise<void> {
       isGuest: false
     };
 
-    res.status(201).json({ success: true, user: returnedUser });
+    res.status(201).json({
+      success: true,
+      user: returnedUser,
+      orders: migratedOrders,
+      cart: userCart,
+      savedReelIds: returnedUser.savedReelIds || [],
+      message: `¡Cuenta creada exitosamente! Tus datos han sido vinculados a tu nuevo perfil.`
+    });
   } catch (err: any) {
     if (err.code === 11000) {
       console.warn("⚠️ Duplicate key collision caught in MongoDB registration:", err.message);

@@ -12,7 +12,12 @@ import {
   getUserCanonicalReelsFromMongo,
 } from "./services/reelService";
 import { isConfiguredSuperadmin, handleGuestSession } from "./controllers/userController";
-import { MongoCart } from "./models";
+import { MongoCart, MongoChatMessage } from "./models";
+import {
+  mergeGuestCartItems,
+  migrateGuestChatHistory,
+  migrateGuestReelInteractions,
+} from "./utils/guestDataMigration";
 
 export interface AndroidRouterDependencies {
   MongoUser: any;
@@ -369,14 +374,14 @@ export function createAndroidRouter(deps: AndroidRouterDependencies): Router {
       }
 
       const expectedPassword = targetUser.password || "";
-      if (expectedPassword && password && expectedPassword !== password && password !== "123") {
+      if (!expectedPassword || !password || expectedPassword !== String(password).trim()) {
         res.status(401).json({ error: "Contraseña incorrecta. Verifica tus datos de acceso." });
         return;
       }
 
       const androidUser: User = {
         id: targetUser.id,
-        originalId: targetUser._id ? targetUser._id.toString() : targetUser.id,
+        originalId: targetUser.id || (targetUser._id ? targetUser._id.toString() : targetUser.id),
         username: targetUser.username,
         name: targetUser.name,
         bio: targetUser.bio || "",
@@ -402,28 +407,56 @@ export function createAndroidRouter(deps: AndroidRouterDependencies): Router {
     }
   });
 
-  // Android Auth: Register
+  // Android Auth: Register with Automatic Guest Data Migration
   const pendingAndroidRegistrations = new Set<string>();
 
   const handleAndroidRegister = async (req: Request, res: Response) => {
-    const { username, targetUsername, name, email, password, avatar, coverPhoto, bio } = req.body;
+    const { username, targetUsername, name, email, password, avatar, coverPhoto, bio, address, shippingAddress, city, country, phone } = req.body;
     if (!name || !String(name).trim()) {
       res.status(400).json({ error: "El nombre es obligatorio" });
       return;
     }
 
     const headerGuestToken = (req.headers["x-guest-token"] as string || req.body?.guestToken || "").trim();
+    const guestId = (req.body?.guestId || req.headers["x-user-id"] || "").toString().trim();
+    const guestUsername = (req.body?.guestUsername || req.headers["x-user-username"] || "").toString().trim();
+
+    if (mongoose.connection.readyState !== 1) {
+      res.status(503).json({
+        error: "La base de datos no está disponible. No podemos crear la cuenta sin migrar los datos del invitado.",
+        code: "DATABASE_NOT_CONNECTED",
+      });
+      return;
+    }
+
     let rawUsername = username || targetUsername;
     let cleanUsername = String(rawUsername || "").trim().toLowerCase().replace(/\s+/g, "").replace(/^@/, "");
 
+    let priorGuest: any = null;
+    if (mongoose.connection.readyState === 1) {
+      try {
+        const guestOrConditions: any[] = [];
+        if (headerGuestToken) guestOrConditions.push({ guestToken: headerGuestToken });
+        if (guestId && guestId !== "current_user" && guestId !== "user_guest") {
+          guestOrConditions.push({ id: guestId });
+          if (mongoose.isValidObjectId(guestId)) guestOrConditions.push({ _id: guestId });
+        }
+        if (guestUsername && guestUsername !== "invitado" && guestUsername !== "guest") {
+          guestOrConditions.push({ username: guestUsername.toLowerCase() });
+        }
+        if (guestOrConditions.length > 0) {
+          priorGuest = await MongoUser.findOne({ isGuest: true, $or: guestOrConditions });
+        }
+      } catch (e) {
+        console.error("Error buscando el perfil invitado para migrar:", e);
+        res.status(500).json({ error: "No se pudo localizar la información de invitado para migrarla." });
+        return;
+      }
+    }
+
     if (!cleanUsername || cleanUsername === "invitado" || cleanUsername === "current_user") {
-      if (headerGuestToken && mongoose.connection.readyState === 1) {
-        try {
-          const priorGuest = await MongoUser.findOne({ guestToken: headerGuestToken });
-          if (priorGuest?.username && priorGuest.username !== "invitado") {
-            cleanUsername = priorGuest.username.toLowerCase();
-          }
-        } catch (e) {}
+      if (priorGuest?.username && priorGuest.username !== "invitado") {
+        cleanUsername = priorGuest.username.toLowerCase();
       }
     }
 
@@ -453,48 +486,70 @@ export function createAndroidRouter(deps: AndroidRouterDependencies): Router {
     pendingAndroidRegistrations.add(cleanUsername);
 
     try {
-      if (mongoose.connection.readyState === 1) {
-        await MongoUser.deleteMany({
-          $or: [
-            { id: "current_user" },
-            { id: "usuario_actual" },
-            { id: "user_guest" }
-          ]
-        });
-
-        const existing = await MongoUser.findOne({
-          $or: [
-            { username: cleanUsername },
-            ...(cleanEmail ? [{ email: cleanEmail }] : [])
-          ],
-        });
-        if (existing) {
-          const isSelfGuest = (headerGuestToken && existing.guestToken === headerGuestToken) || (existing.isGuest && existing.username === cleanUsername);
-          if (isSelfGuest) {
-            await MongoUser.deleteOne({ _id: existing._id }).catch(() => {});
-          } else {
-            res.status(409).json({ error: "El nombre de usuario o correo ya está registrado" });
-            return;
-          }
+      const existing = await MongoUser.findOne({
+        $or: [
+          { username: cleanUsername },
+          ...(cleanEmail ? [{ email: cleanEmail }] : [])
+        ],
+      });
+      if (existing) {
+        const isSelfGuest = (headerGuestToken && existing.guestToken === headerGuestToken) ||
+          (existing.isGuest && existing.username === cleanUsername) ||
+          (priorGuest && existing._id.toString() === priorGuest._id.toString());
+        if (isSelfGuest) {
+          await MongoUser.deleteOne({ _id: existing._id, isGuest: true });
+        } else {
+          res.status(409).json({ error: "El nombre de usuario o correo ya está registrado con otra cuenta." });
+          return;
         }
       }
 
+      // 1. Recopilar IDs y nombres de usuario del invitado para migración integral
+      const guestIdCandidates = Array.from(new Set([
+        guestId,
+        priorGuest?.id,
+        priorGuest?.guestToken,
+        priorGuest?._id?.toString()
+      ])).filter((id): id is string =>
+        Boolean(id && id.trim() && !["current_user", "user_guest", "usuario_invitado", "usuario_actual"].includes(id))
+      );
+
+      const guestUsernameCandidates = Array.from(new Set([
+        guestUsername,
+        priorGuest?.username
+      ])).filter((username): username is string =>
+        Boolean(username && username.trim() && !["invitado", "guest", "current_user", "usuario_actual"].includes(username.toLowerCase()))
+      );
+
+      // 2. Unificar reels guardados y seguidos
+      const clientSavedReelIds = Array.isArray(req.body?.savedReelIds) ? req.body.savedReelIds : [];
+      const guestSavedReelIds = Array.isArray(priorGuest?.savedReelIds) ? priorGuest.savedReelIds : [];
+      const mergedSavedReels = Array.from(new Set([...guestSavedReelIds, ...clientSavedReelIds]));
+
+      const guestFollowing = Array.isArray(priorGuest?.followingUserIds) ? priorGuest.followingUserIds : [];
+
+      // 3. Crear el nuevo usuario registrado
       const newUserId = "user_" + generateId();
       const newUser: User = {
         id: newUserId,
         originalId: newUserId,
         username: cleanUsername,
         name: String(name).trim(),
-        avatar: avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80",
-        coverPhoto: coverPhoto || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80",
-        bio: (bio && String(bio).trim()) || "Nuevo creador en MallSocial",
+        avatar: avatar || priorGuest?.avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80",
+        coverPhoto: coverPhoto || priorGuest?.coverPhoto || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80",
+        bio: (bio && String(bio).trim()) || priorGuest?.bio || "Miembro de MallSocial",
         followers: 0,
-        following: 0,
-        followingUserIds: [],
-        savedReelIds: [],
+        following: guestFollowing.length,
+        followingUserIds: guestFollowing,
+        savedReelIds: mergedSavedReels,
         isGuest: false,
         isOnline: true,
         email: cleanEmail || "",
+        address: address || priorGuest?.address || "",
+        shippingAddress: shippingAddress || address || priorGuest?.shippingAddress || priorGuest?.address || "",
+        city: city || priorGuest?.city || "",
+        country: country || priorGuest?.country || "República Dominicana",
+        phone: phone || priorGuest?.phone || "",
       };
 
       const isAdminUser = isConfiguredSuperadmin(newUser);
@@ -510,8 +565,97 @@ export function createAndroidRouter(deps: AndroidRouterDependencies): Router {
         await mongoUser.save();
       }
 
-      console.log(`📱 [Android Gateway] Nuevo usuario registrado en Atlas: @${newUser.username}`);
-      res.json({ success: true, user: newUser, token: `android_token_${generateId()}` });
+      // 4. MIGRACIÓN DE PEDIDOS (Órdenes de compra previas del invitado)
+      let migratedOrders: any[] = [];
+      if (MongoOrder) {
+        const orderOrQueries: any[] = [
+          { buyerId: { $in: guestIdCandidates } },
+          { userId: { $in: guestIdCandidates } },
+          { buyerUsername: { $in: guestUsernameCandidates } },
+          ...guestUsernameCandidates.map((guestName) => ({
+            buyerUsername: {
+              $regex: new RegExp(`^${guestName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "i"),
+            },
+          })),
+        ];
+
+        if (cleanEmail) {
+          const escapedEmail = cleanEmail.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+          orderOrQueries.push({ buyerEmail: { $regex: new RegExp(`^${escapedEmail}$`, "i") } });
+          orderOrQueries.push({ "buyer.email": { $regex: new RegExp(`^${escapedEmail}$`, "i") } });
+          orderOrQueries.push({ "contactInfo.email": { $regex: new RegExp(`^${escapedEmail}$`, "i") } });
+        }
+
+        const updateResult = await MongoOrder.updateMany(
+          { $or: orderOrQueries },
+          {
+            $set: {
+              buyerId: newUser.id,
+              buyerName: newUser.name,
+              buyerUsername: newUser.username,
+              buyerEmail: newUser.email || cleanEmail,
+            },
+          }
+        );
+
+        migratedOrders = await MongoOrder.find({
+          $or: [
+            { buyerId: newUser.id },
+            { buyerUsername: newUser.username },
+            ...(cleanEmail ? [{ buyerEmail: cleanEmail }] : []),
+          ],
+        }).sort({ createdAt: -1 }).lean();
+
+        console.log(
+          `📦 [Android Gateway] Migradas ${migratedOrders.length} órdenes (actualizadas: ${updateResult.modifiedCount || 0}) a @${newUser.username}`
+        );
+      }
+
+      // 5. MIGRACIÓN DEL CARRITO DE COMPRAS
+      let userCart: any[] = [];
+      if (MongoCart) {
+        const priorCarts = await MongoCart.find({ userId: { $in: guestIdCandidates } }).lean();
+        const clientCart = Array.isArray(req.body?.cart) ? req.body.cart : [];
+        const mergedCartItems = mergeGuestCartItems([
+          ...priorCarts.map((priorCart: any) => priorCart.items),
+          clientCart,
+        ]);
+
+        if (mergedCartItems.length > 0) {
+          await MongoCart.findOneAndUpdate(
+            { userId: newUser.id },
+            { $set: { items: mergedCartItems, updatedAt: new Date() } },
+            { upsert: true, returnDocument: "after" }
+          );
+          userCart = mergedCartItems;
+        }
+      }
+
+      // 6. MIGRACIÓN DE INTERACCIONES (Likes y comentarios en reels)
+      await migrateGuestReelInteractions(MongoReel, guestIdCandidates, newUser);
+      await migrateGuestChatHistory(MongoChatMessage, guestIdCandidates, newUser.id);
+
+      if (MongoCart) {
+        await MongoCart.deleteMany({ userId: { $in: guestIdCandidates.filter(id => id !== newUser.id) } });
+      }
+
+      if (priorGuest?._id) {
+        await MongoUser.deleteOne({ _id: priorGuest._id, isGuest: true });
+      }
+
+      console.log(`📱 [Android Gateway] Usuario registrado exitosamente con migración completa: @${newUser.username} (Pedidos: ${migratedOrders.length}, Carrito: ${userCart.length})`);
+
+      res.json({
+        success: true,
+        user: newUser,
+        orders: migratedOrders,
+        cart: userCart,
+        savedReelIds: newUser.savedReelIds || [],
+        token: `android_token_${generateId()}`,
+        message: migratedOrders.length > 0
+          ? `¡Bienvenido/a, ${newUser.name}! Tu cuenta ha sido creada y se migraron ${migratedOrders.length} compra(s) y tus publicaciones guardadas.`
+          : `¡Bienvenido/a, ${newUser.name}! Tu cuenta ha sido creada exitosamente.`
+      });
     } catch (err: any) {
       if (err.code === 11000) {
         res.status(409).json({ error: "El nombre de usuario o correo ya está registrado en la base de datos." });
@@ -1096,7 +1240,7 @@ export function createAndroidRouter(deps: AndroidRouterDependencies): Router {
 
       const newComment = {
         id: "com_" + generateId(),
-        userId: userId || "user",
+        userId: userId || req.headers["x-user-id"] || req.headers["x-guest-token"] || "user",
         username: username || "usuario",
         avatar: avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80",
         text: text.trim(),

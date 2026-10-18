@@ -2,11 +2,11 @@ import React, { useState, useEffect } from "react";
 import { StatusBar, Style } from "@capacitor/status-bar";
 import { Capacitor } from "@capacitor/core";
 import { User, Reel, Product, Order, isGuestUser } from "../../../types";
-import { Play, ShoppingBag, Bookmark, Settings, LogOut, Edit3, Grid, Camera, Check, Sparkles, UserPlus, UserCheck, X, ExternalLink, Package, Plus, Trash2, ShieldCheck, Truck, Mail } from "lucide-react";
+import { Play, ShoppingBag, Bookmark, Settings, LogOut, Edit3, Grid, Camera, Check, Sparkles, UserPlus, UserCheck, X, ExternalLink, Package, Plus, Trash2, ShieldCheck, Truck } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { androidApiFetch } from "../api";
-import AndroidUserPublicationsFeed from "../components/AndroidUserPublicationsFeed";
-import AndroidPublicationCover from "../components/AndroidPublicationCover";
+import AndroidUserPublicationsFeed from "../components/Feedperfil";
+import AndroidPublicationCover from "../components/miniaturapublicacion";
 import AndroidPublishView from "../publicasion";
 import { isSuperAdmin } from "../../../superAdmin";
 import { navigateTo, parseRoute, getProfilePath, getProfileSavedPath, getProfileCompraPath, getProfileConfigPath, getProfileProductoPath, getProfilePublicacionesPath, getProfilePublicarPath } from "../../../router";
@@ -16,7 +16,6 @@ import { formatPrice } from "../../../utils/currency";
 import GuardadoPerfilView from "./guardado";
 import CompraPerfilView from "./compra";
 import ConfigPerfilView from "./config";
-import AndroidEmailLoginModal from "../components/AndroidEmailLoginModal";
 
 export interface AndroidPerfilProps {
   user?: User;
@@ -155,7 +154,6 @@ export default function Perfil({
   });
 
   const [selectedFeedReelId, setSelectedFeedReelId] = useState<string | null>(null);
-  const [isEmailLoginOpen, setIsEmailLoginOpen] = useState(false);
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(() => {
     if (typeof window !== "undefined") {
       const parsed = parseRoute(window.location.pathname);
@@ -441,15 +439,6 @@ export default function Perfil({
             {isMe ? (
               <>
                 <button
-                  type="button"
-                  onClick={() => setIsEmailLoginOpen(true)}
-                  className="px-3 py-2 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200/80 rounded-xl text-xs font-bold flex items-center space-x-1.5 active:scale-95 transition-transform cursor-pointer shadow-2xs"
-                  title="Recuperar perfil o iniciar sesión con correo"
-                >
-                  <Mail className="w-3.5 h-3.5 text-amber-600" />
-                  <span>Iniciar Sesión</span>
-                </button>
-                <button
                   onClick={() => {
                     setIsEditProfileOpen(true);
                     navigateTo(getProfileConfigPath(activeUser));
@@ -468,7 +457,6 @@ export default function Perfil({
                     <span>Publicar</span>
                   </button>
                 )}
-              </>
             ) : (
               <div className="flex items-center space-x-2">
                 {onBackToSelf && (
@@ -524,25 +512,37 @@ export default function Perfil({
           )}
         </div>
 
-        {/* Banner para usuarios que perdieron su celular o usan otro dispositivo */}
+        {/* Banner para usuarios que navegan como invitado */}
         {isMe && (!activeUser.email || isGuestUser(activeUser)) && (
-          <div className="mt-3 p-3 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/80 rounded-2xl flex items-center justify-between gap-3 shadow-2xs">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-700 flex items-center justify-center shrink-0">
+          <div className="mt-3 p-3.5 bg-gradient-to-br from-amber-50 via-orange-50 to-amber-100/60 border border-amber-200/90 rounded-2xl shadow-xs">
+            <div className="flex items-start gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-700 flex items-center justify-center shrink-0 mt-0.5">
                 <Sparkles className="w-4 h-4" />
               </div>
-              <div>
-                <p className="text-xs font-black text-slate-900 leading-tight">¿Ya tenías cuenta en otro celular?</p>
-                <p className="text-[10px] text-slate-600">Inicia sesión con tu correo para recuperar compras, carrito y datos.</p>
+              <div className="flex-1">
+                <p className="text-xs font-black text-slate-900 leading-tight">Estás navegando como Invitado</p>
+                <p className="text-[11px] text-slate-600 mt-0.5 leading-snug">
+                  Regístrate para guardar todas tus compras, carrito y videos favoritos, o inicia sesión si ya tienes cuenta.
+                </p>
               </div>
             </div>
-            <button
-              type="button"
-              onClick={() => setIsEmailLoginOpen(true)}
-              className="px-3 py-1.5 bg-slate-950 hover:bg-slate-900 text-white font-bold text-[11px] rounded-xl shrink-0 active:scale-95 transition-transform cursor-pointer shadow-sm"
-            >
-              Recuperar
-            </button>
+            <div className="flex items-center gap-2 mt-3 pt-2.5 border-t border-amber-200/60">
+              <button
+                type="button"
+                onClick={() => navigateTo("/perfil/login?mode=register")}
+                className="flex-1 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs rounded-xl active:scale-95 transition-transform cursor-pointer shadow-xs flex items-center justify-center gap-1.5"
+              >
+                <UserPlus className="w-3.5 h-3.5" />
+                <span>Crear Cuenta y Guardar Mis Datos</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => navigateTo("/perfil/login?mode=login")}
+                className="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-800 border border-amber-200 font-bold text-xs rounded-xl active:scale-95 transition-transform cursor-pointer"
+              >
+                Ya tengo cuenta
+              </button>
+            </div>
           </div>
         )}
 
@@ -834,15 +834,6 @@ export default function Perfil({
         )}
       </AnimatePresence>
 
-      {/* Modal para iniciar sesión con correo y recuperar cuenta */}
-      <AndroidEmailLoginModal
-        isOpen={isEmailLoginOpen}
-        onClose={() => setIsEmailLoginOpen(false)}
-        onLoginSuccess={(data) => {
-          if (onProfileUpdate) onProfileUpdate(data.user);
-          if (onUpdateUser) onUpdateUser(data.user);
-        }}
-      />
     </div>
   );
 }

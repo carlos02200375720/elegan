@@ -37,15 +37,21 @@ export interface User {
  */
 export function isGuestUser(user?: Partial<User> | null): boolean {
   if (!user) return true;
-  // If the user is identified by their persistent token in the database, they are an authenticated user
-  if (user.guestToken) return false;
   if (user.isGuest === false) return false;
-  if (user.id && user.id !== "guest" && !user.id.startsWith("guest_") && user.id !== "current_user") return false;
-  return false;
+  return Boolean(
+    user.isGuest === true ||
+    user.id === "guest" ||
+    user.id === "current_user" ||
+    user.id?.startsWith("guest_") ||
+    user.username === "invitado" ||
+    user.username === "guest" ||
+    user.username?.startsWith("invitado_")
+  );
 }
 
 export interface Comment {
   id: string;
+  userId?: string;
   username: string;
   avatar: string;
   text: string;

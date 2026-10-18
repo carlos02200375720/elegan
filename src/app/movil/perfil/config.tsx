@@ -17,7 +17,7 @@ import {
 import { motion, AnimatePresence } from "motion/react";
 import { androidApiFetch } from "../api";
 import { isSuperAdmin } from "../../../superAdmin";
-import AndroidEmailLoginModal from "../components/AndroidEmailLoginModal";
+import { navigateTo } from "../../../router";
 
 export interface ConfigPerfilProps {
   activeUser: User;
@@ -55,8 +55,6 @@ export function ConfigPerfilView({
   const [editAvatar, setEditAvatar] = useState(activeUser.avatar || currentUser.avatar || "");
   const [isSaving, setIsSaving] = useState(false);
   const [statusMessage, setStatusMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
-  const [isEmailLoginOpen, setIsEmailLoginOpen] = useState(false);
-
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // Manejar selección de foto desde la galería local del celular o navegador
@@ -369,35 +367,35 @@ export function ConfigPerfilView({
                 )}
               </button>
 
-              {/* Sección para recuperar cuenta previa o iniciar sesión en otro celular */}
+              {/* Sección para registrar cuenta o iniciar sesión previa */}
               <div className="pt-3 border-t border-slate-100 flex items-center justify-between gap-3 bg-slate-50 p-3 rounded-2xl border border-slate-200/80">
                 <div>
-                  <p className="text-xs font-black text-slate-800">¿Cambiaste de celular?</p>
-                  <p className="text-[10px] text-slate-500">Inicia sesión con tu correo para restaurar tus compras y carrito.</p>
+                  <p className="text-xs font-black text-slate-800">¿Deseas guardar tu cuenta?</p>
+                  <p className="text-[10px] text-slate-500">Crea tu cuenta o inicia sesión para vincular todas tus compras y carrito.</p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setIsEmailLoginOpen(true)}
-                  className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-[11px] rounded-xl shrink-0 active:scale-95 transition-transform cursor-pointer shadow-sm flex items-center gap-1"
-                >
-                  <Sparkles className="w-3 h-3 text-amber-400" />
-                  <span>Iniciar Sesión</span>
-                </button>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => navigateTo("/perfil/login?mode=register")}
+                    className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-[11px] rounded-xl active:scale-95 transition-transform cursor-pointer shadow-xs"
+                  >
+                    Registrarse
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigateTo("/perfil/login?mode=login")}
+                    className="px-2.5 py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-[11px] rounded-xl active:scale-95 transition-transform cursor-pointer shadow-xs flex items-center gap-1"
+                  >
+                    <Sparkles className="w-3 h-3 text-amber-400" />
+                    <span>Entrar</span>
+                  </button>
+                </div>
               </div>
             </form>
           </motion.div>
         </div>
       </AnimatePresence>
 
-      <AndroidEmailLoginModal
-        isOpen={isEmailLoginOpen}
-        onClose={() => setIsEmailLoginOpen(false)}
-        onLoginSuccess={(data) => {
-          if (onProfileUpdate) onProfileUpdate(data.user);
-          if (onUpdateUser) onUpdateUser(data.user);
-          if (onClose) onClose();
-        }}
-      />
     </>
   );
 }

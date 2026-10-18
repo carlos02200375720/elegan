@@ -4,7 +4,7 @@ import { Heart, MessageCircle, Share2, Bookmark, ShoppingBag, Volume2, VolumeX, 
 import { motion, AnimatePresence } from "motion/react";
 import { MovilVideoPlay, MovilVideoPlayHandle } from "./components/videoplay";
 import { AndroidProgressBar } from "./components/barraprogreso";
-import { MovilHamburgerButton, MovilHamburgerMenu } from "./components/MovilHamburgerMenu";
+import { MovilHamburgerButton, MovilHamburgerMenu } from "./components/menu";
 import { getMediaUrl } from "../../config";
 import { getInicioShareUrl, findReelByInicioParam, navigateTo } from "../../router";
 import { getLocalGuestToken } from "../../utils/guestToken";
