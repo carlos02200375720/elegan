@@ -4,6 +4,7 @@ import { StatusBar, Style } from "@capacitor/status-bar";
 import { User, Reel, Product, CartItem, Order, ChatMessage, LiveSession, NavigationTab, isGuestUser } from "./types";
 import { WebApp, AuthModal } from "./app/web";
 import { AndroidApp } from "./app/movil";
+import AndroidSplashScreen from "./app/movil/SplashScreen";
 import { getApiUrl, getWebSocketUrl, BACKEND_URL, apiFetch } from "./config";
 import { isSuperAdmin } from "./superAdmin";
 import { resolveSupportUser, isSupportAdmin, isSupportAlias, SUPPORT_EMAIL, SUPPORT_USER_ID } from "./utils/supportChat";
@@ -508,8 +509,9 @@ export default function App() {
     }
   }, [activeTab, selectedCreatorProfileId, currentUser, users, activePlatform, isLoggedIn]);
 
-  // App Startup State: Pantallas intermedias eliminadas para renderizado inmediato
-  const [isInitialLoading, setIsInitialLoading] = useState(false);
+  // Android permanece en la pantalla inicial hasta que el catálogo remoto esté listo.
+  const [isInitialLoading, setIsInitialLoading] = useState(() => activePlatform === "android");
+  const [isCatalogAvailable, setIsCatalogAvailable] = useState(false);
   const [splashStatus, setSplashStatus] = useState("");
   const [splashHasError, setSplashHasError] = useState(false);
 
@@ -636,6 +638,9 @@ export default function App() {
       if (Array.isArray(data) && data.length > 0) {
         const unique = deduplicateById(data) as Product[];
         setProducts(unique);
+        setIsCatalogAvailable(true);
+        setSplashHasError(false);
+        if (activePlatform === "android") setIsInitialLoading(false);
       }
     } catch (err) {
       console.error("Error fetching products:", err);
@@ -675,7 +680,9 @@ export default function App() {
   const loadInitialData = async () => {
     setSplashHasError(false);
     setSplashStatus("Cargando contenido...");
+    if (activePlatform === "android") setIsInitialLoading(true);
     loadAttemptsRef.current += 1;
+    let catalogLoaded = false;
 
     try {
       // Step 1: Optional health check ping to wake up container
@@ -757,8 +764,12 @@ export default function App() {
       }
       if (productsSyncCompleted && loadedProducts.length > 0) {
         const uniqueProducts = deduplicateById(loadedProducts) as Product[];
-        setProducts(uniqueProducts);
-        hasLoadedAnyCore = true;
+        if (uniqueProducts.length > 0) {
+          setProducts(uniqueProducts);
+          setIsCatalogAvailable(true);
+          catalogLoaded = true;
+          hasLoadedAnyCore = true;
+        }
       }
 
       // If either feed is empty during boot (e.g. database still connecting), auto-retry in the background
@@ -842,10 +853,20 @@ export default function App() {
         }
       }
 
-      setIsInitialLoading(false);
+      if (activePlatform !== "android" || catalogLoaded || isCatalogAvailable) {
+        setIsInitialLoading(false);
+      } else {
+        setSplashHasError(true);
+        setSplashStatus("El catálogo todavía no está disponible. Comprueba tu conexión.");
+      }
     } catch (error) {
       console.error("Error initializing app data:", error);
-      setIsInitialLoading(false);
+      if (activePlatform === "android" && !catalogLoaded && !isCatalogAvailable) {
+        setSplashHasError(true);
+        setSplashStatus("No se pudo cargar el catálogo. Comprueba tu conexión.");
+      } else {
+        setIsInitialLoading(false);
+      }
     }
   };
 
@@ -853,13 +874,17 @@ export default function App() {
   useEffect(() => {
     loadInitialData();
 
-    // Fallback safety timeout: allow up to 8 seconds for slower mobile networks before clearing splash screen
-    const safetyTimer = setTimeout(() => {
-      setIsInitialLoading(false);
-    }, 8000);
-
-    return () => clearTimeout(safetyTimer);
+    return undefined;
   }, []);
+
+  useEffect(() => {
+    if (activePlatform !== "android" || !isInitialLoading || isCatalogAvailable) return;
+    const timer = setTimeout(() => {
+      setSplashHasError(true);
+      setSplashStatus("El catálogo está tardando. Comprueba tu conexión e inténtalo de nuevo.");
+    }, 8000);
+    return () => clearTimeout(timer);
+  }, [activePlatform, isCatalogAvailable, isInitialLoading]);
 
   // Fetch Private Chats on Active User change
   useEffect(() => {
@@ -1845,8 +1870,16 @@ export default function App() {
   return (
     <div className={`w-full ${isDarkNavActive ? "h-dvh max-h-dvh overflow-hidden bg-slate-950 text-slate-100" : "min-h-screen bg-white text-slate-900"} font-sans flex flex-col justify-between selection:bg-amber-500 selection:text-slate-950`}>
 
+      {activePlatform === "android" && isInitialLoading && (
+        <AndroidSplashScreen
+          statusMessage={splashStatus}
+          hasError={splashHasError}
+          onRetry={loadInitialData}
+        />
+      )}
+
       {/* Botones fijos para alternar rápidamente entre versión Web y versión Móvil / Android */}
-      {typeof window !== "undefined" && !(typeof (window as any).Capacitor !== "undefined" && (window as any).Capacitor?.isNativePlatform?.()) && (
+      {!isInitialLoading && typeof window !== "undefined" && !(typeof (window as any).Capacitor !== "undefined" && (window as any).Capacitor?.isNativePlatform?.()) && (
         <aside
           aria-label="Selector de plataforma"
           className="fixed top-3 right-3 z-[9999] flex items-center bg-slate-950/95 backdrop-blur-md p-1 border border-slate-700/80 rounded-full shadow-2xl text-xs font-semibold text-white select-none transition-all ring-1 ring-white/10"
