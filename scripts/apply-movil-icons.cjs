@@ -18,7 +18,7 @@ const imageGenerator = path.join(__dirname, 'generate-movil-icons.ps1');
 const powershell = process.platform === 'win32' ? 'powershell.exe' : 'pwsh';
 const generation = spawnSync(
   powershell,
-  ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', imageGenerator, sourceIcon, movilResDir],
+  ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', imageGenerator, sourceIcon, movilResDir, androidMainRes],
   { stdio: 'inherit' }
 );
 
