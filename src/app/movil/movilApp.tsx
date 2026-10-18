@@ -73,6 +73,28 @@ export interface AndroidAppProps {
   socket: WebSocket | null;
 }
 
+function cartItemsMatch(left: CartItem, right: CartItem): boolean {
+  const getKey = (item: CartItem) => {
+    const extendedItem = item as CartItem & {
+      selectedOptions?: Record<string, string>;
+      selectedVariantVid?: string;
+      variantId?: string;
+    };
+    const options = extendedItem.selectedOptions && typeof extendedItem.selectedOptions === "object"
+      ? Object.fromEntries(Object.entries(extendedItem.selectedOptions).sort(([a], [b]) => a.localeCompare(b)))
+      : extendedItem.selectedOptions;
+    return JSON.stringify([
+      item.product.id || (item.product as any)._id || item.product.name || item.product,
+      options || null,
+      extendedItem.selectedVariantVid || extendedItem.variantId || null,
+      item.selectedCarrier || null,
+      item.selectedShippingCost || null,
+      item.selectedCountry || null,
+    ]);
+  };
+  return getKey(left) === getKey(right);
+}
+
 export default function AndroidApp({
   activeTab,
   setActiveTab,
@@ -136,6 +158,23 @@ export default function AndroidApp({
   const [cartDrawerRequest, setCartDrawerRequest] = React.useState(0);
   const [isCartPageOpen, setIsCartPageOpen] = React.useState(false);
   const [profileInitialTab, setProfileInitialTab] = React.useState<"reels" | "products" | "saved" | "orders" | undefined>(undefined);
+  const [pendingCheckoutItems, setPendingCheckoutItems] = React.useState<CartItem[] | null>(null);
+
+  const requestCheckoutLogin = (itemsToCheckout: CartItem[]) => {
+    setPendingCheckoutItems(itemsToCheckout);
+    setShopInitialStep('checkout');
+    setActiveTab('profile');
+    navigateTo('/perfil/login?returnTo=checkout');
+  };
+
+  const handleToggleSaveProduct = (productId: string) => {
+    if (requiresLogin) {
+      setActiveTab('profile');
+      navigateTo('/perfil/login?returnTo=shop');
+      return;
+    }
+    handleToggleSaveReel(productId);
+  };
 
   React.useEffect(() => {
     const updateNavHeight = () => {
@@ -236,6 +275,10 @@ export default function AndroidApp({
                   navigateTo('/tienda/catalogo');
                 }}
                 onNavigateToCheckout={(selectedIndices) => {
+                  if (requiresLogin) {
+                    requestCheckoutLogin((selectedIndices || []).map((index) => cart[index]).filter(Boolean));
+                    return;
+                  }
                   setShopInitialStep('checkout');
                   setShopInitialSelectedIndices(selectedIndices || []);
                   setActiveTab('shop');
@@ -274,6 +317,8 @@ export default function AndroidApp({
                 onRemoveFromCart={handleRemoveFromCart}
                 onUpdateCartQuantity={handleUpdateCartQuantity}
                 onCheckout={handleCheckoutCart}
+                requiresLoginForCheckout={requiresLogin}
+                onLoginRequiredForCheckout={requestCheckoutLogin}
                 onCreatorClick={handleCreatorProfileLink}
                 selectedProductDirectly={directSelectedProduct}
                 clearDirectProduct={() => setDirectSelectedProduct(null)}
@@ -305,7 +350,7 @@ export default function AndroidApp({
                 }}
                 cartDrawerRequest={cartDrawerRequest}
                 savedReelIds={savedReelIds}
-                onToggleSave={handleToggleSaveReel}
+                onToggleSave={handleToggleSaveProduct}
               />
             )}
 
@@ -322,7 +367,7 @@ export default function AndroidApp({
                   setActiveTab('inicio');
                   navigateTo('/inicio');
                 }}
-                onSuccess={(user) => {
+                onSuccess={(user, restoredCart = []) => {
                   sessionState.setUser(user);
                   sessionState.setAuthenticated(true);
                   sessionState.setUsername(user.username);
@@ -342,7 +387,27 @@ export default function AndroidApp({
                     return [...previous, user];
                   });
                   setSelectedCreatorProfileId(null);
-                  navigateTo(getProfilePath(user));
+                  const shouldResumeCheckout =
+                    pendingCheckoutItems !== null ||
+                    new URLSearchParams(window.location.search).get('returnTo') === 'checkout';
+                  if (shouldResumeCheckout) {
+                    const selectedIndices = restoredCart.reduce<number[]>((indices, item, index) => {
+                      if (pendingCheckoutItems?.some((pendingItem) => cartItemsMatch(pendingItem, item))) {
+                        indices.push(index);
+                      }
+                      return indices;
+                    }, []);
+                    setShopInitialStep('checkout');
+                    setShopInitialSelectedIndices(selectedIndices);
+                    setActiveTab('shop');
+                    setPendingCheckoutItems(null);
+                    navigateTo('/tienda/verificacion');
+                  } else if (new URLSearchParams(window.location.search).get('returnTo') === 'shop') {
+                    setActiveTab('shop');
+                    navigateTo(directSelectedProduct ? getProductPath(directSelectedProduct) : '/tienda/catalogo');
+                  } else {
+                    navigateTo(getProfilePath(user));
+                  }
                 }}
               />
             )}

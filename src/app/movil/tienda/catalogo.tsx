@@ -51,6 +51,8 @@ export interface AndroidShopProps {
     itemsToCheckout?: CartItem[],
     buyerInfo?: { buyerName?: string; buyerEmail?: string; buyerPhone?: string }
   ) => void;
+  requiresLoginForCheckout?: boolean;
+  onLoginRequiredForCheckout?: (itemsToCheckout: CartItem[]) => void;
   onNavigateToHistory?: () => void;
   onToggleDetailView?: (open: boolean) => void;
   onToggleCart?: (open: boolean) => void;
@@ -183,6 +185,8 @@ export default function Catalogo({
   clearDirectProduct,
   onClearInitialProduct,
   onCheckout,
+  requiresLoginForCheckout = false,
+  onLoginRequiredForCheckout,
   isLoading = false,
   onRefreshProducts,
   cartDrawerRequest = 0,
@@ -1040,6 +1044,10 @@ export default function Catalogo({
           }
         }}
         onProceedToCheckout={() => {
+          if (requiresLoginForCheckout) {
+            onLoginRequiredForCheckout?.(selectedCartItems);
+            return;
+          }
           setIsCartOpen(false);
           setShowCheckoutPage(true);
           navigateTo("/tienda/verificacion");

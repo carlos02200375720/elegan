@@ -12,7 +12,7 @@ interface PerfilLoginProps {
   cart: CartItem[];
   savedReelIds: string[];
   onBack: () => void;
-  onSuccess: (user: User) => void;
+  onSuccess: (user: User, restoredCart?: CartItem[]) => void;
 }
 
 export default function PerfilLogin({
@@ -64,7 +64,7 @@ export default function PerfilLogin({
     if (restoredCart) {
       window.dispatchEvent(new CustomEvent("mall_cart_updated", { detail: restoredCart }));
     }
-    onSuccess(user);
+    onSuccess(user, restoredCart);
   };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -125,14 +125,30 @@ export default function PerfilLogin({
       }
 
       const userId = response.user.originalId || response.user.id;
-      const [cartResponse, ordersResponse] = await Promise.all([
+      const guestToken = getLocalGuestToken() || currentUser.guestToken;
+      const [cartResponse, ordersResponse, guestCartResponse] = await Promise.all([
         androidApi.getCart(userId),
         androidApi.getUserOrders(userId),
+        guestToken && guestToken !== userId
+          ? androidApi.getCart(guestToken).catch(() => ({ items: [] }))
+          : Promise.resolve({ items: [] }),
       ]);
+      const restoredCart = mergeCartItems([
+        Array.isArray(cartResponse?.items) ? cartResponse.items : [],
+        Array.isArray(guestCartResponse?.items) ? guestCartResponse.items : [],
+        cart,
+      ]);
+      if (restoredCart.length > 0) {
+        try {
+          await androidApi.saveCart(userId, restoredCart);
+        } catch (cartError) {
+          console.warn("No se pudo sincronizar el carrito recuperado con la cuenta:", cartError);
+        }
+      }
       finishAuthentication(
         response.user,
         ordersResponse,
-        Array.isArray(cartResponse?.items) ? cartResponse.items : [],
+        restoredCart,
         response.user.savedReelIds
       );
     } catch (authError) {
@@ -298,4 +314,34 @@ export default function PerfilLogin({
       </div>
     </main>
   );
+}
+
+function mergeCartItems(sources: CartItem[][]): CartItem[] {
+  const merged = new Map<string, CartItem>();
+  for (const source of sources) {
+    for (const item of source) {
+      if (!item?.product) continue;
+      const extendedItem = item as CartItem & {
+        selectedOptions?: Record<string, string>;
+        selectedVariantVid?: string;
+        variantId?: string;
+      };
+      const options = extendedItem.selectedOptions && typeof extendedItem.selectedOptions === "object"
+        ? Object.fromEntries(Object.entries(extendedItem.selectedOptions).sort(([left], [right]) => left.localeCompare(right)))
+        : extendedItem.selectedOptions;
+      const key = JSON.stringify([
+        item.product.id || (item.product as any)._id || item.product.name || item.product,
+        options || null,
+        extendedItem.selectedVariantVid || extendedItem.variantId || null,
+        item.selectedCarrier || null,
+        item.selectedShippingCost || null,
+        item.selectedCountry || null,
+      ]);
+      const previous = merged.get(key);
+      if (!previous || Number(item.quantity || 0) > Number(previous.quantity || 0)) {
+        merged.set(key, item);
+      }
+    }
+  }
+  return Array.from(merged.values());
 }
