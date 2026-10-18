@@ -142,7 +142,7 @@ export async function commentReel(req: Request, res: Response): Promise<void> {
     return;
   }
 
-  const { username, avatar, text } = req.body;
+  const { userId, username, avatar, text } = req.body;
   if (!text) {
     res.status(400).json({ error: "Comment text is required" });
     return;
@@ -155,6 +155,7 @@ export async function commentReel(req: Request, res: Response): Promise<void> {
 
   const newComment: Comment = {
     id: "c_" + generateId(),
+    userId: userId || req.headers["x-user-id"] as string || req.headers["x-guest-token"] as string,
     username: resolvedUsername,
     avatar: resolvedAvatar,
     text,
