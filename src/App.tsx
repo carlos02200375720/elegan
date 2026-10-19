@@ -561,9 +561,10 @@ export default function App() {
 
   // Synchronize status bar and native bottom navigation bar color dynamically
   useEffect(() => {
+    const isLogin = currentRoute.type === "login";
     const isDark = activeTab === 'inicio' || activeTab === 'reels';
     const currentThemeColor = isDark ? "#000000" : "#ffffff";
-    const statusBarStyle = isDark ? "black-translucent" : "default";
+    const statusBarStyle = isDark || isLogin ? "black-translucent" : "default";
 
     // Update theme-color meta tags for mobile browsers and Android system UI
     const themeMeta = document.getElementById("theme-color-meta") || document.querySelector('meta[name="theme-color"]');
@@ -587,20 +588,26 @@ export default function App() {
     // Sincronizar plugin nativo StatusBar de Capacitor en celulares
     try {
       if (typeof window !== "undefined" && Capacitor.isPluginAvailable("StatusBar")) {
-        if (activeTab === "profile") {
+        if (isLogin) {
+          StatusBar.setOverlaysWebView({ overlay: true }).catch(() => {});
+          StatusBar.setBackgroundColor({ color: "#00000000" }).catch(() => {});
+          StatusBar.setStyle({ style: Style.Light }).catch(() => {});
+        } else if (activeTab === "profile") {
           StatusBar.setOverlaysWebView({ overlay: false }).catch(() => {});
           StatusBar.setBackgroundColor({ color: "#ffffff" }).catch(() => {});
           StatusBar.setStyle({ style: Style.Light }).catch(() => {});
         } else if (isDark) {
+          StatusBar.setOverlaysWebView({ overlay: false }).catch(() => {});
           StatusBar.setBackgroundColor({ color: "#000000" }).catch(() => {});
           StatusBar.setStyle({ style: Style.Dark }).catch(() => {});
         } else {
+          StatusBar.setOverlaysWebView({ overlay: false }).catch(() => {});
           StatusBar.setBackgroundColor({ color: "#ffffff" }).catch(() => {});
           StatusBar.setStyle({ style: Style.Light }).catch(() => {});
         }
       }
     } catch {}
-  }, [activeTab]);
+  }, [activeTab, currentRoute]);
 
   // Refresh functions to ensure feed is live without refreshing browser
   const refreshReels = async () => {

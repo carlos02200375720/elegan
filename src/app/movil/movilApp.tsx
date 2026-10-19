@@ -10,7 +10,7 @@ import AdminView from "../admin/resumen";
 import { isSuperAdmin } from "../../superAdmin";
 import { motion, AnimatePresence } from "motion/react";
 import { sessionState } from "../../utils/sessionState";
-import { navigateTo, getProfilePath, getProfileCompraPath, getProductPath, getInicioPath } from "../../router";
+import { navigateTo, getProfilePath, getProfileCompraPath, getProductPath, getInicioPath, useCurrentRoute } from "../../router";
 
 export interface AndroidAppProps {
   activeTab: NavigationTab;
@@ -149,9 +149,11 @@ export default function AndroidApp({
   openPrivateChatDirectly,
   socket,
 }: AndroidAppProps) {
+  const currentRoute = useCurrentRoute();
   const isUserLoggedIn = true;
   const hasActiveAccount = (isLoggedIn ?? sessionState.isAuthenticated()) && !isGuestUser(currentUser);
   const requiresLogin = !hasActiveAccount;
+  const isLoginPage = currentRoute.type === "login";
   const isHomeActive = activeTab === 'inicio' || activeTab === 'reels';
   const isDarkNavActive = isHomeActive;
   const [navBarHeight, setNavBarHeight] = React.useState(56);
@@ -518,7 +520,7 @@ export default function AndroidApp({
       </main>
 
       {/* Android Material Design Navigation Bar */}
-      {!(activeTab === 'messages' && activeChatUser) && !isLiveViewerOpen && !isProductDetailOpen && !(activeTab === 'shop' && isCartPageOpen) && (
+      {!isLoginPage && !(activeTab === 'messages' && activeChatUser) && !isLiveViewerOpen && !isProductDetailOpen && !(activeTab === 'shop' && isCartPageOpen) && (
         <div
           id="android-bottom-nav-bar"
           className={`fixed bottom-0 inset-x-0 pt-1 px-1 z-30 transition-colors shadow-none ${

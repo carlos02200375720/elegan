@@ -1,9 +1,10 @@
 import React, { useState } from "react";
-import { ArrowLeft, Eye, EyeOff, LockKeyhole, Mail, ShoppingBag, UserRound } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff, LockKeyhole, Mail, ShoppingBag } from "lucide-react";
 import { CartItem, Order, User } from "../../../types";
 import { androidApi } from "../api";
 import { getLocalGuestToken, removeLocalGuestToken } from "../../../utils/guestToken";
 import { sessionState } from "../../../utils/sessionState";
+import coverImage from "../../../../assets/portada-elegan.jpg";
 
 type AuthMode = "register" | "login";
 
@@ -160,23 +161,27 @@ export default function PerfilLogin({
   };
 
   return (
-    <main className="min-h-screen bg-slate-50 px-5 pb-28 pt-[max(32px,env(safe-area-inset-top,32px))] text-slate-900">
-      <div className="mx-auto flex w-full max-w-md flex-col">
-        <button
-          type="button"
-          onClick={onBack}
-          className="mb-8 flex w-fit items-center gap-2 rounded-xl px-2 py-2 text-sm font-semibold text-slate-600 hover:bg-white"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Volver
-        </button>
-
-        <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-400 text-slate-950 shadow-sm">
-          <UserRound className="h-7 w-7" />
+    <main className="relative min-h-screen bg-slate-50 px-5 pb-36 pt-[calc(env(safe-area-inset-top,0px)+4.5rem)] text-slate-900">
+      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 z-0 h-[300px] overflow-hidden">
+        <img src={coverImage} alt="" className="h-full w-full object-cover object-center" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/10 to-slate-50" />
+      </div>
+      <header className="fixed inset-x-0 top-0 z-50 bg-transparent">
+        <div className="mx-auto flex w-full max-w-md items-center gap-3 px-5 pb-2 pt-[max(8px,env(safe-area-inset-top,8px))]">
+          <button
+            type="button"
+            onClick={onBack}
+            className="flex shrink-0 items-center gap-2 rounded-xl px-2 py-2 text-sm font-semibold text-white hover:bg-white/10"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Volver
+          </button>
+          <h1 className="text-lg font-black tracking-tight text-white">
+            {mode === "register" ? "Crea tu cuenta" : "Inicia sesión"}
+          </h1>
         </div>
-        <h1 className="text-2xl font-black tracking-tight">
-          {mode === "register" ? "Crea tu cuenta" : "Inicia sesión"}
-        </h1>
+      </header>
+      <div className="relative z-10 -mx-5 mt-[210px] flex min-h-[calc(100vh-282px)] w-full flex-col rounded-t-3xl bg-white px-5 pt-5">
         <p className="mt-2 text-sm leading-6 text-slate-600">
           {mode === "register"
             ? "Al registrarte conservaremos tus compras, productos del carrito y elementos guardados como invitado."
@@ -210,7 +215,7 @@ export default function PerfilLogin({
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="mt-5 space-y-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+        <form id="perfil-login-form" onSubmit={handleSubmit} className="mt-5 space-y-4 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
           {mode === "register" && (
             <>
               <label className="block text-xs font-bold text-slate-700">
@@ -299,8 +304,13 @@ export default function PerfilLogin({
             </p>
           )}
 
+        </form>
+      </div>
+      <footer className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 px-5 pt-3 backdrop-blur-md [padding-bottom:max(0.75rem,env(safe-area-inset-bottom,0px))]">
+        <div className="mx-auto w-full max-w-md">
           <button
             type="submit"
+            form="perfil-login-form"
             disabled={isLoading}
             className="flex w-full items-center justify-center rounded-xl bg-amber-400 px-4 py-3.5 text-sm font-black text-slate-950 shadow-sm transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
           >
@@ -310,8 +320,8 @@ export default function PerfilLogin({
                 ? "Crear cuenta y guardar mis datos"
                 : "Iniciar sesión y recuperar mis datos"}
           </button>
-        </form>
-      </div>
+        </div>
+      </footer>
     </main>
   );
 }
