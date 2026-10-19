@@ -473,16 +473,6 @@ export default function Perfil({
           <div className="flex items-center space-x-2 pb-1">
             {isMe ? (
               <>
-                <button
-                  onClick={() => {
-                    setIsEditProfileOpen(true);
-                    navigateTo(getProfileConfigPath(activeUser));
-                  }}
-                  className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold flex items-center space-x-1.5 border border-slate-200 active:scale-95 transition-transform cursor-pointer"
-                >
-                  <Edit3 className="w-3.5 h-3.5" />
-                  <span>Editar</span>
-                </button>
                 {(activeUser.canSell === true || isSuperAdmin(activeUser)) && (
                   <button
                     onClick={() => (onOpenPublishModal ? onOpenPublishModal() : setIsPublishingOpen(true))}
@@ -652,6 +642,22 @@ export default function Perfil({
             }`}
           >
             <Package className="w-5 h-5" />
+          </button>
+        )}
+
+        {isMe && (
+          <button
+            onClick={() => {
+              setIsEditProfileOpen(true);
+              navigateTo(getProfileConfigPath(activeUser));
+            }}
+            title="Configuración y Editar Perfil"
+            aria-label="Configuración y Editar Perfil"
+            className={`flex-1 py-3 text-xs font-bold flex items-center justify-center border-b-2 transition-all cursor-pointer active:scale-95 ${
+              isEditProfileOpen ? "border-amber-500 text-amber-600" : "border-transparent text-slate-400 hover:text-slate-600"
+            }`}
+          >
+            <Settings className="w-5 h-5" />
           </button>
         )}
       </div>

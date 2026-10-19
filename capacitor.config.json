@@ -13,10 +13,19 @@
     "handleApplicationURL": true
   },
   "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 30000,
+      "launchAutoHide": false,
+      "backgroundColor": "#FFFFFF",
+      "androidScaleType": "CENTER_CROP",
+      "showSpinner": false,
+      "splashFullScreen": true,
+      "splashImmersive": true
+    },
     "StatusBar": {
       "overlaysWebView": false,
       "style": "DARK",
-      "backgroundColor": "#000000"
+      "backgroundColor": "#FFFFFF"
     }
   },
   "server": {

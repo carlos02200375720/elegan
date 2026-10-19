@@ -68,28 +68,36 @@ export default function SocialPanel({
 
   // For regular clients: auto-select the single Support chat by default on desktop/large screens
   useEffect(() => {
-    if (!isAdmin && !activeChatUser) {
-      // Auto-select Support chat so it displays side-by-side or directly
+    if (!isAdmin && (!activeChatUser || !activeChatUser.id)) {
       onSelectChatUser(supportUser);
       clearUnreads(supportUser.id);
       clearUnreads(SUPPORT_USER_ID);
       clearUnreads(SUPPORT_EMAIL);
     }
-  }, [isAdmin, activeChatUser, supportUser, onSelectChatUser, clearUnreads]);
+  }, [isAdmin, activeChatUser?.id, supportUser.id]);
 
   // For ADMIN: fetch past conversations from server to ensure complete inbox
   useEffect(() => {
     if (isAdmin) {
       apiFetch("/api/chats/support/conversations")
-        .then((res) => res.json())
+        .then(async (res) => {
+          if (!res.ok) return { conversations: [] };
+          const text = await res.text();
+          if (!text) return { conversations: [] };
+          try {
+            return JSON.parse(text);
+          } catch {
+            return { conversations: [] };
+          }
+        })
         .then((data) => {
-          if (Array.isArray(data.conversations)) {
+          if (Array.isArray(data?.conversations)) {
             setApiConversations(data.conversations);
           }
         })
-        .catch((err) => console.error("Error fetching support conversations:", err));
+        .catch((err) => console.warn("Notice fetching support conversations:", err?.message || err));
     }
-  }, [isAdmin, messages]);
+  }, [isAdmin]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

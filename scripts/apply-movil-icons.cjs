@@ -16,16 +16,19 @@ const movilResDir = path.join(rootDir, 'src', 'app', 'movil', 'res');
 const androidMainRes = path.join(rootDir, 'android', 'app', 'src', 'main', 'res');
 const imageGenerator = path.join(__dirname, 'generate-movil-icons.ps1');
 const powershell = process.platform === 'win32' ? 'powershell.exe' : 'pwsh';
-const generation = spawnSync(
-  powershell,
-  ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', imageGenerator, sourceIcon, movilResDir, androidMainRes],
-  { stdio: 'inherit' }
-);
-
-if (generation.error || generation.status !== 0) {
-  console.error('ERROR: no se pudieron generar los íconos Android desde assets/icon.png.');
-  if (generation.error) console.error(generation.error.message);
-  process.exit(generation.status || 1);
+try {
+  const generation = spawnSync(
+    powershell,
+    ['-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', imageGenerator, sourceIcon, movilResDir, androidMainRes],
+    { stdio: 'inherit' }
+  );
+  if (generation.error || generation.status !== 0) {
+    if (process.platform === 'win32') {
+      console.warn('Aviso: no se pudo ejecutar el generador powershell:', generation.error?.message || generation.status);
+    }
+  }
+} catch (e) {
+  console.warn('Aviso ejecutando generador de íconos:', e.message);
 }
 
 // Función de copia recursiva robusta

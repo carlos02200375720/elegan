@@ -4,7 +4,7 @@ import { StatusBar, Style } from "@capacitor/status-bar";
 import { User, Reel, Product, CartItem, Order, ChatMessage, LiveSession, NavigationTab, isGuestUser } from "./types";
 import { WebApp, AuthModal } from "./app/web";
 import { AndroidApp } from "./app/movil";
-import AndroidSplashScreen from "./app/movil/SplashScreen";
+import { SplashScreen } from "@capacitor/splash-screen";
 import { getApiUrl, getWebSocketUrl, BACKEND_URL, apiFetch } from "./config";
 import { isSuperAdmin } from "./superAdmin";
 import { resolveSupportUser, isSupportAdmin, isSupportAlias, SUPPORT_EMAIL, SUPPORT_USER_ID } from "./utils/supportChat";
@@ -509,11 +509,22 @@ export default function App() {
     }
   }, [activeTab, selectedCreatorProfileId, currentUser, users, activePlatform, isLoggedIn]);
 
-  // Android permanece en la pantalla inicial hasta que el catálogo remoto esté listo.
-  const [isInitialLoading, setIsInitialLoading] = useState(() => activePlatform === "android");
+  // Android permanece en la pantalla nativa con fondo blanco hasta que la app/catálogo cargue.
+  const [isInitialLoading, setIsInitialLoading] = useState(false);
   const [isCatalogAvailable, setIsCatalogAvailable] = useState(false);
   const [splashStatus, setSplashStatus] = useState("");
   const [splashHasError, setSplashHasError] = useState(false);
+
+  // Ocultar el splash nativo de Android de forma suave una vez la app esté lista
+  const dismissNativeSplash = useCallback(async () => {
+    try {
+      if (typeof window !== "undefined" && Capacitor.isPluginAvailable("SplashScreen")) {
+        await SplashScreen.hide();
+      }
+    } catch (err) {
+      console.warn("Notice: SplashScreen.hide error:", err);
+    }
+  }, []);
 
   // Sincronizar automáticamente usuario y carrito recuperados desde el login con correo
   useEffect(() => {
@@ -853,20 +864,12 @@ export default function App() {
         }
       }
 
-      if (activePlatform !== "android" || catalogLoaded || isCatalogAvailable) {
-        setIsInitialLoading(false);
-      } else {
-        setSplashHasError(true);
-        setSplashStatus("El catálogo todavía no está disponible. Comprueba tu conexión.");
-      }
+      setIsInitialLoading(false);
+      dismissNativeSplash();
     } catch (error) {
       console.error("Error initializing app data:", error);
-      if (activePlatform === "android" && !catalogLoaded && !isCatalogAvailable) {
-        setSplashHasError(true);
-        setSplashStatus("No se pudo cargar el catálogo. Comprueba tu conexión.");
-      } else {
-        setIsInitialLoading(false);
-      }
+      setIsInitialLoading(false);
+      dismissNativeSplash();
     }
   };
 
@@ -874,24 +877,39 @@ export default function App() {
   useEffect(() => {
     loadInitialData();
 
-    return undefined;
-  }, []);
+    const safetyTimer = setTimeout(() => {
+      dismissNativeSplash();
+    }, 4000);
 
+    return () => clearTimeout(safetyTimer);
+  }, [dismissNativeSplash]);
+
+  // When products are available, dismiss native splash immediately
   useEffect(() => {
-    if (activePlatform !== "android" || !isInitialLoading || isCatalogAvailable) return;
-    const timer = setTimeout(() => {
-      setSplashHasError(true);
-      setSplashStatus("El catálogo está tardando. Comprueba tu conexión e inténtalo de nuevo.");
-    }, 8000);
-    return () => clearTimeout(timer);
-  }, [activePlatform, isCatalogAvailable, isInitialLoading]);
+    if (products.length > 0 || isCatalogAvailable) {
+      dismissNativeSplash();
+    }
+  }, [products.length, isCatalogAvailable, dismissNativeSplash]);
 
   // Fetch Private Chats on Active User change
   useEffect(() => {
-    if (activeChatUser) {
+    const targetUserId = activeChatUser?.id;
+    if (targetUserId) {
       const callerId = currentUser.originalId || currentUser.id || "current_user";
-      apiFetch(`/api/chats/${encodeURIComponent(activeChatUser.id)}?userId=${encodeURIComponent(callerId)}`)
-        .then((res) => res.json())
+      apiFetch(`/api/chats/${encodeURIComponent(targetUserId)}?userId=${encodeURIComponent(callerId)}`)
+        .then(async (res) => {
+          if (!res.ok) {
+            console.warn(`[Chat] Servidor respondió con estado ${res.status}: ${res.statusText}`);
+            return [];
+          }
+          const text = await res.text();
+          if (!text) return [];
+          try {
+            return JSON.parse(text);
+          } catch {
+            return [];
+          }
+        })
         .then((data) => {
           if (Array.isArray(data)) {
             setPrivateMessages(data);
@@ -899,11 +917,11 @@ export default function App() {
             setPrivateMessages([]);
           }
         })
-        .catch((err) => console.error("Error loading chat:", err));
+        .catch((err) => console.warn("Aviso al cargar chat:", err?.message || err));
     } else {
       setPrivateMessages([]);
     }
-  }, [activeChatUser, currentUser.id, currentUser.originalId]);
+  }, [activeChatUser?.id, currentUser.id, currentUser.originalId]);
 
   // Connect WebSockets
   useEffect(() => {
@@ -1707,16 +1725,23 @@ export default function App() {
           text: text,
         }),
       })
-        .then((res) => res.json())
+        .then(async (res) => {
+          if (!res.ok) return null;
+          try {
+            return await res.json();
+          } catch {
+            return null;
+          }
+        })
         .then((data) => {
-          if (data.message) {
+          if (data && data.message) {
             setPrivateMessages((prev) => {
               if (prev.some((m) => m.id === data.message.id)) return prev;
               return [...prev, data.message];
             });
           }
         })
-        .catch((err) => console.error("Error sending message via fallback:", err));
+        .catch((err) => console.warn("Notice sending message via fallback:", err?.message || err));
     }
   };
 
@@ -1870,16 +1895,8 @@ export default function App() {
   return (
     <div className={`w-full ${isDarkNavActive ? "h-dvh max-h-dvh overflow-hidden bg-slate-950 text-slate-100" : "min-h-screen bg-white text-slate-900"} font-sans flex flex-col justify-between selection:bg-amber-500 selection:text-slate-950`}>
 
-      {activePlatform === "android" && isInitialLoading && (
-        <AndroidSplashScreen
-          statusMessage={splashStatus}
-          hasError={splashHasError}
-          onRetry={loadInitialData}
-        />
-      )}
-
       {/* Botones fijos para alternar rápidamente entre versión Web y versión Móvil / Android */}
-      {!isInitialLoading && typeof window !== "undefined" && !(typeof (window as any).Capacitor !== "undefined" && (window as any).Capacitor?.isNativePlatform?.()) && (
+      {typeof window !== "undefined" && !(typeof (window as any).Capacitor !== "undefined" && (window as any).Capacitor?.isNativePlatform?.()) && (
         <aside
           aria-label="Selector de plataforma"
           className="fixed top-3 right-3 z-[9999] flex items-center bg-slate-950/95 backdrop-blur-md p-1 border border-slate-700/80 rounded-full shadow-2xl text-xs font-semibold text-white select-none transition-all ring-1 ring-white/10"

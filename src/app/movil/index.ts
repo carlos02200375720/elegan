@@ -6,6 +6,5 @@ export { default as Perfil, default as ProfileView } from "./perfil";
 export * from "./perfil";
 export { default as SocialPanel } from "./SocialPanel";
 export { default as PublishView, default as Publicasion } from "./publicasion";
-export { default as SplashScreen } from "./SplashScreen";
 export * from "./components/videoplay";
 export * from "./components/barraprogreso";

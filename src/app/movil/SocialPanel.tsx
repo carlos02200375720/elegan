@@ -44,6 +44,27 @@ export default function AndroidSocialPanel({
     }
   }, [messages, activeChatUser]);
 
+  // Configurar la barra de estado de Android para que se integre con el tema oscuro de mensajes
+  useEffect(() => {
+    const applySocialStatusBar = async () => {
+      try {
+        if (typeof window !== "undefined" && (window as any).Capacitor?.isPluginAvailable?.("StatusBar")) {
+          const { StatusBar, Style } = await import("@capacitor/status-bar");
+          await StatusBar.setStyle({ style: Style.Dark });
+          await StatusBar.setBackgroundColor({ color: activeChatUser ? "#0f172a" : "#020617" });
+        }
+      } catch (e) {
+        // En entorno web o si el plugin no está disponible
+      }
+
+      document.querySelectorAll('meta[name="theme-color"]').forEach((tag) => {
+        tag.setAttribute("content", activeChatUser ? "#0f172a" : "#020617");
+      });
+    };
+
+    applySocialStatusBar();
+  }, [activeChatUser]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!chatInput.trim()) return;
@@ -127,8 +148,13 @@ export default function AndroidSocialPanel({
       {activeChatUser ? (
         /* --- Android 1-on-1 Chat Thread View --- */
         <div className="flex-1 flex flex-col h-full bg-slate-950">
-          {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 bg-slate-900 border-b border-slate-800">
+          {/* Header con respeto a la barra de estado de Android */}
+          <div
+            className="flex items-center justify-between px-4 pb-3 bg-slate-900 border-b border-slate-800 shrink-0"
+            style={{
+              paddingTop: "calc(max(24px, env(safe-area-inset-top, 24px)) + 8px)",
+            }}
+          >
             <div className="flex items-center space-x-3 min-w-0">
               <button
                 onClick={() => onSelectChatUser(null)}
@@ -216,8 +242,14 @@ export default function AndroidSocialPanel({
             )}
           </div>
 
-          {/* Chat Input Bar */}
-          <form onSubmit={handleSubmit} className="p-3 bg-slate-900 border-t border-slate-800 flex items-center space-x-2">
+          {/* Chat Input Bar que respeta la barra de navegación nativa de Android */}
+          <form
+            onSubmit={handleSubmit}
+            className="p-3 bg-slate-900 border-t border-slate-800 flex items-center space-x-2 shrink-0"
+            style={{
+              paddingBottom: "max(16px, calc(env(safe-area-inset-bottom, 0px) + 12px))",
+            }}
+          >
             <input
               type="text"
               placeholder={isAdmin ? "Responder al cliente..." : "Escribe a Soporte al Cliente..."}
@@ -236,7 +268,12 @@ export default function AndroidSocialPanel({
         </div>
       ) : (
         /* --- Android Chats & User List View --- */
-        <div className="flex-1 flex flex-col h-full p-4 pb-20">
+        <div
+          className="flex-1 flex flex-col h-full px-4 pb-20 bg-slate-950"
+          style={{
+            paddingTop: "calc(max(24px, env(safe-area-inset-top, 24px)) + 12px)",
+          }}
+        >
           {/* Header */}
           <div className="flex items-center justify-between pb-3 border-b border-slate-800">
             <div className="flex items-center space-x-2">
@@ -245,9 +282,20 @@ export default function AndroidSocialPanel({
                 {isAdmin ? "Bandeja de Clientes" : "Mensajes y Soporte"}
               </h2>
             </div>
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-amber-400 font-bold">
-              {isAdmin ? "Admin" : "Oficial"}
-            </span>
+            <div className="flex items-center space-x-2">
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-amber-400 font-bold">
+                {isAdmin ? "Admin" : "Oficial"}
+              </span>
+              {onClose && (
+                <button
+                  onClick={onClose}
+                  className="p-1.5 rounded-full hover:bg-white/10 text-slate-400 cursor-pointer"
+                  title="Cerrar"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              )}
+            </div>
           </div>
 
           {!isAdmin ? (

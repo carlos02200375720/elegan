@@ -256,8 +256,8 @@ export const apiFetch = async (
     const res = await fetch(targetUrl, fetchOptions);
     clearTimeout(timeoutId);
 
-    // If remote host returned 5xx server error, and we have a local dev/preview host available, try local
-    if (!res.ok && res.status >= 500 && targetUrl !== cleanPath) {
+    // If remote host returned 5xx server error or 429 rate limit, and we have a local dev/preview host available, try local
+    if (!res.ok && (res.status >= 500 || res.status === 429) && targetUrl !== cleanPath) {
       if (typeof window !== "undefined" && window.location && window.location.protocol.startsWith("http")) {
         try {
           const localRes = await fetch(cleanPath, fetchOptions);
