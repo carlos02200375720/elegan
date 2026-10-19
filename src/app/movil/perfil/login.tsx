@@ -181,7 +181,8 @@ export default function PerfilLogin({
           </h1>
         </div>
       </header>
-      <div className="relative z-10 -mx-5 mt-[210px] flex min-h-[calc(100vh-282px)] w-full flex-col rounded-t-3xl bg-white px-5 pt-5">
+      <div className="relative z-10 -mx-5 mt-[210px] flex min-h-[calc(100vh-282px)] w-[calc(100%+2.5rem)] flex-col bg-gradient-to-b from-slate-50 via-white to-white px-5 pt-5">
+        <div className="mx-auto w-full max-w-md">
         <p className="mt-2 text-sm leading-6 text-slate-600">
           {mode === "register"
             ? "Al registrarte conservaremos tus compras, productos del carrito y elementos guardados como invitado."
@@ -305,6 +306,7 @@ export default function PerfilLogin({
           )}
 
         </form>
+        </div>
       </div>
       <footer className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 px-5 pt-3 backdrop-blur-md [padding-bottom:max(0.75rem,env(safe-area-inset-bottom,0px))]">
         <div className="mx-auto w-full max-w-md">
