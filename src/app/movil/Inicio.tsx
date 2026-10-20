@@ -546,13 +546,29 @@ export default function Inicio({
           const isFollowing = currentUser?.followingUserIds?.includes(reelItem.creatorId) || false;
 
           const effectiveFormat = getEffectiveFormat(reelItem);
-          const formatStyle = getPublicationFormatStyles(effectiveFormat);
+          const mediaMaxHeight = `calc(100dvh - ${actualNavHeight + 300}px)`;
+          const formatStyle: React.CSSProperties = {
+            aspectRatio: effectiveFormat.replace(":", " / "),
+            maxHeight: mediaMaxHeight,
+            ...(effectiveFormat === "3:4"
+              ? {
+                  height: mediaMaxHeight,
+                  width: "auto",
+                  maxWidth: `min(100%, calc((100dvh - ${actualNavHeight + 300}px) * 3 / 4))`,
+                }
+              : {
+                  width: "100%",
+                  maxWidth: effectiveFormat === "1:1"
+                    ? `min(100%, ${mediaMaxHeight})`
+                    : "100%",
+                }),
+          };
 
           return (
             <div
               key={reelItem.id || reelIndex}
               id={`android-reel-card-${reelItem.id}`}
-              className="w-full shrink-0 snap-start snap-always relative flex flex-col items-center justify-center bg-white overflow-hidden select-none px-3"
+              className="w-full shrink-0 snap-start snap-always relative flex flex-col items-center justify-start gap-2 bg-white overflow-hidden select-none px-3 pt-[76px] pb-2"
               style={{
                 height: `calc(100dvh - ${actualNavHeight}px)`,
                 minHeight: `calc(100dvh - ${actualNavHeight}px)`,
@@ -563,9 +579,39 @@ export default function Inicio({
               }}
             >
               {/* Contenedor de publicación con 3 formatos (1:1, 3:4, 4:3) - NO cubre la pantalla completa */}
+              <div className="mx-auto flex w-full max-w-xl shrink-0 items-center gap-3 px-1">
+                <button
+                  type="button"
+                  onClick={() => handleCreatorNav(reelItem)}
+                  className="shrink-0 rounded-full"
+                  aria-label={`Ver perfil de @${displayUsername}`}
+                >
+                  <img src={displayAvatar} alt="" className="h-10 w-10 rounded-full object-cover" />
+                </button>
+                <div className="min-w-0 flex-1">
+                  <button
+                    type="button"
+                    onClick={() => handleCreatorNav(reelItem)}
+                    className="block max-w-full truncate text-left text-sm font-bold text-slate-900"
+                  >
+                    @{displayUsername}
+                  </button>
+                </div>
+                {currentUser?.id !== reelItem.creatorId && onToggleFollowUser && (
+                  <button
+                    type="button"
+                    onClick={() => onToggleFollowUser(reelItem.creatorId)}
+                    className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold ${
+                      isFollowing ? "bg-slate-100 text-slate-600" : "bg-blue-50 text-blue-700"
+                    }`}
+                  >
+                    {isFollowing ? "Siguiendo" : "Seguir"}
+                  </button>
+                )}
+              </div>
               <div
                 id={`android-publication-container-${reelItem.id}`}
-                className="relative flex items-center justify-center overflow-hidden rounded-2xl bg-black shadow-xl border border-slate-200/90 transition-all duration-300 mx-auto select-none"
+                className="relative flex shrink-0 items-center justify-center overflow-hidden rounded-xl bg-black shadow-sm border border-slate-200/90 transition-all duration-300 mx-auto select-none"
                 style={formatStyle}
               >
                 {/* Selector interactivo de formatos: Formato 1 (1:1), Formato 2 (3:4), Formato 3 (4:3) */}
@@ -703,10 +749,124 @@ export default function Inicio({
                 </AnimatePresence>
               </div>
 
+              <div className="w-full max-w-xl shrink-0 border-y border-slate-100 px-2 py-1">
+                <div
+                  className="flex items-center justify-around"
+                  id={`android-reel-interaction-bar-${reelItem.id}`}
+                >
+                  <button
+                    type="button"
+                    onClick={() => onLikeReel(reelItem.id)}
+                    className={`flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-sm font-semibold hover:bg-slate-50 ${
+                      isLiked ? "text-rose-600" : "text-slate-600"
+                    }`}
+                    id={`android-reel-like-btn-${reelItem.id}`}
+                    aria-label={`Me gusta, ${reelItem.likes || 0}`}
+                  >
+                    <Heart className={`h-5 w-5 ${isLiked ? "fill-rose-500 text-rose-500" : ""}`} />
+                    <span>{reelItem.likes || 0}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveCommentsReelId(reelItem.id);
+                      setShowComments(true);
+                    }}
+                    className="flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+                    id={`android-reel-comment-btn-${reelItem.id}`}
+                    aria-label={`Comentar, ${reelItem.comments?.length || 0}`}
+                  >
+                    <MessageCircle className="h-5 w-5" />
+                    <span>{reelItem.comments?.length || 0}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onToggleSaveReel(reelItem.id)}
+                    className={`flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-sm font-semibold hover:bg-slate-50 ${
+                      isSaved ? "text-amber-600" : "text-slate-600"
+                    }`}
+                    id={`android-reel-save-btn-${reelItem.id}`}
+                    aria-label={`Guardar, ${reelItem.saves ?? 0}`}
+                  >
+                    <Bookmark className={`h-5 w-5 ${isSaved ? "fill-amber-400" : ""}`} />
+                    <span>{reelItem.saves ?? 0}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleShare(reelItem)}
+                    className="flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+                    id={`android-reel-share-btn-${reelItem.id}`}
+                    aria-label={`Compartir, ${reelItem.shares || 0}`}
+                  >
+                    <Share2 className="h-5 w-5" />
+                    <span>{reelItem.shares || 0}</span>
+                  </button>
+                </div>
+              </div>
+
+              <div className="w-full max-w-xl min-h-0 flex-1 overflow-y-auto px-2 pb-3">
+                {reelItem.title && (
+                  <h2 className="mb-1 text-base font-bold text-slate-900">{reelItem.title}</h2>
+                )}
+                {reelItem.description && (
+                  <p className="text-sm leading-5 text-slate-700 break-words">
+                    {expandedDescriptions[reelItem.id]
+                      ? reelItem.description
+                      : reelItem.description.length > 140
+                        ? `${reelItem.description.slice(0, 140)}...`
+                        : reelItem.description}
+                    {reelItem.description.length > 140 && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setExpandedDescriptions((prev) => ({
+                            ...prev,
+                            [reelItem.id]: !prev[reelItem.id],
+                          }))
+                        }
+                        className="ml-1 font-semibold text-slate-500 hover:text-slate-800"
+                      >
+                        {expandedDescriptions[reelItem.id] ? "Ver menos" : "Ver más"}
+                      </button>
+                    )}
+                  </p>
+                )}
+                {taggedProduct && handleProductSelect && (
+                  <button
+                    type="button"
+                    onClick={() => handleProductSelect(taggedProduct)}
+                    className="mt-2 flex w-full items-center gap-3 overflow-hidden rounded-xl border border-slate-200 bg-white p-2 text-left hover:bg-slate-50"
+                    id={`tagged-product-${reelItem.id}`}
+                  >
+                    {taggedProduct.imageUrl || taggedProduct.images?.[0] ? (
+                      <img
+                        src={taggedProduct.imageUrl || taggedProduct.images?.[0]}
+                        alt=""
+                        className="h-14 w-14 shrink-0 rounded-lg object-cover"
+                      />
+                    ) : (
+                      <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-amber-500">
+                        <ShoppingBag className="h-5 w-5" />
+                      </span>
+                    )}
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[10px] font-bold uppercase tracking-wide text-amber-600">
+                        Producto destacado
+                      </span>
+                      <span className="block truncate text-sm font-semibold text-slate-900">{taggedProduct.name}</span>
+                      <span className="text-xs font-bold text-emerald-700">
+                        {formatPrice(Number(taggedProduct.price) || 0)}
+                      </span>
+                    </span>
+                    <span className="text-xs font-semibold text-amber-700">Ver</span>
+                  </button>
+                )}
+              </div>
+
               {/* Interaction Bar on the Right */}
               <div
-                className="absolute right-2.5 sm:right-3.5 bottom-6 sm:bottom-8 z-30 flex flex-col items-center space-y-3.5 select-none p-0"
-                id={`android-reel-interaction-bar-${reelItem.id}`}
+                className="hidden"
+                aria-hidden="true"
               >
                 <div className="flex flex-col items-center">
                   <button
@@ -727,7 +887,7 @@ export default function Inicio({
                     className={`w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-black/40 backdrop-blur-xs flex items-center justify-center hover:scale-115 active:scale-95 transition-all cursor-pointer shadow-md pointer-events-auto ${
                       isLiked ? "text-rose-500" : "text-white hover:text-rose-400"
                     }`}
-                    id={`android-reel-like-btn-${reelItem.id}`}
+                    data-legacy-id={`android-reel-like-btn-${reelItem.id}`}
                   >
                     <Heart
                       strokeWidth={2.2}
@@ -749,7 +909,7 @@ export default function Inicio({
                       setShowComments(true);
                     }}
                     className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-black/40 backdrop-blur-xs flex items-center justify-center text-white hover:text-amber-400 hover:scale-115 active:scale-95 transition-all cursor-pointer shadow-md pointer-events-auto"
-                    id={`android-reel-comment-btn-${reelItem.id}`}
+                    data-legacy-id={`android-reel-comment-btn-${reelItem.id}`}
                   >
                     <MessageCircle
                       strokeWidth={2.2}
@@ -766,7 +926,7 @@ export default function Inicio({
                     className={`w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-black/40 backdrop-blur-xs flex items-center justify-center hover:scale-115 active:scale-95 transition-all cursor-pointer shadow-md pointer-events-auto ${
                       isSaved ? "text-amber-400" : "text-white hover:text-amber-300"
                     }`}
-                    id={`android-reel-save-btn-${reelItem.id}`}
+                    data-legacy-id={`android-reel-save-btn-${reelItem.id}`}
                   >
                     <Bookmark
                       strokeWidth={2.2}
@@ -785,7 +945,7 @@ export default function Inicio({
                   <button
                     onClick={() => handleShare(reelItem)}
                     className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-black/40 backdrop-blur-xs flex items-center justify-center text-white hover:text-cyan-400 hover:scale-115 active:scale-95 transition-all cursor-pointer shadow-md pointer-events-auto"
-                    id={`android-reel-share-btn-${reelItem.id}`}
+                    data-legacy-id={`android-reel-share-btn-${reelItem.id}`}
                   >
                     <Share2
                       strokeWidth={2.2}
@@ -799,7 +959,7 @@ export default function Inicio({
               </div>
 
               {/* Creator & Description Overlay */}
-              <div className="absolute left-4 right-20 bottom-4 sm:bottom-6 z-20 pointer-events-none">
+              <div className="hidden">
                 <div className="max-w-[calc(100%-10px)]">
                   <div className="text-white bg-black/40 backdrop-blur-md p-3 rounded-2xl drop-shadow-md border border-white/10 pointer-events-auto">
                     <h3 className="font-display font-bold text-base tracking-wide flex items-center space-x-2.5">
@@ -886,7 +1046,7 @@ export default function Inicio({
                         transition={{ delay: 0.2 }}
                         onClick={() => handleProductSelect(taggedProduct)}
                         className="bg-white border border-slate-200/90 text-slate-900 rounded-xl flex items-stretch cursor-pointer hover:bg-slate-50 hover:border-amber-400 active:scale-[0.98] transition-all shadow-xl overflow-hidden pointer-events-auto select-none mt-2"
-                        id={`tagged-product-${reelItem.id}`}
+                        data-legacy-id={`tagged-product-${reelItem.id}`}
                         style={{
                           marginLeft: "-4px",
                           width: "285.606px",
