@@ -549,26 +549,17 @@ export default function Inicio({
           const mediaMaxHeight = `calc(100dvh - ${actualNavHeight + 300}px)`;
           const formatStyle: React.CSSProperties = {
             aspectRatio: effectiveFormat.replace(":", " / "),
+            width: "100%",
+            maxWidth: "100%",
             maxHeight: mediaMaxHeight,
-            ...(effectiveFormat === "3:4"
-              ? {
-                  height: mediaMaxHeight,
-                  width: "auto",
-                  maxWidth: `min(100%, calc((100dvh - ${actualNavHeight + 300}px) * 3 / 4))`,
-                }
-              : {
-                  width: "100%",
-                  maxWidth: effectiveFormat === "1:1"
-                    ? `min(100%, ${mediaMaxHeight})`
-                    : "100%",
-                }),
+            ...(effectiveFormat === "3:4" ? { height: mediaMaxHeight } : {}),
           };
 
           return (
             <div
               key={reelItem.id || reelIndex}
               id={`android-reel-card-${reelItem.id}`}
-              className="w-full shrink-0 snap-start snap-always relative flex flex-col items-center justify-start gap-2 bg-white overflow-hidden select-none px-3 pt-[76px] pb-2"
+              className="w-full shrink-0 snap-start snap-always relative flex flex-col items-center justify-start gap-2 bg-white overflow-hidden select-none px-0 pt-[76px] pb-2"
               style={{
                 height: `calc(100dvh - ${actualNavHeight}px)`,
                 minHeight: `calc(100dvh - ${actualNavHeight}px)`,
@@ -578,7 +569,7 @@ export default function Inicio({
                 backgroundColor: "#ffffff",
               }}
             >
-              {/* Contenedor de publicación con 3 formatos (1:1, 3:4, 4:3) - NO cubre la pantalla completa */}
+              {/* Información del creador sobre la publicación */}
               <div className="mx-auto flex w-full max-w-xl shrink-0 items-center gap-3 px-1">
                 <button
                   type="button"
@@ -611,7 +602,7 @@ export default function Inicio({
               </div>
               <div
                 id={`android-publication-container-${reelItem.id}`}
-                className="relative flex shrink-0 items-center justify-center overflow-hidden rounded-xl bg-black shadow-sm border border-slate-200/90 transition-all duration-300 mx-auto select-none"
+                className="relative flex shrink-0 items-center justify-center overflow-hidden bg-black shadow-sm transition-all duration-300 mx-auto select-none"
                 style={formatStyle}
               >
                 {/* Selector interactivo de formatos: Formato 1 (1:1), Formato 2 (3:4), Formato 3 (4:3) */}
