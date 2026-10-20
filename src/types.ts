@@ -94,7 +94,7 @@ export interface Reel {
   type?: 'video' | 'image' | 'carousel' | 'product';
   images?: string[]; // For carrousels or single images
   media?: ReelMedia[]; // Ordered sequence of media items (video and/or images)
-  aspectRatio?: 'vertical' | 'horizontal' | 'square';
+  aspectRatio?: 'vertical' | 'horizontal' | 'square' | '1:1' | '3:4' | '4:3';
 }
 
 export interface ProductVariantItem {

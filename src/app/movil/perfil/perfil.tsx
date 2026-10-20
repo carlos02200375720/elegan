@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { StatusBar, Style } from "@capacitor/status-bar";
 import { Capacitor } from "@capacitor/core";
 import { User, Reel, Product, Order, isGuestUser } from "../../../types";
-import { Play, ShoppingBag, Bookmark, Settings, LogOut, Edit3, Grid, Camera, Check, Sparkles, UserPlus, UserCheck, X, ExternalLink, Package, Plus, Trash2, ShieldCheck, Truck, Mail } from "lucide-react";
+import { Play, ShoppingBag, Bookmark, Settings, LogOut, Edit3, Grid, Camera, Check, Sparkles, UserPlus, UserCheck, X, ExternalLink, Package, Plus, Trash2, ShieldCheck, Truck, Mail, BadgeCheck, ArrowLeft } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { androidApiFetch } from "../api";
 import AndroidUserPublicationsFeed from "../components/Feedperfil";
@@ -24,6 +24,9 @@ export interface AndroidPerfilProps {
   users?: User[];
   reels?: Reel[];
   products?: Product[];
+  cart?: any[];
+  cartCount?: number;
+  onOpenCart?: () => void;
   onLogout: () => void;
   onSelectProduct?: (product: Product) => void;
   onSelectReel?: (reel: Reel | string) => void;
@@ -61,6 +64,9 @@ export default function Perfil({
   users = [],
   reels = [],
   products = [],
+  cart,
+  cartCount,
+  onOpenCart,
   onLogout,
   onSelectProduct,
   onSelectReel,
@@ -388,6 +394,26 @@ export default function Perfil({
     });
   }, [products, savedReelIds]);
 
+  const totalCartItems = React.useMemo(() => {
+    if (typeof cartCount === "number") return cartCount;
+    if (Array.isArray(cart)) {
+      return cart.reduce((acc, item: any) => acc + (Number(item?.quantity) || 1), 0);
+    }
+    if (typeof window !== "undefined") {
+      try {
+        const userId = currentUser.id || currentUser.username || "guest";
+        const raw = localStorage.getItem(`mall_cart_${userId}`) || localStorage.getItem("mall_cart");
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) {
+            return parsed.reduce((acc, item: any) => acc + (Number(item?.quantity) || 1), 0);
+          }
+        }
+      } catch {}
+    }
+    return 0;
+  }, [cart, cartCount, currentUser.id, currentUser.username]);
+
   return (
     <div
       className="w-full min-h-screen bg-white text-slate-900 flex flex-col font-sans select-none pb-24 relative"
@@ -406,137 +432,159 @@ export default function Perfil({
         aria-hidden="true"
       />
 
-      {/* Espaciador que respeta la barra de estado nativa y garantiza el margen de separación para que no se mezcle con el contenido */}
-      <div
-        className="w-full bg-white shrink-0 pointer-events-none transition-all"
+      {/* Cabecera fija del perfil con fondo blanco igual que la barra de estado nativa de Android */}
+      <header
+        id="android-profile-header"
+        className="sticky top-0 z-40 w-full bg-white border-b border-slate-100 shadow-2xs"
         style={{
-          height: "max(24px, env(safe-area-inset-top, 24px))",
-          marginBottom: "8px",
           backgroundColor: "#ffffff",
+          paddingTop: "max(24px, env(safe-area-inset-top, 24px))",
         }}
-        aria-hidden="true"
-      />
+      >
+        <div className="flex items-center justify-between px-4 h-14 w-full">
+          {/* Lado izquierdo: Foto / Icono de perfil (y botón para volver si es perfil de otro creador) */}
+          <div className="flex items-center gap-2 shrink-0">
+            {onBackToSelf && !isMe && (
+              <button
+                type="button"
+                onClick={onBackToSelf}
+                className="p-1.5 -ml-1 text-slate-700 hover:text-slate-900 active:scale-95 transition-transform cursor-pointer"
+                aria-label="Volver a mi perfil"
+                title="Volver a mi perfil"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+            )}
+            <div
+              className={`relative ${isMe ? "cursor-pointer active:scale-95 transition-transform" : ""}`}
+              onClick={() => {
+                if (isMe) {
+                  setIsEditProfileOpen(true);
+                  navigateTo(getProfileConfigPath(activeUser));
+                }
+              }}
+              title={isMe ? "Editar foto y perfil" : activeUser.name}
+            >
+              <img
+                src={activeUser.avatar}
+                alt={activeUser.name}
+                className="w-9 h-9 rounded-full object-cover border border-slate-200 shadow-2xs bg-white"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).src =
+                    "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80";
+                }}
+              />
+            </div>
+          </div>
 
-      {/* Contenedor del contenido del perfil que respeta la barra de estado y no se mezcla */}
+          {/* En el medio: Solo el nombre del cliente con el icono azul de verificado */}
+          <div className="flex-1 flex items-center justify-center gap-1.5 px-2 min-w-0">
+            <span className="text-sm font-bold text-slate-900 truncate">
+              {activeUser.name}
+            </span>
+            {isSuperAdmin(activeUser) && (
+              <span className="inline-flex items-center justify-center shrink-0" title="Verificado">
+                <BadgeCheck className="w-4 h-4 text-white fill-blue-500 shrink-0 drop-shadow-2xs" />
+              </span>
+            )}
+          </div>
+
+          {/* Esquina derecha: Icono del carrito con contador de productos */}
+          <div className="flex items-center justify-end shrink-0">
+            <button
+              type="button"
+              onClick={() => {
+                if (onOpenCart) {
+                  onOpenCart();
+                } else {
+                  navigateTo("/tienda/carrito");
+                }
+              }}
+              id="mobile-profile-cart-btn"
+              className="relative p-2 rounded-xl text-slate-700 hover:text-slate-900 hover:bg-slate-100 active:scale-95 transition-all cursor-pointer"
+              title="Carrito de compras"
+              aria-label={`Carrito de compras (${totalCartItems} productos)`}
+            >
+              <ShoppingBag className="w-5 h-5 text-slate-800" />
+              {totalCartItems > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-amber-500 text-slate-950 text-[10px] font-black rounded-full flex items-center justify-center shadow-xs border-2 border-white leading-none">
+                  {totalCartItems > 99 ? "99+" : totalCartItems}
+                </span>
+              )}
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* Contenedor del contenido del perfil */}
       <div
         className="w-full flex-1 flex flex-col"
         style={{
           marginTop: "0px",
         }}
       >
-        {/* Profile Bio Section without Cover Container */}
-        <div className="px-4 pt-1">
-          {/* Barra superior con botón para cerrar sesión en la esquina superior derecha */}
-          <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100">
-            <div className="flex items-center gap-2">
-              {onBackToSelf && !isMe && (
-                <button
-                  type="button"
-                  onClick={onBackToSelf}
-                  className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold border border-slate-200 active:scale-95 cursor-pointer shadow-2xs"
-                >
-                  ← Mi Perfil
-                </button>
+        {/* Profile Bio Section */}
+        <div className="px-4 pt-3">
+          {/* Fila de acciones superiores (Publicar / Seguir / Mensaje) */}
+          <div className="flex items-center justify-end">
+            <div className="flex items-center space-x-2">
+              {isMe ? (
+                <>
+                  {(activeUser.canSell === true || isSuperAdmin(activeUser)) && (
+                    <button
+                      onClick={() => (onOpenPublishModal ? onOpenPublishModal() : setIsPublishingOpen(true))}
+                      className="px-3.5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-xs font-bold flex items-center space-x-1.5 shadow-sm active:scale-95 transition-transform cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Publicar</span>
+                    </button>
+                  )}
+                </>
+              ) : (
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => onToggleFollowUser?.(activeUser.id)}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center space-x-1.5 active:scale-95 transition-all cursor-pointer ${
+                      isFollowing
+                        ? "bg-slate-100 text-slate-700 border border-slate-300"
+                        : "bg-amber-500 text-slate-950 shadow-sm"
+                    }`}
+                  >
+                    {isFollowing ? <UserCheck className="w-3.5 h-3.5" /> : <UserPlus className="w-3.5 h-3.5" />}
+                    <span>{isFollowing ? "Siguiendo" : "Seguir"}</span>
+                  </button>
+                  {onOpenDirectChat && (
+                    <button
+                      onClick={() => onOpenDirectChat(activeUser)}
+                      className="px-3 py-2 bg-slate-100 text-slate-800 rounded-xl text-xs font-bold border border-slate-200 active:scale-95 cursor-pointer"
+                    >
+                      Mensaje
+                    </button>
+                  )}
+                </div>
               )}
-              <span className="text-xs font-black text-slate-500 tracking-wide uppercase">
-                {isMe ? "Mi Perfil" : `@${activeUser.username}`}
-              </span>
             </div>
-
-            {onLogout && (
-              <button
-                type="button"
-                onClick={() => {
-                  onLogout();
-                  navigateTo("/perfil/login?mode=login");
-                }}
-                id="mobile-profile-logout-btn"
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 active:bg-rose-200 text-rose-600 border border-rose-200/80 active:scale-95 transition-all cursor-pointer shadow-2xs group"
-                title="Cerrar sesión"
-                aria-label="Cerrar sesión"
-              >
-                <LogOut className="w-3.5 h-3.5 text-rose-600 group-hover:scale-110 transition-transform" />
-                <span className="text-xs font-bold text-rose-700">Cerrar sesión</span>
-              </button>
-            )}
           </div>
 
-          <div className="flex items-end justify-between">
-            <div className="relative">
-              <img
-                src={activeUser.avatar}
-                alt={activeUser.name}
-                className="w-20 h-20 rounded-full object-cover border-2 border-slate-200 shadow-sm bg-white"
-              />
+          <div className="mt-2">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <h1 className="text-lg font-black text-slate-900">{activeUser.name}</h1>
+              {isSuperAdmin(activeUser) && (
+                <span className="inline-flex items-center justify-center shrink-0" title="Verificado">
+                  <BadgeCheck className="w-4 h-4 text-white fill-blue-500 shrink-0 drop-shadow-2xs" />
+                </span>
+              )}
             </div>
-
-          <div className="flex items-center space-x-2 pb-1">
-            {isMe ? (
-              <>
-                {(activeUser.canSell === true || isSuperAdmin(activeUser)) && (
-                  <button
-                    onClick={() => (onOpenPublishModal ? onOpenPublishModal() : setIsPublishingOpen(true))}
-                    className="px-3.5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-xs font-bold flex items-center space-x-1.5 shadow-sm active:scale-95 transition-transform cursor-pointer"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Publicar</span>
-                  </button>
-                )}
-              </>
-            ) : (
-              <div className="flex items-center space-x-2">
-                {onBackToSelf && (
-                  <button
-                    onClick={onBackToSelf}
-                    className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold border border-slate-200 active:scale-95 cursor-pointer shadow-sm"
-                  >
-                    Mi Perfil
-                  </button>
-                )}
-                <button
-                  onClick={() => onToggleFollowUser?.(activeUser.id)}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center space-x-1.5 active:scale-95 transition-all cursor-pointer ${
-                    isFollowing
-                      ? "bg-slate-100 text-slate-700 border border-slate-300"
-                      : "bg-amber-500 text-slate-950 shadow-sm"
-                  }`}
-                >
-                  {isFollowing ? <UserCheck className="w-3.5 h-3.5" /> : <UserPlus className="w-3.5 h-3.5" />}
-                  <span>{isFollowing ? "Siguiendo" : "Seguir"}</span>
-                </button>
-                {onOpenDirectChat && (
-                  <button
-                    onClick={() => onOpenDirectChat(activeUser)}
-                    className="px-3 py-2 bg-slate-100 text-slate-800 rounded-xl text-xs font-bold border border-slate-200 active:scale-95 cursor-pointer"
-                  >
-                    Mensaje
-                  </button>
-                )}
+            <p className="text-xs text-amber-600 font-semibold">@{activeUser.username}</p>
+            {activeUser.email && (
+              <div className="flex items-center gap-1.5 mt-1 text-[11px] text-slate-600 font-medium">
+                <Mail className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                <span className="truncate">{activeUser.email}</span>
+                {activeUser.city && <span className="text-slate-400">• {activeUser.city}</span>}
+                {activeUser.country && <span className="text-slate-400">, {activeUser.country}</span>}
               </div>
             )}
           </div>
-        </div>
-
-        <div className="mt-3">
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <h1 className="text-lg font-black text-slate-900">{activeUser.name}</h1>
-            {isSuperAdmin(activeUser) && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700 border border-amber-500/30 text-[10px] font-black tracking-wide">
-                <ShieldCheck className="w-3 h-3 text-amber-600" />
-                <span>SUPERADMIN</span>
-              </span>
-            )}
-          </div>
-          <p className="text-xs text-amber-600 font-semibold">@{activeUser.username}</p>
-          {activeUser.email && (
-            <div className="flex items-center gap-1.5 mt-1 text-[11px] text-slate-600 font-medium">
-              <Mail className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-              <span className="truncate">{activeUser.email}</span>
-              {activeUser.city && <span className="text-slate-400">• {activeUser.city}</span>}
-              {activeUser.country && <span className="text-slate-400">, {activeUser.country}</span>}
-            </div>
-          )}
-        </div>
 
         {/* Banner para usuarios que navegan como invitado */}
         {isMe && (!activeUser.email || isGuestUser(activeUser)) && (
@@ -807,6 +855,7 @@ export default function Perfil({
         currentUser={currentUser}
         onProfileUpdate={onProfileUpdate}
         onUpdateUser={onUpdateUser}
+        onLogout={onLogout}
         onClose={() => {
           setIsEditProfileOpen(false);
           navigateTo(getProfilePath(activeUser));

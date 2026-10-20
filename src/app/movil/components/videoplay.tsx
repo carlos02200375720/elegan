@@ -25,7 +25,7 @@ export interface MovilVideoPlayProps {
   muted?: boolean;
   isCurrent?: boolean;
   className?: string;
-  aspectRatio?: 'vertical' | 'horizontal' | 'square';
+  aspectRatio?: 'vertical' | 'horizontal' | 'square' | '1:1' | '3:4' | '4:3';
   onClick?: () => void;
   onDoubleTap?: () => void;
   onEnded?: () => void;
@@ -67,7 +67,7 @@ export const MovilVideoPlay = forwardRef<MovilVideoPlayHandle, MovilVideoPlayPro
     const [isMuted, setIsMuted] = useState(muted);
     const [showTapIndicator, setShowTapIndicator] = useState(false);
     const [detectedAspect, setDetectedAspect] = useState<'vertical' | 'horizontal' | 'square'>(
-      aspectRatio === 'horizontal' ? 'horizontal' : 'square'
+      aspectRatio === 'horizontal' || aspectRatio === '4:3' ? 'horizontal' : 'square'
     );
     const lastTapTimeRef = useRef<number>(0);
     const tapTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -439,13 +439,7 @@ export const MovilVideoPlay = forwardRef<MovilVideoPlayHandle, MovilVideoPlayPro
     const effectiveAspect = detectedAspect;
     return (
       <div className={`relative w-full h-full flex flex-col items-center justify-center overflow-hidden bg-black ${className}`} onClick={handleTap}>
-        <div
-          className={
-            effectiveAspect === 'vertical'
-              ? 'absolute inset-0 w-full h-full overflow-hidden bg-black'
-              : 'w-full h-full flex items-center justify-center bg-black overflow-hidden'
-          }
-        >
+        <div className="w-full h-full flex items-center justify-center bg-black overflow-hidden">
           <video
             ref={videoRef}
             poster={poster ? getMediaUrl(poster) : undefined}
@@ -456,11 +450,7 @@ export const MovilVideoPlay = forwardRef<MovilVideoPlayHandle, MovilVideoPlayPro
             disablePictureInPicture
             webkit-playsinline="true"
             preload={isCurrent ? "auto" : "metadata"}
-            className={
-              effectiveAspect === 'vertical'
-                ? 'w-full h-full object-cover object-center block'
-                : 'w-full h-auto max-h-full object-contain object-center block bg-black'
-            }
+            className="w-full h-full object-cover object-center block"
             onLoadedMetadata={checkVideoDimensions}
             onLoadedData={() => {
               checkVideoDimensions();

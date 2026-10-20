@@ -155,7 +155,7 @@ export default function AndroidApp({
   const requiresLogin = !hasActiveAccount;
   const isLoginPage = currentRoute.type === "login";
   const isHomeActive = activeTab === 'inicio' || activeTab === 'reels';
-  const isDarkNavActive = isHomeActive;
+  const isDarkNavActive = false;
   const [navBarHeight, setNavBarHeight] = React.useState(56);
   const [cartDrawerRequest, setCartDrawerRequest] = React.useState(0);
   const [isCartPageOpen, setIsCartPageOpen] = React.useState(false);
@@ -457,6 +457,12 @@ export default function AndroidApp({
                     onPublishSuccess={refreshAllData}
                     onDeleteReel={handleDeleteReel}
                     onLogout={handleLogout}
+                    cart={cart}
+                    onOpenCart={() => {
+                      setActiveTab('shop');
+                      setShopInitialStep('cart');
+                      navigateTo('/tienda/carrito');
+                    }}
                     socket={socket}
                   />
               </div>
@@ -523,12 +529,9 @@ export default function AndroidApp({
       {!isLoginPage && !(activeTab === 'messages' && activeChatUser) && !isLiveViewerOpen && !isProductDetailOpen && !(activeTab === 'shop' && isCartPageOpen) && (
         <div
           id="android-bottom-nav-bar"
-          className={`fixed bottom-0 inset-x-0 pt-1 px-1 z-30 transition-colors shadow-none ${
-            activeTab === 'shop' || activeTab === 'profile' || activeTab === 'messages'
-               ? "bg-white text-slate-900 border-t border-slate-100"
-               : "bg-black text-white border-t border-white/5"
-          }`}
+          className="fixed bottom-0 inset-x-0 pt-1 px-1 z-30 transition-colors shadow-none bg-white text-slate-900 border-t border-slate-100"
           style={{
+            backgroundColor: "#ffffff",
             paddingBottom: 'max(0.2rem, calc(env(safe-area-inset-bottom, 0px) + 0.15rem))'
           }}
         >
@@ -539,12 +542,12 @@ export default function AndroidApp({
               onClick={() => { refreshReels(); setActiveTab('inicio'); navigateTo('/inicio'); }}
               className={`flex flex-col items-center justify-center py-1 px-3 rounded-2xl transition-all active:bg-amber-500/10 cursor-pointer ${
                 isHomeActive
-                  ? "text-amber-500 scale-105"
-                  : "text-slate-400 hover:text-white"
+                  ? "text-amber-600 scale-105 font-bold"
+                  : "text-slate-400 hover:text-slate-800"
               }`}
               id="android-nav-inicio"
             >
-              <Play className={`w-5 h-5 transition-all ${isHomeActive ? "fill-amber-500 stroke-amber-500" : ""}`} />
+              <Play className={`w-5 h-5 transition-all ${isHomeActive ? "fill-amber-600 stroke-amber-600" : ""}`} />
               <span className="text-[10px] font-medium mt-0.5 tracking-tight">Inicio</span>
             </button>
 
@@ -553,8 +556,8 @@ export default function AndroidApp({
               onClick={() => { setActiveTab('shop'); navigateTo('/tienda/catalogo'); }}
               className={`flex flex-col items-center justify-center py-1 px-3 rounded-2xl transition-all active:bg-amber-500/10 cursor-pointer relative ${
                 activeTab === 'shop'
-                  ? "text-amber-600 scale-105"
-                  : isHomeActive ? "text-slate-400 hover:text-white" : "text-slate-400 hover:text-slate-800"
+                  ? "text-amber-600 scale-105 font-bold"
+                  : "text-slate-400 hover:text-slate-800"
               }`}
               id="android-nav-shop"
             >
@@ -567,15 +570,15 @@ export default function AndroidApp({
               onClick={() => { setActiveTab('messages'); navigateTo('/messages'); }}
               className={`flex flex-col items-center justify-center py-1 px-3 rounded-2xl transition-all active:bg-amber-500/10 cursor-pointer relative ${
                 activeTab === 'messages'
-                  ? "text-amber-600 scale-105"
-                  : isHomeActive ? "text-slate-400 hover:text-white" : "text-slate-400 hover:text-slate-800"
+                  ? "text-amber-600 scale-105 font-bold"
+                  : "text-slate-400 hover:text-slate-800"
               }`}
               id="android-nav-messages"
             >
               <MessageSquare className={`w-5 h-5 transition-all ${activeTab === 'messages' ? "fill-amber-600 stroke-amber-600" : ""}`} />
               <span className="text-[10px] font-medium mt-0.5 tracking-tight">Mensajes</span>
               {totalUnreads > 0 && (
-                <span className="absolute top-0.5 right-2 w-4 h-4 bg-rose-500 text-white font-mono font-bold text-[9px] rounded-full flex items-center justify-center border border-black animate-pulse shadow-sm">
+                <span className="absolute top-0.5 right-2 w-4 h-4 bg-rose-500 text-white font-mono font-bold text-[9px] rounded-full flex items-center justify-center border border-white animate-pulse shadow-sm">
                   {totalUnreads}
                 </span>
               )}
@@ -590,17 +593,16 @@ export default function AndroidApp({
               }}
               className={`flex flex-col items-center justify-center py-1 px-3 rounded-2xl transition-all active:bg-amber-500/10 cursor-pointer ${
                 activeTab === 'profile'
-                  ? "text-amber-600 scale-105"
-                  : isHomeActive ? "text-slate-400 hover:text-white" : "text-slate-400 hover:text-slate-800"
+                  ? "text-amber-600 scale-105 font-bold"
+                  : "text-slate-400 hover:text-slate-800"
               }`}
               id="android-nav-profile"
             >
               <UserIcon className={`w-5 h-5 transition-all ${activeTab === 'profile' ? "fill-amber-600 stroke-amber-600" : ""}`} />
               <span className="text-[10px] font-medium mt-0.5 tracking-tight">
-                Perfil
+                Mi Perfil
               </span>
             </button>
-
           </div>
         </div>
       )}

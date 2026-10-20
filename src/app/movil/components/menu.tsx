@@ -20,21 +20,25 @@ export interface MovilHamburgerMenuProps {
 export function MovilHamburgerButton({
   onOpen,
   totalUnreads = 0,
+  dark = false,
 }: {
   onOpen: () => void;
   totalUnreads?: number;
+  dark?: boolean;
 }) {
   return (
     <button
       type="button"
       onClick={onOpen}
-      className="relative p-2.5 rounded-full bg-transparent text-white hover:bg-white/10 transition-colors cursor-pointer drop-shadow-md flex items-center justify-center pointer-events-auto"
+      className={`relative p-2 rounded-xl transition-colors cursor-pointer flex items-center justify-center pointer-events-auto ${
+        dark ? "bg-transparent text-slate-800 hover:bg-slate-100" : "bg-transparent text-white hover:bg-white/10 drop-shadow-md"
+      }`}
       id="movil-inicio-hamburger-btn"
       title="Abrir menú de navegación móvil"
     >
-      <Menu className="w-6 h-6 text-white drop-shadow-md" />
+      <Menu className={`w-6 h-6 ${dark ? "text-slate-900" : "text-white drop-shadow-md"}`} />
       {totalUnreads > 0 && (
-        <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 rounded-full bg-rose-500 border border-slate-950" />
+        <span className="absolute top-1 right-1 w-2.5 h-2.5 rounded-full bg-rose-500 border border-white" />
       )}
     </button>
   );

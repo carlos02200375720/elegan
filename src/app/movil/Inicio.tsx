@@ -48,6 +48,35 @@ export interface AndroidInicioProps {
   onActiveReelChange?: (reelId: string) => void;
 }
 
+export type PublicationFormat = '1:1' | '3:4' | '4:3';
+
+export const getPublicationFormatStyles = (format: PublicationFormat): React.CSSProperties => {
+  switch (format) {
+    case '1:1':
+      return {
+        aspectRatio: '1 / 1',
+        width: '100%',
+        maxWidth: 'min(100%, calc(100dvh - 200px))',
+        maxHeight: 'calc(100dvh - 200px)',
+      };
+    case '3:4':
+      return {
+        aspectRatio: '3 / 4',
+        height: '100%',
+        maxHeight: 'calc(100dvh - 160px)',
+        maxWidth: 'min(100%, calc((100dvh - 160px) * 3 / 4))',
+        width: 'auto',
+      };
+    case '4:3':
+      return {
+        aspectRatio: '4 / 3',
+        width: '100%',
+        maxWidth: '100%',
+        maxHeight: 'calc(100dvh - 220px)',
+      };
+  }
+};
+
 export default function Inicio({
   reels,
   currentUser,
@@ -109,6 +138,19 @@ export default function Inicio({
   const [showCartPanel, setShowCartPanel] = useState(false);
   const [showHamburgerMenu, setShowHamburgerMenu] = useState(false);
   const [expandedDescriptions, setExpandedDescriptions] = useState<{ [key: string]: boolean }>({});
+  const [publicationFormats, setPublicationFormats] = useState<Record<string, PublicationFormat>>({});
+
+  const getEffectiveFormat = (item: Reel): PublicationFormat => {
+    if (publicationFormats[item.id]) {
+      return publicationFormats[item.id];
+    }
+    const ar = (item.aspectRatio || '').toLowerCase().trim();
+    if (ar === '1:1' || ar === 'square') return '1:1';
+    if (ar === '4:3' || ar === 'horizontal' || ar === 'landscape') return '4:3';
+    if (ar === '3:4' || ar === 'vertical' || ar === 'portrait') return '3:4';
+    if (item.type === 'product' || item.productId) return '1:1';
+    return '3:4';
+  };
 
   const [selectedCartIndices, setSelectedCartIndices] = useState<number[]>([]);
 
@@ -190,173 +232,103 @@ export default function Inicio({
   }, []);
 
   const playerRef = useRef<MovilVideoPlayHandle>(null);
-  const touchStartX = useRef<number>(0);
-  const touchStartY = useRef<number>(0);
-  const mouseStartX = useRef<number>(0);
-  const isMouseDownRef = useRef<boolean>(false);
-  const isGuest = false;
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [carouselIndices, setCarouselIndices] = useState<Record<string, number>>({});
+  const [activeCommentsReelId, setActiveCommentsReelId] = useState<string | null>(null);
+  const [heartAnimReelId, setHeartAnimReelId] = useState<string | null>(null);
 
-  const [activeMediaIndex, setActiveMediaIndex] = useState(0);
-  const prevReelIdRef = useRef<string | null>(null);
-  const imageRef = useRef<HTMLImageElement | null>(null);
+  const getReelMediaItems = useCallback((reel?: Reel): ReelMedia[] => {
+    if (!reel) return [{ type: "image", url: "" }];
+    if (Array.isArray(reel.media) && reel.media.length > 0) {
+      return reel.media.map((item) =>
+        item.type === "video"
+          ? {
+              ...item,
+              url: reel.hlsUrl || reel.videoUrl || item.url,
+              hlsUrl: reel.hlsUrl || item.hlsUrl,
+              thumbnailUrl: item.thumbnailUrl || reel.thumbnailUrl || undefined,
+            }
+          : item
+      );
+    }
+    if (reel.videoUrl && reel.videoUrl.trim() !== "") {
+      return [
+        {
+          type: "video",
+          url: reel.hlsUrl || reel.videoUrl,
+          hlsUrl: reel.hlsUrl,
+          thumbnailUrl: reel.thumbnailUrl || undefined,
+        },
+      ];
+    }
+    if (reel.images && reel.images.length > 0) {
+      return reel.images.map((img, i) => ({ type: "image", url: img, order: i }));
+    }
+    return [{ type: "image", url: reel.thumbnailUrl || "" }];
+  }, []);
 
   const currentReel = reels[currentIndex] || reels[0];
-  const isProductPublication = Boolean(
-    currentReel?.type === "product" ||
-    currentReel?.id?.startsWith("reel_prod_") ||
-    currentReel?.productId ||
-    (currentReel as any)?.taggedProductId
-  );
+  const currentMediaItems = getReelMediaItems(currentReel);
+  const currentActiveMediaIdx = carouselIndices[currentReel?.id] || 0;
+
+  const scrollToReelIndex = useCallback((targetIdx: number, smooth = true) => {
+    if (!containerRef.current) return;
+    const ch = containerRef.current.clientHeight;
+    if (ch > 0) {
+      containerRef.current.scrollTo({
+        top: targetIdx * ch,
+        behavior: smooth ? "smooth" : "auto",
+      });
+    }
+  }, []);
+
+  const handleScroll = useCallback(() => {
+    if (!containerRef.current) return;
+    const { scrollTop, clientHeight } = containerRef.current;
+    if (clientHeight <= 0) return;
+    const newIdx = Math.round(scrollTop / clientHeight);
+    if (newIdx >= 0 && newIdx < reels.length && newIdx !== currentIndex) {
+      setCurrentIndex(newIdx);
+      if (newIdx >= reels.length - 2 && onRefreshReels) {
+        onRefreshReels();
+      }
+    }
+  }, [currentIndex, reels.length, onRefreshReels]);
+
+  const handleNext = useCallback(() => {
+    if (reels.length === 0) return;
+    const nextIdx = (currentIndex + 1) % reels.length;
+    setCurrentIndex(nextIdx);
+    scrollToReelIndex(nextIdx, true);
+  }, [currentIndex, reels.length, scrollToReelIndex]);
+
+  const handlePrev = useCallback(() => {
+    if (reels.length === 0) return;
+    const prevIdx = (currentIndex - 1 + reels.length) % reels.length;
+    setCurrentIndex(prevIdx);
+    scrollToReelIndex(prevIdx, true);
+  }, [currentIndex, reels.length, scrollToReelIndex]);
 
   useEffect(() => {
     if (!initialReelId || reels.length === 0) return;
-    if (lastSeenInitialReelIdPropRef.current === initialReelId) {
-      return;
-    }
+    if (lastSeenInitialReelIdPropRef.current === initialReelId) return;
     const matched = findReelByInicioParam(reels, initialReelId);
     const idx = matched ? reels.findIndex((r) => r.id === matched.id) : -1;
     if (idx !== -1) {
       lastSeenInitialReelIdPropRef.current = initialReelId;
-      if (internalSwipedReelIdsRef.current.has(initialReelId) || internalSwipedReelIdsRef.current.has(matched!.id)) {
-        internalSwipedReelIdsRef.current.delete(initialReelId);
-        internalSwipedReelIdsRef.current.delete(matched!.id);
-        return;
-      }
       if (idx !== currentIndex) {
         setCurrentIndex(idx);
+        scrollToReelIndex(idx, false);
       }
     }
-  }, [initialReelId, reels, currentIndex]);
+  }, [initialReelId, reels, currentIndex, scrollToReelIndex]);
 
   useEffect(() => {
-    const activeId = reels[currentIndex]?.id || reels[0]?.id;
-    if (!activeId) return;
-    if (prevReelIdRef.current !== activeId) {
-      prevReelIdRef.current = activeId;
-      setActiveMediaIndex(0);
-      setImageAspect("square");
-    }
-    if (initialReelId && lastSeenInitialReelIdPropRef.current !== initialReelId) {
-      const matched = findReelByInicioParam(reels, initialReelId);
-      const targetIdx = matched ? reels.findIndex((r) => r.id === matched.id) : -1;
-      if (targetIdx !== -1 && targetIdx !== currentIndex) {
-        return;
-      }
-    }
-    internalSwipedReelIdsRef.current.add(activeId);
-    onActiveReelChangeRef.current?.(activeId);
-  }, [currentIndex, reels, initialReelId]);
-
-  const handleProductSelect = onProductClick || onSelectProduct;
-
-  // Infinite scroll: Next reel loops back to beginning seamlessly
-  const handleNext = useCallback(() => {
-    if (reels.length === 0) return;
-    setCurrentIndex((i) => (i + 1) % reels.length);
-    if (currentIndex >= reels.length - 2 && onRefreshReels) {
-      onRefreshReels();
-    }
-  }, [currentIndex, reels.length, onRefreshReels]);
-
-  // Infinite scroll: Prev reel loops back to end seamlessly
-  const handlePrev = useCallback(() => {
-    if (reels.length === 0) return;
-    setCurrentIndex((i) => (i - 1 + reels.length) % reels.length);
-  }, [reels.length]);
-
-  const mediaItems: ReelMedia[] =
-    Array.isArray(currentReel?.media) && currentReel.media.length > 0
-      ? currentReel.media.map((item) =>
-          item.type === "video"
-            ? { ...item, url: currentReel.hlsUrl || currentReel.videoUrl || item.url, hlsUrl: currentReel.hlsUrl || item.hlsUrl, thumbnailUrl: item.thumbnailUrl || currentReel.thumbnailUrl || undefined }
-            : item
-        )
-      : currentReel?.videoUrl && currentReel.videoUrl.trim() !== ""
-        ? [{ type: "video", url: currentReel.hlsUrl || currentReel.videoUrl, hlsUrl: currentReel.hlsUrl, thumbnailUrl: currentReel.thumbnailUrl || undefined }]
-    : (currentReel?.images && currentReel.images.length > 0)
-    ? currentReel.images.map((img, i) => ({ type: "image", url: img, order: i }))
-    : [{ type: "image", url: currentReel?.thumbnailUrl || "" }];
-
-  const currentMedia = mediaItems[activeMediaIndex] || mediaItems[0];
-  const isVideo = currentMedia?.type === "video" && !!currentMedia.url;
-
-  const nextReel = reels.length > 1 ? reels[(currentIndex + 1) % reels.length] : null;
-  const nextMediaItems: ReelMedia[] =
-    Array.isArray(nextReel?.media) && nextReel.media.length > 0
-      ? nextReel.media.map((item) =>
-          item.type === "video"
-            ? { ...item, url: nextReel.hlsUrl || nextReel.videoUrl || item.url, hlsUrl: nextReel.hlsUrl || item.hlsUrl, thumbnailUrl: item.thumbnailUrl || nextReel.thumbnailUrl || undefined }
-            : item
-        )
-      : nextReel?.videoUrl && nextReel.videoUrl.trim() !== ""
-        ? [{ type: "video", url: nextReel.hlsUrl || nextReel.videoUrl, hlsUrl: nextReel.hlsUrl, thumbnailUrl: nextReel.thumbnailUrl || undefined }]
-        : nextReel?.images && nextReel.images.length > 0
-          ? nextReel.images.map((img, i) => ({ type: "image", url: img, order: i }))
-          : [];
-  const nextMedia = nextMediaItems.find((item) => item.type === "video" && !!item.url);
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (showComments || showCartPanel || showHamburgerMenu) return;
-    touchStartX.current = e.touches[0].clientX;
-    touchStartY.current = e.touches[0].clientY;
-  };
-
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    if (showComments || showCartPanel || showHamburgerMenu) return;
-    const touchEndX = e.changedTouches[0].clientX;
-    const touchEndY = e.changedTouches[0].clientY;
-    const diffX = touchStartX.current - touchEndX;
-    const diffY = touchStartY.current - touchEndY;
-    const SWIPE_THRESHOLD = 45;
-
-    // Detect horizontal swipe inside reel media sequence
-    if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > SWIPE_THRESHOLD && mediaItems.length > 1) {
-      if (diffX > 0 && activeMediaIndex < mediaItems.length - 1) {
-        setActiveMediaIndex((prev) => prev + 1);
-        return;
-      } else if (diffX < 0 && activeMediaIndex > 0) {
-        setActiveMediaIndex((prev) => prev - 1);
-        return;
-      }
-    }
-
-    if (diffY > SWIPE_THRESHOLD) {
-      handleNext();
-    } else if (diffY < -SWIPE_THRESHOLD) {
-      handlePrev();
-    }
-  };
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    if (showComments || showCartPanel || showHamburgerMenu) return;
-    isMouseDownRef.current = true;
-    mouseStartX.current = e.clientX;
-    touchStartY.current = e.clientY;
-  };
-
-  const handleMouseUp = (e: React.MouseEvent) => {
-    if (showComments || showCartPanel || showHamburgerMenu || !isMouseDownRef.current) return;
-    isMouseDownRef.current = false;
-    const diffX = mouseStartX.current - e.clientX;
-    const diffY = touchStartY.current - e.clientY;
-    const SWIPE_THRESHOLD = 45;
-
-    if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > SWIPE_THRESHOLD && mediaItems.length > 1) {
-      if (diffX > 0 && activeMediaIndex < mediaItems.length - 1) {
-        setActiveMediaIndex((prev) => prev + 1);
-        return;
-      } else if (diffX < 0 && activeMediaIndex > 0) {
-        setActiveMediaIndex((prev) => prev - 1);
-        return;
-      }
-    }
-
-    if (diffY > SWIPE_THRESHOLD) {
-      handleNext();
-    } else if (diffY < -SWIPE_THRESHOLD) {
-      handlePrev();
-    }
-  };
+    const activeReel = reels[currentIndex];
+    if (!activeReel) return;
+    internalSwipedReelIdsRef.current.add(activeReel.id);
+    onActiveReelChangeRef.current?.(activeReel.id);
+  }, [currentIndex, reels]);
 
   // Keyboard navigation (ArrowDown / ArrowUp)
   useEffect(() => {
@@ -369,80 +341,88 @@ export default function Inicio({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [handleNext, handlePrev, showComments, showCartPanel, showHamburgerMenu]);
 
-  // Infinite mouse wheel scroll navigation
-  useEffect(() => {
-    let lastWheelTime = 0;
-    const handleWheel = (e: WheelEvent) => {
-      if (showComments || showCartPanel || showHamburgerMenu) return;
-      const now = Date.now();
-      if (now - lastWheelTime < 400) return;
-      if (e.deltaY > 25) {
-        lastWheelTime = now;
-        handleNext();
-      } else if (e.deltaY < -25) {
-        lastWheelTime = now;
-        handlePrev();
-      }
-    };
+  const handleProductSelect = onProductClick || onSelectProduct;
+  const currentGuestToken = currentUser?.guestToken || getLocalGuestToken();
 
-    const container = document.getElementById("android-reels-view");
-    if (container) {
-      container.addEventListener("wheel", handleWheel, { passive: true });
+  const handleDoubleTap = (reelItem: Reel) => {
+    const isLiked = Boolean(
+      reelItem.likedBy?.some(
+        (id) =>
+          id === currentUser?.originalId ||
+          id === currentUser?.id ||
+          id === currentUser?.username ||
+          (currentGuestToken && id === currentGuestToken)
+      )
+    );
+    if (!isLiked) {
+      onLikeReel(reelItem.id);
     }
-    return () => {
-      if (container) container.removeEventListener("wheel", handleWheel);
-    };
-  }, [handleNext, handlePrev, showComments, showCartPanel, showHamburgerMenu]);
+    setHeartAnimReelId(reelItem.id);
+    setTimeout(() => setHeartAnimReelId(null), 800);
+  };
 
-  const applyDetectedImageDimensions = useCallback(
-    (img: HTMLImageElement | null) => {
-      if (!img || !img.naturalWidth || !img.naturalHeight) return;
-      const ratio = img.naturalWidth / img.naturalHeight;
-      if (isProductPublication) {
-        setImageAspect(ratio > 1.05 ? "horizontal" : "square");
-        return;
-      }
-      if (ratio > 1.05) setImageAspect("horizontal");
-      else if (ratio < 0.95) setImageAspect("vertical");
-      else setImageAspect("square");
-    },
-    [isProductPublication]
-  );
-
-  useEffect(() => {
-    if (isProductPublication) {
-      setImageAspect("square");
+  const handleShare = async (reelToShare: Reel) => {
+    const shareUrl = getInicioShareUrl(reelToShare);
+    if (typeof navigator !== "undefined" && navigator.share) {
+      try {
+        await navigator.share({
+          title: reelToShare.description || "Inicio",
+          text: reelToShare.description,
+          url: shareUrl,
+        });
+      } catch {}
+    } else {
+      navigator.clipboard?.writeText?.(shareUrl);
     }
-    if (imageRef.current && imageRef.current.complete && imageRef.current.naturalWidth > 0) {
-      applyDetectedImageDimensions(imageRef.current);
-    }
-  }, [currentReel?.id, activeMediaIndex, currentMedia?.url, isProductPublication, applyDetectedImageDimensions]);
+  };
 
-  if (!currentReel) {
+  const handleCreatorNav = (reelItem: Reel) => {
+    if (onCreatorClick) {
+      onCreatorClick(reelItem.creatorId);
+    } else if (onSelectUser) {
+      const creator = users.find(
+        (u) => u.id === reelItem.creatorId || u.username === reelItem.creatorUsername
+      );
+      if (creator) onSelectUser(creator);
+    }
+  };
+
+  const activeCommentsReel =
+    reels.find((r) => r.id === activeCommentsReelId) || reels[currentIndex] || reels[0];
+
+  const handleCommentSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!commentInput.trim() || !activeCommentsReel) return;
+    const commentFn = onAddComment || onCommentReel;
+    if (commentFn) commentFn(activeCommentsReel.id, commentInput.trim());
+    setCommentInput("");
+  };
+
+  if (!currentReel && reels.length === 0) {
     if (isLoading) {
       return (
-        <div className="w-full h-screen bg-slate-950 flex flex-col items-center justify-center text-white p-6 text-center">
+        <div className="w-full h-screen bg-white flex flex-col items-center justify-center text-slate-800 p-6 text-center">
           <div className="w-10 h-10 rounded-full border-2 border-amber-500/20 border-t-amber-500 animate-spin mb-4" />
-          <p className="text-sm font-semibold text-slate-200">Sincronizando Reels...</p>
-          <p className="text-xs text-slate-400 mt-1">Conectando con la base de datos de videos</p>
+          <p className="text-sm font-semibold text-slate-800">Sincronizando Reels...</p>
+          <p className="text-xs text-slate-500 mt-1">Conectando con la base de datos de videos</p>
         </div>
       );
     }
 
     return (
-      <div className="w-full h-screen bg-slate-950 flex flex-col items-center justify-center text-white p-6 text-center">
-        <div className="w-16 h-16 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center mb-4 text-amber-400">
+      <div className="w-full h-screen bg-white flex flex-col items-center justify-center text-slate-800 p-6 text-center">
+        <div className="w-16 h-16 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center mb-4 text-amber-500">
           <Video className="w-8 h-8" />
         </div>
-        <p className="text-base font-bold text-slate-200">No hay publicaciones disponibles</p>
-        <p className="text-xs text-slate-400 mt-1 max-w-xs">
+        <p className="text-base font-bold text-slate-800">No hay publicaciones disponibles</p>
+        <p className="text-xs text-slate-500 mt-1 max-w-xs">
           Aún no se han publicado reels o videos en la aplicación.
         </p>
         {onRefreshReels && (
           <button
             type="button"
             onClick={onRefreshReels}
-            className="mt-5 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-bold text-xs flex items-center space-x-2 transition-transform shadow-lg shadow-amber-500/10"
+            className="mt-5 px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 active:scale-95 text-slate-950 font-bold text-xs flex items-center space-x-2 transition-transform shadow-lg shadow-amber-500/10 cursor-pointer"
           >
             <RefreshCw className="w-3.5 h-3.5" />
             <span>Actualizar</span>
@@ -452,285 +432,508 @@ export default function Inicio({
     );
   }
 
-  const currentGuestToken = currentUser?.guestToken || getLocalGuestToken();
-  const isLiked = Boolean(
-    currentReel.likedBy?.some((id) =>
-      id === currentUser?.originalId ||
-      id === currentUser?.id ||
-      id === currentUser?.username ||
-      (currentGuestToken && id === currentGuestToken)
-    )
-  );
-  const isSaved = savedReelIds.includes(currentReel.id);
-  const taggedProduct =
-    (currentReel as any).product ||
-    products.find((p) => p.id === (currentReel.productId || (currentReel as any).taggedProductId));
-  const isFollowing = currentUser?.followingUserIds?.includes(currentReel.creatorId) || false;
-
-  // Resolve creator username, display name, and avatar reliably
-  const creatorUser = users.find(
-    (u) =>
-      (currentReel.creatorId && (u.id === currentReel.creatorId || u.originalId === currentReel.creatorId)) ||
-      (currentReel.creatorUsername && u.username?.toLowerCase() === currentReel.creatorUsername?.toLowerCase())
-  );
-  const displayUsername =
-    creatorUser?.username ||
-    currentReel.creatorUsername ||
-    (currentReel.creatorId === "current_user" ? currentUser?.username : "") ||
-    "usuario";
-  const displayName = creatorUser?.name || currentReel.creatorName || (displayUsername ? `@${displayUsername}` : "Creador");
-  const displayAvatar =
-    creatorUser?.avatar ||
-    currentReel.creatorAvatar ||
-    "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80";
-
-  const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    applyDetectedImageDimensions(e.currentTarget);
-  };
-
-  const handleDoubleTap = () => {
-    if (!isLiked) {
-      onLikeReel(currentReel.id);
-    }
-    setShowHeartAnim(true);
-    setTimeout(() => setShowHeartAnim(false), 800);
-  };
-
-  const handleCommentSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!commentInput.trim()) return;
-    const commentFn = onAddComment || onCommentReel;
-    if (commentFn) commentFn(currentReel.id, commentInput.trim());
-    setCommentInput("");
-  };
-
-  const handleShare = async () => {
-    const shareUrl = getInicioShareUrl(currentReel);
-    if (typeof navigator !== "undefined" && navigator.share) {
-      try {
-        await navigator.share({
-          title: currentReel.description || "Inicio",
-          text: currentReel.description,
-          url: shareUrl,
-        });
-      } catch {}
-    } else {
-      navigator.clipboard?.writeText?.(shareUrl);
-    }
-  };
-
-  const handleCreatorNav = () => {
-    if (onCreatorClick) {
-      onCreatorClick(currentReel.creatorId);
-    } else if (onSelectUser) {
-      const creator = users.find((u) => u.id === currentReel.creatorId || u.username === currentReel.creatorUsername);
-      if (creator) onSelectUser(creator);
-    }
-  };
-
   return (
     <div
-      className="relative w-full bg-black overflow-hidden flex flex-col items-center justify-center select-none font-sans"
+      className="relative w-full bg-white overflow-hidden flex flex-col font-sans select-none"
       style={{
         height: `calc(100dvh - ${actualNavHeight}px)`,
         minHeight: `calc(100dvh - ${actualNavHeight}px)`,
         maxHeight: `calc(100dvh - ${actualNavHeight}px)`,
-        touchAction: "pan-y",
+        backgroundColor: "#ffffff",
       }}
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
-      onMouseDown={handleMouseDown}
-      onMouseUp={handleMouseUp}
       id="android-reels-view"
     >
-      {/* Media Player Container: Dynamic Aspect Architecture (Vertical 100% from nav bar, Horizontal 16:9, Square 1:1) */}
-      {isVideo ? (
-        <div className="absolute inset-0 w-full h-full overflow-hidden">
-          <MovilVideoPlay
-            key={`${currentReel.id}-${activeMediaIndex}`}
-            ref={playerRef}
-            src={getMediaUrl(currentMedia.url)}
-            hlsUrl={getMediaUrl(currentMedia.hlsUrl || (currentMedia.url?.includes(".m3u8") ? currentMedia.url : currentReel.hlsUrl))}
-            poster={undefined}
-            autoPlay={true}
-            loop={true}
-            muted={isMuted}
-            isCurrent={isFeedActive}
-            aspectRatio={isProductPublication ? "square" : currentReel.aspectRatio}
-            onDoubleTap={handleDoubleTap}
-            onMuteChange={handleMuteChange}
-            onVideoReady={handleVideoReady}
-            className="w-full h-full"
-          />
-        </div>
-      ) : (
-        /* Image / Carousel publication */
-        <div className="absolute inset-0 w-full h-full flex flex-col items-center justify-center overflow-hidden bg-black">
-          <div
-            className={
-              !isProductPublication && imageAspect === "vertical"
-                ? "absolute inset-0 w-full h-full overflow-hidden bg-black"
-                : "w-full h-full flex items-center justify-center bg-black overflow-hidden"
-            }
-          >
-            <img
-              ref={imageRef}
-              src={getMediaUrl(currentMedia?.url || currentReel.thumbnailUrl || (currentReel.images && currentReel.images[0]))}
-              alt={currentReel.description}
-              onLoad={handleImageLoad}
-              className={
-                !isProductPublication && imageAspect === "vertical"
-                  ? "w-full h-full object-cover object-center block"
-                  : "w-full h-auto max-h-full object-contain object-center block bg-black"
-              }
-            />
-          </div>
-        </div>
-      )}
-
-      {nextMedia && nextReel && nextReel.id !== currentReel.id && (
-        <MovilVideoPlay
-          key={`preload-${nextReel.id}`}
-          src={getMediaUrl(nextMedia.url)}
-          hlsUrl={getMediaUrl(nextMedia.hlsUrl || (nextMedia.url?.includes(".m3u8") ? nextMedia.url : nextReel.hlsUrl))}
-          poster={undefined}
-          autoPlay={false}
-          loop={true}
-          muted={true}
-          isCurrent={false}
-          aspectRatio={nextReel.aspectRatio}
-          className="absolute inset-0 w-full h-full opacity-0 pointer-events-none"
-        />
-      )}
-
-      {/* Progress Bar for video publications: receives the live video element from AndroidVideoPlayer and tracks its accurate playback */}
-      {isVideo && (
-        <AndroidProgressBar
-          video={progressVideo}
-          isActive={isFeedActive}
-          bottomOffset={0}
-        />
-      )}
-
-      <AnimatePresence>
-        {showHeartAnim && (
-          <motion.div
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1.3, opacity: 1 }}
-            exit={{ scale: 1.8, opacity: 0 }}
-            transition={{ duration: 0.6, ease: "easeOut" }}
-            className="absolute z-40 pointer-events-none text-rose-500"
-          >
-            <Heart className="w-24 h-24 fill-rose-500 drop-shadow-2xl" />
-          </motion.div>
-        )}
-      </AnimatePresence>
-
+      {/* Cabecera fija con fondo blanco que se acopla con la barra de estado de Android */}
       <header
-        className="absolute top-0 inset-x-0 z-40 flex items-center justify-between px-4 pointer-events-none"
-        style={{ paddingTop: "max(12px, calc(env(safe-area-inset-top, 0px) + 0.75rem))", paddingBottom: "0.75rem" }}
+        className="absolute top-0 inset-x-0 z-40 flex items-center justify-between px-4 bg-white border-b border-slate-100 shadow-2xs pointer-events-auto"
+        style={{
+          backgroundColor: "#ffffff",
+          paddingTop: "max(12px, calc(env(safe-area-inset-top, 0px) + 0.5rem))",
+          paddingBottom: "0.5rem",
+        }}
         id="android-reels-fixed-header"
       >
-        <div className="flex items-center space-x-2 pointer-events-auto">
+        <div className="flex items-center space-x-2">
           <MovilHamburgerButton
+            dark={true}
             onOpen={() => setShowHamburgerMenu(true)}
             totalUnreads={totalUnreads || unreadCount || 0}
           />
         </div>
-        <div className="flex items-center space-x-2 pointer-events-auto">
-          {mediaItems.length > 1 && <div className="inline-flex items-center space-x-1 px-1.5 py-1 bg-transparent text-xs font-extrabold text-white drop-shadow-md"><span className="text-amber-400 font-mono font-black">{activeMediaIndex + 1}</span><span className="text-white/70 font-mono">/</span><span className="text-white font-mono font-bold">{mediaItems.length}</span></div>}
-          <button onClick={() => setShowCartPanel(true)} className="relative p-2.5 rounded-full bg-transparent text-white hover:bg-white/10 transition-colors cursor-pointer drop-shadow-md flex items-center justify-center pointer-events-auto" id="android-reels-cart-btn" title="Ver carrito de compras">
-            <ShoppingBag className="w-5 h-5 text-amber-400 drop-shadow-md" />
-            {totalCartCount > 0 && <span className="absolute -top-1 -right-1 bg-rose-500 text-white font-mono text-[10px] font-bold w-4.5 h-4.5 rounded-full flex items-center justify-center border border-slate-950 shadow-md animate-pulse">{totalCartCount}</span>}
+        <div className="flex items-center space-x-2">
+          {currentMediaItems.length > 1 && (
+            <div className="inline-flex items-center space-x-1 px-2.5 py-1 bg-slate-100 rounded-full text-xs font-bold text-slate-800 border border-slate-200 shadow-2xs">
+              <span className="text-amber-600 font-mono font-black">{currentActiveMediaIdx + 1}</span>
+              <span className="text-slate-400 font-mono">/</span>
+              <span className="text-slate-700 font-mono font-bold">{currentMediaItems.length}</span>
+            </div>
+          )}
+          <button
+            onClick={() => setShowCartPanel(true)}
+            className="relative p-2 rounded-xl text-slate-800 hover:bg-slate-100 active:scale-95 transition-all cursor-pointer flex items-center justify-center pointer-events-auto"
+            id="android-reels-cart-btn"
+            title="Ver carrito de compras"
+            aria-label={`Ver carrito (${totalCartCount} productos)`}
+          >
+            <ShoppingBag className="w-5 h-5 text-slate-800" />
+            {totalCartCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-amber-500 text-slate-950 font-mono text-[10px] font-black w-4.5 h-4.5 rounded-full flex items-center justify-center border-2 border-white shadow-xs">
+                {totalCartCount > 99 ? "99+" : totalCartCount}
+              </span>
+            )}
           </button>
         </div>
       </header>
 
-      <MovilHamburgerMenu
-        isOpen={showHamburgerMenu}
-        onOpen={() => setShowHamburgerMenu(true)}
-        onClose={() => setShowHamburgerMenu(false)}
-        currentUser={currentUser}
-        totalUnreads={totalUnreads || unreadCount || 0}
-        onNavigateToTab={onNavigateToTab}
-        onRefreshReels={onRefreshReels}
-        onNavigateToShop={onNavigateToShop}
-        onNavigateToProfile={onNavigateToProfile}
-      />
+      {/* Contenedor vertical deslizable como en catálogo (Continuous Vertical Snap-Scroll Feed) */}
+      <div
+        ref={containerRef}
+        onScroll={handleScroll}
+        className="w-full flex-1 overflow-y-scroll snap-y snap-mandatory no-scrollbar relative bg-white"
+        style={{
+          scrollbarWidth: "none",
+          scrollSnapType: "y mandatory",
+          WebkitOverflowScrolling: "touch",
+          height: `calc(100dvh - ${actualNavHeight}px)`,
+          touchAction: "pan-y",
+          backgroundColor: "#ffffff",
+        }}
+        id="android-reels-scroll-container"
+      >
+        {reels.map((reelItem, reelIndex) => {
+          const isCurrent = reelIndex === currentIndex;
+          const shouldPreload = isCurrent || Math.abs(reelIndex - currentIndex) <= 1;
+          const reelMediaItems = getReelMediaItems(reelItem);
+          const activeMediaIdx = carouselIndices[reelItem.id] || 0;
+          const currentMedia = reelMediaItems[activeMediaIdx] || reelMediaItems[0];
+          const isVideo = currentMedia?.type === "video" && !!currentMedia.url;
+          const isProductPub = Boolean(
+            reelItem.type === "product" ||
+            reelItem.id?.startsWith("reel_prod_") ||
+            reelItem.productId ||
+            (reelItem as any)?.taggedProductId
+          );
 
-      <div className="absolute right-2.5 sm:right-3.5 bottom-6 sm:bottom-8 z-30 flex flex-col items-center space-y-3.5 select-none p-0" id={`android-reel-interaction-bar-${currentReel.id}`}>
-        <div className="flex flex-col items-center"><button onClick={handleCreatorNav} className="relative rounded-full transform hover:scale-110 active:scale-95 transition-transform cursor-pointer drop-shadow-sm" id="android-mobile-creator-avatar-btn"><img src={displayAvatar} alt={displayUsername} className="w-[46px] h-[46px] sm:w-[50px] sm:h-[50px] rounded-full object-cover" /></button></div>
-        <div className="flex flex-col items-center">
-          <button onClick={() => onLikeReel(currentReel.id)} className={`w-11 h-11 sm:w-12 sm:h-12 flex items-center justify-center hover:scale-115 active:scale-95 transition-all cursor-pointer ${isLiked ? "text-rose-500" : "text-white hover:text-rose-400"}`} id="android-reel-like-btn">
-            <Heart strokeWidth={2.2} className={`w-8 h-7 sm:w-9 sm:h-8 scale-x-110 ${isLiked ? "fill-rose-500 text-rose-500 drop-shadow-[0_1px_3px_rgba(0,0,0,0.35)]" : "fill-white text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.35)]"}`} />
-          </button><span className="text-white text-xs font-bold mt-0.5 drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]">{currentReel.likes || 0}</span>
-        </div>
-        <div className="flex flex-col items-center">
-          <button onClick={() => setShowComments(true)} className="w-11 h-11 sm:w-12 sm:h-12 flex items-center justify-center text-white hover:text-amber-400 hover:scale-115 active:scale-95 transition-all cursor-pointer" id="android-reel-comment-btn">
-            <MessageCircle strokeWidth={2.2} className="w-8 h-7 sm:w-9 h-8 scale-x-110 fill-white text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.35)]" />
-          </button><span className="text-white text-xs font-bold mt-0.5 drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]">{currentReel.comments?.length || 0}</span>
-        </div>
-        <div className="flex flex-col items-center">
-          <button onClick={() => onToggleSaveReel(currentReel.id)} className={`w-11 h-11 sm:w-12 sm:h-12 flex items-center justify-center hover:scale-115 active:scale-95 transition-all cursor-pointer ${isSaved ? "text-amber-400" : "text-white hover:text-amber-300"}`} id="android-reel-save-btn">
-            <Bookmark strokeWidth={2.2} className={`w-8 h-7 sm:w-9 sm:h-8 scale-x-110 ${isSaved ? "fill-amber-400 text-amber-400 drop-shadow-[0_1px_3px_rgba(0,0,0,0.35)]" : "fill-white text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.35)]"}`} />
-          </button><span className="text-white text-xs font-bold mt-0.5 drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]">{currentReel.saves ?? 0}</span>
-        </div>
-        <div className="flex flex-col items-center">
-          <button onClick={handleShare} className="w-11 h-11 sm:w-12 sm:h-12 flex items-center justify-center text-white hover:text-cyan-400 hover:scale-115 active:scale-95 transition-all cursor-pointer" id="android-reel-share-btn">
-            <Share2 strokeWidth={2.2} className="w-8 h-7 sm:w-9 sm:h-8 scale-x-110 fill-white text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.35)]" />
-          </button><span className="text-white text-xs font-bold mt-0.5 drop-shadow-[0_1px_2px_rgba(0,0,0,0.4)]">{currentReel.shares || 0}</span>
-        </div>
-      </div>
-      <div className="absolute left-4 right-20 bottom-4 sm:bottom-6 z-20 pointer-events-none">
-        <div className="max-w-[calc(100%-10px)]">
-          <div className="text-white bg-transparent p-3 rounded-xl drop-shadow-md">
-            <h3 className="font-display font-bold text-base tracking-wide flex items-center space-x-2.5">
-              <span onClick={handleCreatorNav} className="cursor-pointer hover:underline text-white font-bold drop-shadow-sm pointer-events-auto">@{displayUsername}</span>
-              {currentUser?.id !== currentReel.creatorId && onToggleFollowUser && <button type="button" onClick={(e) => { e.stopPropagation(); e.preventDefault(); onToggleFollowUser(currentReel.creatorId); }} className={`text-xs font-bold px-3 py-1 rounded-full transition-all cursor-pointer border bg-transparent backdrop-blur-sm pointer-events-auto ${isFollowing ? "text-white/80 border-white/60" : "text-white border-white"}`}>{isFollowing ? "Siguiendo" : "+ Seguir"}</button>}
-            </h3>
-            {currentReel.description && (
-              <p className={`text-sm text-white/95 font-medium mt-1.5 leading-relaxed drop-shadow-sm pointer-events-auto break-words ${expandedDescriptions[currentReel.id] ? "whitespace-pre-line max-h-40 overflow-y-auto no-scrollbar" : ""}`}>
-                {currentReel.description.length > 25 && !expandedDescriptions[currentReel.id] ? (
-                  <>
-                    <span>{currentReel.description.slice(0, 25)}...</span>
+          const taggedProduct =
+            (reelItem as any).product ||
+            products.find((p) => p.id === (reelItem.productId || (reelItem as any).taggedProductId));
+
+          const creatorUser = users.find(
+            (u) =>
+              (reelItem.creatorId && (u.id === reelItem.creatorId || u.originalId === reelItem.creatorId)) ||
+              (reelItem.creatorUsername && u.username?.toLowerCase() === reelItem.creatorUsername?.toLowerCase())
+          );
+          const displayUsername =
+            creatorUser?.username ||
+            reelItem.creatorUsername ||
+            (reelItem.creatorId === "current_user" ? currentUser?.username : "") ||
+            "usuario";
+          const displayAvatar =
+            creatorUser?.avatar ||
+            reelItem.creatorAvatar ||
+            "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80";
+
+          const isLiked = Boolean(
+            reelItem.likedBy?.some(
+              (id) =>
+                id === currentUser?.originalId ||
+                id === currentUser?.id ||
+                id === currentUser?.username ||
+                (currentGuestToken && id === currentGuestToken)
+            )
+          );
+          const isSaved = savedReelIds.includes(reelItem.id);
+          const isFollowing = currentUser?.followingUserIds?.includes(reelItem.creatorId) || false;
+
+          const effectiveFormat = getEffectiveFormat(reelItem);
+          const formatStyle = getPublicationFormatStyles(effectiveFormat);
+
+          return (
+            <div
+              key={reelItem.id || reelIndex}
+              id={`android-reel-card-${reelItem.id}`}
+              className="w-full shrink-0 snap-start snap-always relative flex flex-col items-center justify-center bg-white overflow-hidden select-none px-3"
+              style={{
+                height: `calc(100dvh - ${actualNavHeight}px)`,
+                minHeight: `calc(100dvh - ${actualNavHeight}px)`,
+                maxHeight: `calc(100dvh - ${actualNavHeight}px)`,
+                scrollSnapAlign: "start",
+                scrollSnapStop: "always",
+                backgroundColor: "#ffffff",
+              }}
+            >
+              {/* Contenedor de publicación con 3 formatos (1:1, 3:4, 4:3) - NO cubre la pantalla completa */}
+              <div
+                id={`android-publication-container-${reelItem.id}`}
+                className="relative flex items-center justify-center overflow-hidden rounded-2xl bg-black shadow-xl border border-slate-200/90 transition-all duration-300 mx-auto select-none"
+                style={formatStyle}
+              >
+                {/* Selector interactivo de formatos: Formato 1 (1:1), Formato 2 (3:4), Formato 3 (4:3) */}
+                <div className="absolute top-2.5 left-2.5 z-30 flex items-center bg-black/65 backdrop-blur-md px-2 py-1 rounded-full border border-white/20 shadow-md pointer-events-auto">
+                  <span className="text-[10px] text-white/80 font-bold px-1 select-none">Formato:</span>
+                  {(['1:1', '3:4', '4:3'] as const).map((fmt) => (
                     <button
+                      key={fmt}
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
                         e.preventDefault();
-                        setExpandedDescriptions((prev) => ({ ...prev, [currentReel.id]: true }));
+                        setPublicationFormats((prev) => ({ ...prev, [reelItem.id]: fmt }));
                       }}
-                      className="font-bold text-white hover:text-amber-400 cursor-pointer pointer-events-auto transition-colors"
+                      className={`px-2 py-0.5 rounded-full text-[11px] font-black transition-all cursor-pointer ${
+                        effectiveFormat === fmt
+                          ? 'bg-white text-slate-950 shadow-sm scale-105'
+                          : 'text-white/75 hover:text-white hover:bg-white/20'
+                      }`}
+                      title={`Cambiar a formato ${fmt}`}
                     >
-                      mas
+                      {fmt}
                     </button>
-                  </>
-                ) : (
-                  <>
-                    <span>{currentReel.description}</span>
-                    {currentReel.description.length > 25 && expandedDescriptions[currentReel.id] && (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          e.preventDefault();
-                          setExpandedDescriptions((prev) => ({ ...prev, [currentReel.id]: false }));
-                        }}
-                        className="font-bold text-white/75 hover:text-amber-400 cursor-pointer pointer-events-auto transition-colors ml-1.5 text-xs"
-                      >
-                        menos
-                      </button>
+                  ))}
+                </div>
+
+                {/* Media Player Container */}
+                {isVideo ? (
+                  <div className="w-full h-full overflow-hidden bg-black flex items-center justify-center">
+                    {shouldPreload ? (
+                      <MovilVideoPlay
+                        key={`${reelItem.id}-${activeMediaIdx}`}
+                        ref={isCurrent ? playerRef : undefined}
+                        src={getMediaUrl(currentMedia.url)}
+                        hlsUrl={getMediaUrl(currentMedia.hlsUrl || (currentMedia.url?.includes(".m3u8") ? currentMedia.url : reelItem.hlsUrl))}
+                        poster={reelItem.thumbnailUrl ? getMediaUrl(reelItem.thumbnailUrl) : undefined}
+                        autoPlay={isCurrent && isFeedActive}
+                        loop={true}
+                        muted={isMuted}
+                        isCurrent={isCurrent && isFeedActive}
+                        aspectRatio={effectiveFormat}
+                        onDoubleTap={() => handleDoubleTap(reelItem)}
+                        onMuteChange={handleMuteChange}
+                        onVideoReady={isCurrent ? handleVideoReady : undefined}
+                        className="w-full h-full"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center bg-black">
+                        <img
+                          src={getMediaUrl(reelItem.thumbnailUrl || "")}
+                          alt={reelItem.description || ""}
+                          className="w-full h-full object-cover"
+                          loading="lazy"
+                        />
+                      </div>
                     )}
-                  </>
+                  </div>
+                ) : (
+                  /* Image / Carousel publication */
+                  <div className="w-full h-full flex flex-col items-center justify-center overflow-hidden bg-black">
+                    <div
+                      className="w-full h-full flex items-center justify-center bg-black overflow-hidden cursor-pointer"
+                      onDoubleClick={() => handleDoubleTap(reelItem)}
+                    >
+                      <img
+                        src={getMediaUrl(currentMedia?.url || reelItem.thumbnailUrl || (reelItem.images && reelItem.images[0]))}
+                        alt={reelItem.description}
+                        className="w-full h-full object-cover object-center block"
+                        loading={reelIndex <= 2 ? "eager" : "lazy"}
+                      />
+                    </div>
+
+                    {/* Carousel lateral buttons */}
+                    {reelMediaItems.length > 1 && (
+                      <>
+                        {activeMediaIdx > 0 && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setCarouselIndices((prev) => ({
+                                ...prev,
+                                [reelItem.id]: Math.max(0, activeMediaIdx - 1),
+                              }));
+                            }}
+                            className="absolute left-2.5 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-black/50 text-white backdrop-blur-xs flex items-center justify-center hover:bg-black/70 transition-all cursor-pointer pointer-events-auto shadow-md"
+                            aria-label="Foto anterior"
+                          >
+                            <ChevronLeft className="w-4 h-4" />
+                          </button>
+                        )}
+                        {activeMediaIdx < reelMediaItems.length - 1 && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setCarouselIndices((prev) => ({
+                                ...prev,
+                                [reelItem.id]: Math.min(reelMediaItems.length - 1, activeMediaIdx + 1),
+                              }));
+                            }}
+                            className="absolute right-2.5 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-black/50 text-white backdrop-blur-xs flex items-center justify-center hover:bg-black/70 transition-all cursor-pointer pointer-events-auto shadow-md"
+                            aria-label="Siguiente foto"
+                          >
+                            <ChevronRight className="w-4 h-4" />
+                          </button>
+                        )}
+                      </>
+                    )}
+                  </div>
                 )}
-              </p>
-            )}
-            {taggedProduct && handleProductSelect && <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }} onClick={() => handleProductSelect(taggedProduct)} className="bg-black/10 backdrop-blur-md border border-white/15 text-white rounded-xl flex items-stretch cursor-pointer hover:bg-black/20 hover:border-amber-500/40 active:scale-[0.98] transition-all shadow-lg overflow-hidden pointer-events-auto select-none mt-2" id={`tagged-product-${currentReel.id}`} style={{ marginLeft: "-4px", width: "285.606px", maxWidth: "100%", height: "68.3438px" }}>
-              <div className="w-20 shrink-0 h-full relative overflow-hidden bg-black/10 border-r border-white/10">{taggedProduct.imageUrl || taggedProduct.images?.[0] ? <img src={taggedProduct.imageUrl || taggedProduct.images?.[0]} alt={taggedProduct.name} referrerPolicy="no-referrer" className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center bg-slate-800 text-amber-400"><ShoppingBag className="w-5 h-5" /></div>}</div>
-              <div className="flex-1 min-w-0 px-2.5 py-1.5 flex flex-col justify-between bg-black/10"><span className="text-[9.5px] uppercase tracking-wider font-bold text-amber-400 flex items-center"><ShoppingBag className="w-2.5 h-2.5 mr-1 shrink-0" /> Producto Destacado</span><h4 className="text-xs font-bold truncate text-slate-100">{taggedProduct.name}</h4><div className="flex items-center justify-between"><span className="text-xs font-semibold text-emerald-400 font-mono">{formatPrice(Number(taggedProduct.price) || 0)}</span><span className="text-[9px] text-amber-400 font-semibold">Ver detalles →</span></div></div>
-            </motion.div>}
-          </div>
-        </div>
+
+                {/* Progress Bar for active video publication */}
+                {isCurrent && isVideo && (
+                  <AndroidProgressBar
+                    video={progressVideo}
+                    isActive={isFeedActive}
+                    bottomOffset={0}
+                  />
+                )}
+
+                {/* Heart animation on double tap */}
+                <AnimatePresence>
+                  {heartAnimReelId === reelItem.id && (
+                    <motion.div
+                      initial={{ scale: 0, opacity: 0 }}
+                      animate={{ scale: 1.3, opacity: 1 }}
+                      exit={{ scale: 1.8, opacity: 0 }}
+                      transition={{ duration: 0.6, ease: "easeOut" }}
+                      className="absolute z-40 pointer-events-none text-rose-500"
+                    >
+                      <Heart className="w-24 h-24 fill-rose-500 drop-shadow-2xl" />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* Interaction Bar on the Right */}
+              <div
+                className="absolute right-2.5 sm:right-3.5 bottom-6 sm:bottom-8 z-30 flex flex-col items-center space-y-3.5 select-none p-0"
+                id={`android-reel-interaction-bar-${reelItem.id}`}
+              >
+                <div className="flex flex-col items-center">
+                  <button
+                    onClick={() => handleCreatorNav(reelItem)}
+                    className="relative rounded-full transform hover:scale-110 active:scale-95 transition-transform cursor-pointer drop-shadow-sm pointer-events-auto"
+                    id={`android-mobile-creator-avatar-btn-${reelItem.id}`}
+                  >
+                    <img
+                      src={displayAvatar}
+                      alt={displayUsername}
+                      className="w-[46px] h-[46px] sm:w-[50px] sm:h-[50px] rounded-full object-cover"
+                    />
+                  </button>
+                </div>
+                <div className="flex flex-col items-center">
+                  <button
+                    onClick={() => onLikeReel(reelItem.id)}
+                    className={`w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-black/40 backdrop-blur-xs flex items-center justify-center hover:scale-115 active:scale-95 transition-all cursor-pointer shadow-md pointer-events-auto ${
+                      isLiked ? "text-rose-500" : "text-white hover:text-rose-400"
+                    }`}
+                    id={`android-reel-like-btn-${reelItem.id}`}
+                  >
+                    <Heart
+                      strokeWidth={2.2}
+                      className={`w-6 h-6 scale-x-110 ${
+                        isLiked
+                          ? "fill-rose-500 text-rose-500 drop-shadow-[0_1px_3px_rgba(0,0,0,0.5)]"
+                          : "fill-white text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.5)]"
+                      }`}
+                    />
+                  </button>
+                  <span className="text-white text-xs font-bold mt-0.5 drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
+                    {reelItem.likes || 0}
+                  </span>
+                </div>
+                <div className="flex flex-col items-center">
+                  <button
+                    onClick={() => {
+                      setActiveCommentsReelId(reelItem.id);
+                      setShowComments(true);
+                    }}
+                    className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-black/40 backdrop-blur-xs flex items-center justify-center text-white hover:text-amber-400 hover:scale-115 active:scale-95 transition-all cursor-pointer shadow-md pointer-events-auto"
+                    id={`android-reel-comment-btn-${reelItem.id}`}
+                  >
+                    <MessageCircle
+                      strokeWidth={2.2}
+                      className="w-6 h-6 scale-x-110 fill-white text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.5)]"
+                    />
+                  </button>
+                  <span className="text-white text-xs font-bold mt-0.5 drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
+                    {reelItem.comments?.length || 0}
+                  </span>
+                </div>
+                <div className="flex flex-col items-center">
+                  <button
+                    onClick={() => onToggleSaveReel(reelItem.id)}
+                    className={`w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-black/40 backdrop-blur-xs flex items-center justify-center hover:scale-115 active:scale-95 transition-all cursor-pointer shadow-md pointer-events-auto ${
+                      isSaved ? "text-amber-400" : "text-white hover:text-amber-300"
+                    }`}
+                    id={`android-reel-save-btn-${reelItem.id}`}
+                  >
+                    <Bookmark
+                      strokeWidth={2.2}
+                      className={`w-6 h-6 scale-x-110 ${
+                        isSaved
+                          ? "fill-amber-400 text-amber-400 drop-shadow-[0_1px_3px_rgba(0,0,0,0.5)]"
+                          : "fill-white text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.5)]"
+                      }`}
+                    />
+                  </button>
+                  <span className="text-white text-xs font-bold mt-0.5 drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
+                    {reelItem.saves ?? 0}
+                  </span>
+                </div>
+                <div className="flex flex-col items-center">
+                  <button
+                    onClick={() => handleShare(reelItem)}
+                    className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-black/40 backdrop-blur-xs flex items-center justify-center text-white hover:text-cyan-400 hover:scale-115 active:scale-95 transition-all cursor-pointer shadow-md pointer-events-auto"
+                    id={`android-reel-share-btn-${reelItem.id}`}
+                  >
+                    <Share2
+                      strokeWidth={2.2}
+                      className="w-6 h-6 scale-x-110 fill-white text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.5)]"
+                    />
+                  </button>
+                  <span className="text-white text-xs font-bold mt-0.5 drop-shadow-[0_1px_3px_rgba(0,0,0,0.8)]">
+                    {reelItem.shares || 0}
+                  </span>
+                </div>
+              </div>
+
+              {/* Creator & Description Overlay */}
+              <div className="absolute left-4 right-20 bottom-4 sm:bottom-6 z-20 pointer-events-none">
+                <div className="max-w-[calc(100%-10px)]">
+                  <div className="text-white bg-black/40 backdrop-blur-md p-3 rounded-2xl drop-shadow-md border border-white/10 pointer-events-auto">
+                    <h3 className="font-display font-bold text-base tracking-wide flex items-center space-x-2.5">
+                      <span
+                        onClick={() => handleCreatorNav(reelItem)}
+                        className="cursor-pointer hover:underline text-white font-bold drop-shadow-sm pointer-events-auto"
+                      >
+                        @{displayUsername}
+                      </span>
+                      {currentUser?.id !== reelItem.creatorId && onToggleFollowUser && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            onToggleFollowUser(reelItem.creatorId);
+                          }}
+                          className={`text-xs font-bold px-3 py-1 rounded-full transition-all cursor-pointer border bg-transparent backdrop-blur-sm pointer-events-auto ${
+                            isFollowing
+                              ? "text-white/80 border-white/60"
+                              : "text-white border-white"
+                          }`}
+                        >
+                          {isFollowing ? "Siguiendo" : "+ Seguir"}
+                        </button>
+                      )}
+                    </h3>
+                    {reelItem.description && (
+                      <p
+                        className={`text-sm text-white/95 font-medium mt-1.5 leading-relaxed drop-shadow-sm pointer-events-auto break-words ${
+                          expandedDescriptions[reelItem.id]
+                            ? "whitespace-pre-line max-h-40 overflow-y-auto no-scrollbar"
+                            : ""
+                        }`}
+                      >
+                        {reelItem.description.length > 25 && !expandedDescriptions[reelItem.id] ? (
+                          <>
+                            <span>{reelItem.description.slice(0, 25)}...</span>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                e.preventDefault();
+                                setExpandedDescriptions((prev) => ({
+                                  ...prev,
+                                  [reelItem.id]: true,
+                                }));
+                              }}
+                              className="font-bold text-white hover:text-amber-400 cursor-pointer pointer-events-auto transition-colors"
+                            >
+                              mas
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            <span>{reelItem.description}</span>
+                            {reelItem.description.length > 25 &&
+                              expandedDescriptions[reelItem.id] && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    e.preventDefault();
+                                    setExpandedDescriptions((prev) => ({
+                                      ...prev,
+                                      [reelItem.id]: false,
+                                    }));
+                                  }}
+                                  className="font-bold text-white/75 hover:text-amber-400 cursor-pointer pointer-events-auto transition-colors ml-1.5 text-xs"
+                                >
+                                  menos
+                                </button>
+                              )}
+                          </>
+                        )}
+                      </p>
+                    )}
+
+                    {/* Tarjeta de producto con fondo blanco */}
+                    {taggedProduct && handleProductSelect && (
+                      <motion.div
+                        initial={{ y: 20, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ delay: 0.2 }}
+                        onClick={() => handleProductSelect(taggedProduct)}
+                        className="bg-white border border-slate-200/90 text-slate-900 rounded-xl flex items-stretch cursor-pointer hover:bg-slate-50 hover:border-amber-400 active:scale-[0.98] transition-all shadow-xl overflow-hidden pointer-events-auto select-none mt-2"
+                        id={`tagged-product-${reelItem.id}`}
+                        style={{
+                          marginLeft: "-4px",
+                          width: "285.606px",
+                          maxWidth: "100%",
+                          height: "68.3438px",
+                          backgroundColor: "#ffffff",
+                        }}
+                      >
+                        <div className="w-20 shrink-0 h-full relative overflow-hidden bg-slate-100 border-r border-slate-200">
+                          {taggedProduct.imageUrl || taggedProduct.images?.[0] ? (
+                            <img
+                              src={taggedProduct.imageUrl || taggedProduct.images?.[0]}
+                              alt={taggedProduct.name}
+                              referrerPolicy="no-referrer"
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center bg-slate-100 text-amber-500">
+                              <ShoppingBag className="w-5 h-5" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0 px-2.5 py-1.5 flex flex-col justify-between bg-white">
+                          <span className="text-[9.5px] uppercase tracking-wider font-bold text-amber-600 flex items-center">
+                            <ShoppingBag className="w-2.5 h-2.5 mr-1 shrink-0 text-amber-600" />
+                            Producto Destacado
+                          </span>
+                          <h4 className="text-xs font-bold truncate text-slate-900">
+                            {taggedProduct.name}
+                          </h4>
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-extrabold text-emerald-600 font-mono">
+                              {formatPrice(Number(taggedProduct.price) || 0)}
+                            </span>
+                            <span className="text-[9px] text-amber-600 font-bold hover:underline">
+                              Ver detalles →
+                            </span>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
       </div>
       {/* Left Cart Side Panel */}
       <AnimatePresence>
@@ -999,19 +1202,19 @@ export default function Inicio({
               style={{ paddingBottom: "max(8px, env(safe-area-inset-bottom))" }}
             >
               <div className="flex items-center justify-between py-1 border-b border-slate-200">
-                <span className="text-xs font-bold text-slate-900">Comentarios ({currentReel.comments?.length || 0})</span>
+                <span className="text-xs font-bold text-slate-900">Comentarios ({activeCommentsReel?.comments?.length || 0})</span>
                 <button onClick={() => setShowComments(false)} className="p-1 text-slate-500 hover:text-slate-900">
                   <X className="w-4 h-4" />
                 </button>
               </div>
 
               <div className="flex-1 overflow-y-auto py-2 space-y-2">
-                {(!currentReel.comments || currentReel.comments.length === 0) ? (
+                {(!activeCommentsReel?.comments || activeCommentsReel.comments.length === 0) ? (
                   <div className="text-center py-8 text-xs text-slate-500">
                     Aún no hay comentarios. ¡Sé el primero!
                   </div>
                 ) : (
-                  currentReel.comments.map((c, cIdx) => (
+                  activeCommentsReel.comments.map((c, cIdx) => (
                     <div key={`${c.id || 'comment'}-${cIdx}`} className="flex space-x-3 text-xs">
                       <img src={c.avatar} alt={c.username} className="w-8 h-8 rounded-full object-cover shrink-0" />
                       <div>

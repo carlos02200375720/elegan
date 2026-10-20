@@ -44,21 +44,21 @@ export default function AndroidSocialPanel({
     }
   }, [messages, activeChatUser]);
 
-  // Configurar la barra de estado de Android para que se integre con el tema oscuro de mensajes
+  // Configurar la barra de estado de Android con fondo blanco y estilo limpio
   useEffect(() => {
     const applySocialStatusBar = async () => {
       try {
         if (typeof window !== "undefined" && (window as any).Capacitor?.isPluginAvailable?.("StatusBar")) {
           const { StatusBar, Style } = await import("@capacitor/status-bar");
-          await StatusBar.setStyle({ style: Style.Dark });
-          await StatusBar.setBackgroundColor({ color: activeChatUser ? "#0f172a" : "#020617" });
+          await StatusBar.setStyle({ style: Style.Light });
+          await StatusBar.setBackgroundColor({ color: "#ffffff" });
         }
       } catch (e) {
         // En entorno web o si el plugin no está disponible
       }
 
       document.querySelectorAll('meta[name="theme-color"]').forEach((tag) => {
-        tag.setAttribute("content", activeChatUser ? "#0f172a" : "#020617");
+        tag.setAttribute("content", "#ffffff");
       });
     };
 
@@ -144,21 +144,28 @@ export default function AndroidSocialPanel({
   const clientUnreads = unreadCounts[supportUser.id] || unreadCounts[SUPPORT_USER_ID] || unreadCounts[SUPPORT_EMAIL] || 0;
 
   return (
-    <div className="w-full h-full min-h-screen bg-slate-950 text-white flex flex-col font-sans select-none" id="android-social-panel">
+    <div
+      className="w-full h-full min-h-screen bg-white text-slate-900 flex flex-col font-sans select-none"
+      id="android-social-panel"
+      style={{ backgroundColor: "#ffffff" }}
+    >
       {activeChatUser ? (
         /* --- Android 1-on-1 Chat Thread View --- */
-        <div className="flex-1 flex flex-col h-full bg-slate-950">
-          {/* Header con respeto a la barra de estado de Android */}
+        <div className="flex-1 flex flex-col h-full bg-white text-slate-900 min-h-screen">
+          {/* Header fijo con fondo blanco que respeta la barra de estado de Android */}
           <div
-            className="flex items-center justify-between px-4 pb-3 bg-slate-900 border-b border-slate-800 shrink-0"
+            className="sticky top-0 z-30 flex items-center justify-between px-4 pb-3 bg-white border-b border-slate-100 shadow-2xs shrink-0"
             style={{
+              backgroundColor: "#ffffff",
               paddingTop: "calc(max(24px, env(safe-area-inset-top, 24px)) + 8px)",
             }}
           >
             <div className="flex items-center space-x-3 min-w-0">
               <button
                 onClick={() => onSelectChatUser(null)}
-                className="p-1.5 rounded-full hover:bg-white/10 active:scale-95 text-slate-300"
+                className="p-1.5 rounded-full hover:bg-slate-100 active:scale-95 text-slate-700 cursor-pointer"
+                title="Volver"
+                aria-label="Volver a mensajes"
               >
                 <ArrowLeft className="w-5 h-5" />
               </button>
@@ -166,37 +173,39 @@ export default function AndroidSocialPanel({
                 <img
                   src={isAdmin ? activeChatUser.avatar : supportUser.avatar}
                   alt={isAdmin ? activeChatUser.name : "Soporte Oficial"}
-                  className="w-9 h-9 rounded-full object-cover border border-amber-500/40"
+                  className="w-9 h-9 rounded-full object-cover border border-amber-500/40 bg-white"
                 />
-                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-full border border-black" />
+                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 rounded-full border border-white" />
               </div>
               <div className="min-w-0">
-                <p className="text-xs font-bold text-white flex items-center gap-1.5 truncate">
+                <p className="text-xs font-bold text-slate-900 flex items-center gap-1.5 truncate">
                   <span>{isAdmin ? activeChatUser.name : "Soporte al Cliente"}</span>
-                  {!isAdmin && <ShieldCheck className="w-3.5 h-3.5 text-amber-500 shrink-0" />}
+                  {!isAdmin && <ShieldCheck className="w-3.5 h-3.5 text-amber-600 shrink-0" />}
                 </p>
-                <p className="text-[10px] text-amber-400 font-mono truncate">
+                <p className="text-[10px] text-amber-600 font-mono font-medium truncate">
                   {isAdmin ? `@${activeChatUser.username}` : SUPPORT_EMAIL}
                 </p>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="p-1.5 rounded-full hover:bg-white/10 text-slate-400"
+              className="p-1.5 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-700 cursor-pointer"
+              title="Cerrar"
+              aria-label="Cerrar chat"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
-          {/* Messages Scroll Area */}
-          <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3">
+          {/* Messages Scroll Area - Fondo Blanco */}
+          <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3 bg-white">
             {/* Tarjeta de bienvenida */}
-            <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-center max-w-sm mx-auto my-2">
-              <Headphones className="w-6 h-6 text-amber-400 mx-auto mb-1" />
-              <p className="text-xs font-black text-amber-300">
+            <div className="p-3.5 rounded-2xl bg-amber-50/80 border border-amber-200/90 text-center max-w-sm mx-auto my-2 shadow-2xs">
+              <Headphones className="w-6 h-6 text-amber-600 mx-auto mb-1" />
+              <p className="text-xs font-black text-amber-900">
                 {isAdmin ? `Atención Oficial (${SUPPORT_EMAIL})` : "Canal Oficial de Soporte"}
               </p>
-              <p className="text-[11px] text-slate-300 mt-0.5">
+              <p className="text-[11px] text-slate-600 mt-0.5 leading-relaxed">
                 {isAdmin
                   ? "Respondiendo a este cliente en tiempo real."
                   : `Escribe aquí tu consulta y el administrador (${SUPPORT_EMAIL}) te responderá directamente.`}
@@ -204,10 +213,10 @@ export default function AndroidSocialPanel({
             </div>
 
             {conversationMessages.length === 0 ? (
-              <div className="h-48 flex flex-col items-center justify-center text-center p-6 text-slate-500">
-                <MessageSquare className="w-8 h-8 mb-2 opacity-30 text-amber-500" />
-                <p className="text-xs">No hay mensajes previos.</p>
-                <p className="text-[11px] text-slate-600 mt-0.5">Envía un mensaje para comenzar la conversación.</p>
+              <div className="h-48 flex flex-col items-center justify-center text-center p-6 text-slate-400">
+                <MessageSquare className="w-8 h-8 mb-2 opacity-40 text-amber-500" />
+                <p className="text-xs font-medium text-slate-600">No hay mensajes previos.</p>
+                <p className="text-[11px] text-slate-400 mt-0.5">Envía un mensaje para comenzar la conversación.</p>
               </div>
             ) : (
               conversationMessages.map((m, mIdx) => {
@@ -219,21 +228,21 @@ export default function AndroidSocialPanel({
                     className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}
                   >
                     <div
-                      className={`max-w-[75%] px-3.5 py-2.5 rounded-2xl text-xs ${
+                      className={`max-w-[78%] px-3.5 py-2.5 rounded-2xl text-xs ${
                         isMe
-                          ? "bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-medium rounded-br-none shadow-sm"
-                          : "bg-slate-900 text-white rounded-bl-none border border-slate-800"
+                          ? "bg-amber-500 text-slate-950 font-medium rounded-br-none shadow-xs"
+                          : "bg-slate-100 text-slate-900 rounded-bl-none border border-slate-200/80 shadow-2xs"
                       }`}
                     >
                       {!isMe && (
-                        <p className="text-[10px] font-bold text-amber-400 mb-0.5 flex items-center gap-1">
+                        <p className="text-[10px] font-bold text-amber-700 mb-0.5 flex items-center gap-1">
                           <span>{isAdmin ? activeChatUser.name : "Soporte Oficial"}</span>
-                          {!isAdmin && <ShieldCheck className="w-3 h-3 text-amber-500" />}
+                          {!isAdmin && <ShieldCheck className="w-3.5 h-3.5 text-amber-600" />}
                         </p>
                       )}
-                      <p className="break-words">{m.text}</p>
+                      <p className="break-words leading-relaxed">{m.text}</p>
                     </div>
-                    <span className="text-[9px] text-slate-500 mt-0.5 px-1 font-mono">
+                    <span className="text-[9px] text-slate-400 mt-0.5 px-1 font-mono">
                       {new Date(m.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                     </span>
                   </div>
@@ -242,11 +251,12 @@ export default function AndroidSocialPanel({
             )}
           </div>
 
-          {/* Chat Input Bar que respeta la barra de navegación nativa de Android */}
+          {/* Chat Input Bar fijo en el pie con fondo blanco */}
           <form
             onSubmit={handleSubmit}
-            className="p-3 bg-slate-900 border-t border-slate-800 flex items-center space-x-2 shrink-0"
+            className="p-3 bg-white border-t border-slate-100 flex items-center space-x-2 shrink-0 shadow-[0_-4px_16px_rgba(0,0,0,0.04)]"
             style={{
+              backgroundColor: "#ffffff",
               paddingBottom: "max(16px, calc(env(safe-area-inset-bottom, 0px) + 12px))",
             }}
           >
@@ -255,12 +265,12 @@ export default function AndroidSocialPanel({
               placeholder={isAdmin ? "Responder al cliente..." : "Escribe a Soporte al Cliente..."}
               value={chatInput}
               onChange={(e) => setChatInput(e.target.value)}
-              className="flex-1 bg-slate-950 border border-slate-800 text-xs text-white px-4 py-2.5 rounded-2xl focus:outline-none focus:border-amber-500 placeholder:text-slate-500"
+              className="flex-1 bg-slate-50 border border-slate-200 text-xs text-slate-900 px-4 py-2.5 rounded-2xl focus:outline-none focus:border-amber-500 focus:bg-white placeholder:text-slate-400 transition-colors"
             />
             <button
               type="submit"
               disabled={!chatInput.trim()}
-              className="p-2.5 bg-amber-500 hover:bg-amber-400 disabled:opacity-40 text-slate-950 rounded-2xl active:scale-95 transition-all shadow"
+              className="p-2.5 bg-amber-500 hover:bg-amber-400 disabled:opacity-40 text-slate-950 rounded-2xl active:scale-95 transition-all shadow-xs cursor-pointer"
             >
               <Send className="w-4 h-4" />
             </button>
@@ -268,28 +278,29 @@ export default function AndroidSocialPanel({
         </div>
       ) : (
         /* --- Android Chats & User List View --- */
-        <div
-          className="flex-1 flex flex-col h-full px-4 pb-20 bg-slate-950"
-          style={{
-            paddingTop: "calc(max(24px, env(safe-area-inset-top, 24px)) + 12px)",
-          }}
-        >
-          {/* Header */}
-          <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div className="flex-1 flex flex-col h-full bg-white text-slate-900 min-h-screen">
+          {/* Header fijo con fondo blanco que dice "Mensajes y Soporte" */}
+          <div
+            className="sticky top-0 z-30 flex items-center justify-between px-4 pb-3 bg-white border-b border-slate-100 shadow-2xs shrink-0"
+            style={{
+              backgroundColor: "#ffffff",
+              paddingTop: "calc(max(24px, env(safe-area-inset-top, 24px)) + 8px)",
+            }}
+          >
             <div className="flex items-center space-x-2">
               <Headphones className="w-5 h-5 text-amber-500" />
-              <h2 className="text-base font-bold text-white">
+              <h2 className="text-base font-bold text-slate-900">
                 {isAdmin ? "Bandeja de Clientes" : "Mensajes y Soporte"}
               </h2>
             </div>
             <div className="flex items-center space-x-2">
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-amber-400 font-bold">
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200 font-bold">
                 {isAdmin ? "Admin" : "Oficial"}
               </span>
               {onClose && (
                 <button
                   onClick={onClose}
-                  className="p-1.5 rounded-full hover:bg-white/10 text-slate-400 cursor-pointer"
+                  className="p-1.5 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-700 cursor-pointer transition-colors"
                   title="Cerrar"
                 >
                   <X className="w-5 h-5" />
@@ -298,109 +309,112 @@ export default function AndroidSocialPanel({
             </div>
           </div>
 
-          {!isAdmin ? (
-            /* PARA CLIENTE: UN SOLO CHAT DISPONIBLE */
-            <div className="my-4 space-y-3">
-              <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/25 flex items-start space-x-2.5">
-                <ShieldCheck className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-                <p className="text-xs text-amber-200">
-                  Todas las consultas de compras, pedidos y publicaciones se atienden en el chat de <strong className="text-white">Soporte Oficial</strong> ({SUPPORT_EMAIL}).
-                </p>
-              </div>
-
-              {/* Único chat disponible */}
-              <div
-                onClick={() => {
-                  onSelectChatUser(supportUser);
-                  clearUnreads(supportUser.id);
-                  clearUnreads(SUPPORT_USER_ID);
-                }}
-                className="flex items-center justify-between p-3.5 bg-slate-900/90 hover:bg-slate-850 rounded-2xl border border-amber-500/50 cursor-pointer shadow-sm active:scale-[0.99] transition-all"
-                id="android-single-support-chat-item"
-              >
-                <div className="flex items-center space-x-3 min-w-0">
-                  <div className="relative shrink-0">
-                    <img
-                      src={supportUser.avatar}
-                      alt={supportUser.name}
-                      className="w-12 h-12 rounded-full object-cover border border-amber-500"
-                    />
-                    <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 rounded-full border-2 border-slate-950" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-bold text-white flex items-center gap-1.5">
-                      <span>Soporte al Cliente</span>
-                      <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
-                    </p>
-                    <p className="text-[11px] text-amber-400 font-mono">{SUPPORT_EMAIL}</p>
-                    <p className="text-[10px] text-slate-400 mt-0.5">Canal oficial de atención directa</p>
-                  </div>
+          {/* Cuerpo de la página con fondo blanco */}
+          <div className="flex-1 overflow-y-auto px-4 pb-24 bg-white">
+            {!isAdmin ? (
+              /* PARA CLIENTE: UN SOLO CHAT DISPONIBLE */
+              <div className="my-4 space-y-3">
+                <div className="p-3.5 rounded-2xl bg-amber-50/80 border border-amber-200/90 flex items-start space-x-2.5 shadow-2xs">
+                  <ShieldCheck className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                  <p className="text-xs text-amber-950 leading-relaxed">
+                    Todas las consultas de compras, pedidos y publicaciones se atienden en el chat de <strong className="text-slate-900 font-black">Soporte Oficial</strong> ({SUPPORT_EMAIL}).
+                  </p>
                 </div>
 
-                {clientUnreads > 0 && (
-                  <span className="px-2 py-0.5 bg-rose-500 text-white rounded-full text-[10px] font-bold">
-                    {clientUnreads}
-                  </span>
-                )}
-              </div>
-            </div>
-          ) : (
-            /* PARA ADMIN: LISTA DE CLIENTES */
-            <div className="flex-1 flex flex-col my-3 space-y-3">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Buscar clientes..."
-                className="w-full px-3.5 py-2 bg-slate-900 border border-slate-800 rounded-xl text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-amber-500"
-              />
-
-              <div className="flex-1 overflow-y-auto space-y-2">
-                {adminClientList.length === 0 ? (
-                  <div className="py-12 text-center text-xs text-slate-500">
-                    No hay clientes con consultas pendientes.
-                  </div>
-                ) : (
-                  adminClientList.map(({ user, lastMsg, unreads }) => (
-                    <div
-                      key={`android-client-${user.id}`}
-                      onClick={() => {
-                        onSelectChatUser(user);
-                        clearUnreads(user.id);
-                      }}
-                      className="flex items-center justify-between p-3 bg-slate-900/80 hover:bg-slate-850 rounded-2xl border border-slate-800 cursor-pointer active:scale-[0.99] transition-transform"
-                    >
-                      <div className="flex items-center space-x-3 min-w-0">
-                        <div className="relative shrink-0">
-                          <img
-                            src={user.avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80"}
-                            alt={user.name}
-                            className="w-11 h-11 rounded-full object-cover border border-amber-500/30"
-                          />
-                          {user.isOnline && (
-                            <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 rounded-full border-2 border-slate-900" />
-                          )}
-                        </div>
-                        <div className="min-w-0">
-                          <p className="text-xs font-bold text-white truncate">{user.name}</p>
-                          <p className="text-[11px] text-amber-400 truncate">@{user.username}</p>
-                          <p className="text-[10px] text-slate-400 mt-0.5 truncate">
-                            {lastMsg ? lastMsg.text : "Sin mensajes aún"}
-                          </p>
-                        </div>
-                      </div>
-
-                      {unreads > 0 && (
-                        <span className="px-2 py-0.5 bg-rose-500 text-white rounded-full text-[10px] font-bold">
-                          {unreads}
-                        </span>
-                      )}
+                {/* Único chat disponible */}
+                <div
+                  onClick={() => {
+                    onSelectChatUser(supportUser);
+                    clearUnreads(supportUser.id);
+                    clearUnreads(SUPPORT_USER_ID);
+                  }}
+                  className="flex items-center justify-between p-3.5 bg-white hover:bg-slate-50 rounded-2xl border border-amber-400/80 cursor-pointer shadow-xs active:scale-[0.99] transition-all"
+                  id="android-single-support-chat-item"
+                >
+                  <div className="flex items-center space-x-3 min-w-0">
+                    <div className="relative shrink-0">
+                      <img
+                        src={supportUser.avatar}
+                        alt={supportUser.name}
+                        className="w-12 h-12 rounded-full object-cover border border-amber-500 shadow-2xs bg-white"
+                      />
+                      <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white" />
                     </div>
-                  ))
-                )}
+                    <div className="min-w-0">
+                      <p className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                        <span>Soporte al Cliente</span>
+                        <ShieldCheck className="w-3.5 h-3.5 text-amber-500" />
+                      </p>
+                      <p className="text-[11px] text-amber-600 font-mono font-medium">{SUPPORT_EMAIL}</p>
+                      <p className="text-[10px] text-slate-400 mt-0.5">Canal oficial de atención directa</p>
+                    </div>
+                  </div>
+
+                  {clientUnreads > 0 && (
+                    <span className="px-2 py-0.5 bg-rose-500 text-white rounded-full text-[10px] font-bold shadow-xs">
+                      {clientUnreads}
+                    </span>
+                  )}
+                </div>
               </div>
-            </div>
-          )}
+            ) : (
+              /* PARA ADMIN: LISTA DE CLIENTES */
+              <div className="flex-1 flex flex-col my-3 space-y-3">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Buscar clientes..."
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-amber-500 focus:bg-white transition-colors"
+                />
+
+                <div className="flex-1 overflow-y-auto space-y-2">
+                  {adminClientList.length === 0 ? (
+                    <div className="py-12 text-center text-xs text-slate-400">
+                      No hay clientes con consultas pendientes.
+                    </div>
+                  ) : (
+                    adminClientList.map(({ user, lastMsg, unreads }) => (
+                      <div
+                        key={`android-client-${user.id}`}
+                        onClick={() => {
+                          onSelectChatUser(user);
+                          clearUnreads(user.id);
+                        }}
+                        className="flex items-center justify-between p-3 bg-white hover:bg-slate-50 rounded-2xl border border-slate-200 cursor-pointer active:scale-[0.99] transition-all shadow-xs"
+                      >
+                        <div className="flex items-center space-x-3 min-w-0">
+                          <div className="relative shrink-0">
+                            <img
+                              src={user.avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80"}
+                              alt={user.name}
+                              className="w-11 h-11 rounded-full object-cover border border-slate-200 bg-white"
+                            />
+                            {user.isOnline && (
+                              <span className="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white" />
+                            )}
+                          </div>
+                          <div className="min-w-0">
+                            <p className="text-xs font-bold text-slate-900 truncate">{user.name}</p>
+                            <p className="text-[11px] text-amber-600 truncate font-mono font-medium">@{user.username}</p>
+                            <p className="text-[10px] text-slate-500 mt-0.5 truncate">
+                              {lastMsg ? lastMsg.text : "Sin mensajes aún"}
+                            </p>
+                          </div>
+                        </div>
+
+                        {unreads > 0 && (
+                          <span className="px-2 py-0.5 bg-rose-500 text-white rounded-full text-[10px] font-bold shadow-xs">
+                            {unreads}
+                          </span>
+                        )}
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

@@ -562,9 +562,9 @@ export default function App() {
   // Synchronize status bar and native bottom navigation bar color dynamically
   useEffect(() => {
     const isLogin = currentRoute.type === "login";
-    const isDark = activeTab === 'inicio' || activeTab === 'reels';
-    const currentThemeColor = isDark ? "#000000" : "#ffffff";
-    const statusBarStyle = isDark || isLogin ? "black-translucent" : "default";
+    const isDark = false;
+    const currentThemeColor = "#ffffff";
+    const statusBarStyle = "default";
 
     // Update theme-color meta tags for mobile browsers and Android system UI
     const themeMeta = document.getElementById("theme-color-meta") || document.querySelector('meta[name="theme-color"]');

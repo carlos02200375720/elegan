@@ -12,11 +12,14 @@ import {
   User as UserIcon,
   Building2,
   Globe,
+  LogOut,
+  BadgeCheck,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { androidApiFetch } from "../api";
 import { isSuperAdmin } from "../../../superAdmin";
 import { sessionState } from "../../../utils/sessionState";
+import { navigateTo } from "../../../router";
 
 export interface ConfigPerfilProps {
   activeUser: User;
@@ -25,6 +28,7 @@ export interface ConfigPerfilProps {
   onUpdateUser?: (updatedUser: User) => void;
   onClose?: () => void;
   isOpen?: boolean;
+  onLogout?: () => void;
 }
 
 export function ConfigPerfilView({
@@ -34,6 +38,7 @@ export function ConfigPerfilView({
   onUpdateUser,
   onClose,
   isOpen = true,
+  onLogout,
 }: ConfigPerfilProps) {
   const getCachedUserData = () => {
     if (typeof window === "undefined") return null;
@@ -214,16 +219,15 @@ export function ConfigPerfilView({
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
             transition={{ type: "spring", damping: 25, stiffness: 220 }}
-            className="w-full max-h-[90vh] bg-white border-t border-slate-200 rounded-t-3xl p-5 text-slate-900 shadow-2xl flex flex-col overflow-y-auto"
+            className="w-full max-h-[90vh] bg-white border-t border-slate-200 rounded-t-3xl text-slate-900 shadow-2xl flex flex-col overflow-hidden"
           >
             {/* Header */}
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 shrink-0">
+            <div className="flex items-center justify-between p-4 px-5 border-b border-slate-100 shrink-0">
               <div className="flex items-center gap-2">
                 <span className="text-sm font-bold text-slate-900">Configuración de Perfil</span>
                 {isSuperAdmin(activeUser) && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-700 text-[10px] font-black">
-                    <ShieldCheck className="w-3 h-3 text-amber-600" />
-                    <span>SUPERADMIN</span>
+                  <span className="inline-flex items-center justify-center shrink-0" title="Verificado">
+                    <BadgeCheck className="w-4 h-4 text-white fill-blue-500 shrink-0 drop-shadow-2xs" />
                   </span>
                 )}
               </div>
@@ -238,8 +242,9 @@ export function ConfigPerfilView({
               )}
             </div>
 
-            {/* Form */}
-            <form onSubmit={handleSaveProfile} className="py-4 space-y-4">
+            {/* Formulario con área de scroll y pie fijo */}
+            <form onSubmit={handleSaveProfile} className="flex-1 flex flex-col min-h-0 overflow-hidden">
+              <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
               {/* Foto de perfil elegida directamente desde la Galería */}
               <div className="flex flex-col items-center">
                 <input
@@ -391,20 +396,51 @@ export function ConfigPerfilView({
                 </div>
               )}
 
-              <button
-                type="submit"
-                disabled={isSaving}
-                className="w-full py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs active:scale-95 shadow-sm cursor-pointer disabled:opacity-50 transition-all flex items-center justify-center gap-2"
-              >
-                {isSaving ? (
-                  <>
-                    <div className="w-3.5 h-3.5 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
-                    <span>Guardando en la base de datos...</span>
-                  </>
-                ) : (
-                  <span>Guardar y Actualizar Información</span>
+                {/* Sección de Cerrar Sesión */}
+                {onLogout && (
+                  <div className="pt-4 pb-2 border-t border-slate-100 flex flex-col items-center">
+                    <button
+                      type="button"
+                      id="mobile-profile-logout-btn"
+                      onClick={() => {
+                        if (onClose) onClose();
+                        onLogout();
+                        navigateTo("/perfil/login?mode=login");
+                      }}
+                      className="w-full py-3 px-4 rounded-xl bg-rose-50 hover:bg-rose-100 active:bg-rose-200 text-rose-600 border border-rose-200/80 active:scale-95 transition-all cursor-pointer shadow-xs flex items-center justify-center gap-2 font-bold text-xs group"
+                      title="Cerrar sesión"
+                      aria-label="Cerrar sesión"
+                    >
+                      <LogOut className="w-4 h-4 text-rose-600 group-hover:scale-110 transition-transform" />
+                      <span className="text-rose-700">Cerrar sesión</span>
+                    </button>
+                    <p className="text-[10px] text-slate-400 mt-2 text-center">
+                      Cerrarás la sesión en este dispositivo móvil de forma segura.
+                    </p>
+                  </div>
                 )}
-              </button>
+              </div>
+
+              {/* Pie fijo con el botón de guardar y actualizar información */}
+              <div
+                className="p-4 bg-white border-t border-slate-100 shrink-0 shadow-[0_-4px_16px_rgba(0,0,0,0.06)]"
+                style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom, 1rem))" }}
+              >
+                <button
+                  type="submit"
+                  disabled={isSaving}
+                  className="w-full py-3.5 bg-amber-500 hover:bg-amber-400 active:bg-amber-600 text-slate-950 font-bold rounded-xl text-xs active:scale-95 shadow-sm cursor-pointer disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+                >
+                  {isSaving ? (
+                    <>
+                      <div className="w-3.5 h-3.5 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
+                      <span>Guardando en la base de datos...</span>
+                    </>
+                  ) : (
+                    <span>Guardar y Actualizar Información</span>
+                  )}
+                </button>
+              </div>
             </form>
           </motion.div>
         </div>
