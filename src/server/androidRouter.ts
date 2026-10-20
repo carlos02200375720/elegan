@@ -129,7 +129,7 @@ export function createAndroidRouter(deps: AndroidRouterDependencies): Router {
           following: u.following || 0,
           followingUserIds: u.followingUserIds || [],
           savedReelIds: u.savedReelIds || [],
-          isGuest: false,
+          isGuest: u.isGuest === true,
           email: u.email || "",
           address: u.address || "",
           shippingAddress: u.shippingAddress || u.address || "",
@@ -809,33 +809,33 @@ export function createAndroidRouter(deps: AndroidRouterDependencies): Router {
       const headerUserId = (req.headers["x-user-id"] as string)?.trim();
       const targetId = userId || headerUserId;
 
-      if (!targetId && !currentUsername && !headerUsername && !email) {
+      if (mongoose.connection.readyState !== 1) {
+        res.status(503).json({ error: "La base de datos no está disponible. El perfil no se guardó." });
+        return;
+      }
+
+      if (!targetId && !currentUsername && !headerUsername) {
         res.status(400).json({ error: "Identificador de usuario requerido para actualización" });
         return;
       }
 
       const updateFields: any = {};
-      if (name) updateFields.name = name.trim();
+      if (name !== undefined) updateFields.name = String(name).trim();
       if (bio !== undefined) updateFields.bio = bio.trim();
-      if (email !== undefined) updateFields.email = email.trim();
-      if (address !== undefined) updateFields.address = address.trim();
-      if (shippingAddress !== undefined) updateFields.shippingAddress = shippingAddress.trim();
-      if (city !== undefined) updateFields.city = city.trim();
-      if (country !== undefined) updateFields.country = country.trim();
-      if (phone !== undefined) updateFields.phone = phone.trim();
+      if (email !== undefined) updateFields.email = String(email).trim().toLowerCase();
+      if (address !== undefined) updateFields.address = String(address).trim();
+      if (shippingAddress !== undefined) updateFields.shippingAddress = String(shippingAddress).trim();
+      if (city !== undefined) updateFields.city = String(city).trim();
+      if (country !== undefined) updateFields.country = String(country).trim();
+      if (phone !== undefined) updateFields.phone = String(phone).trim();
 
       if (avatar) {
-        if (typeof avatar === "string" && avatar.startsWith("data:") && deps.uploadBase64ToGCS) {
-          try {
-            const savedAvatar = await deps.uploadBase64ToGCS(avatar, "avatars");
-            if (savedAvatar && !savedAvatar.startsWith("data:")) {
-              updateFields.avatar = savedAvatar;
-            } else {
-              updateFields.avatar = avatar;
-            }
-          } catch {
-            updateFields.avatar = avatar;
+        if (typeof avatar === "string" && avatar.startsWith("data:")) {
+          const savedAvatar = await uploadBase64ToGCS(avatar, "avatars", { fallbackToMongo: false });
+          if (!savedAvatar || !savedAvatar.startsWith("https://storage.googleapis.com/")) {
+            throw new Error("La foto de perfil no se pudo guardar en Google Cloud Storage.");
           }
+          updateFields.avatar = savedAvatar;
         } else {
           updateFields.avatar = avatar;
         }
@@ -854,22 +854,25 @@ export function createAndroidRouter(deps: AndroidRouterDependencies): Router {
       if (resolvedUsername && resolvedUsername !== "invitado") {
         searchCriteria.push({ username: resolvedUsername });
       }
-      if (email && email.includes("@")) {
-        searchCriteria.push({ email: email.trim().toLowerCase() });
+
+      if (searchCriteria.length === 0) {
+        res.status(400).json({ error: "No se pudo identificar la cuenta cuyo perfil se debe guardar." });
+        return;
       }
 
-      let updated = null;
-      if (mongoose.connection.readyState === 1 && searchCriteria.length > 0) {
-        updated = await MongoUser.findOneAndUpdate(
-          { $or: searchCriteria },
-          { $set: updateFields },
-          { returnDocument: "after" }
-        );
+      const updated = await MongoUser.findOneAndUpdate(
+        { $or: searchCriteria },
+        { $set: updateFields },
+        { returnDocument: "after", runValidators: true }
+      );
+      if (!updated) {
+        res.status(404).json({ error: "No se encontró la cuenta en MongoDB Atlas. El perfil no se guardó." });
+        return;
       }
 
-      console.log(`📱 [Android Gateway] Perfil actualizado para ${targetId || resolvedUsername}:`, updateFields);
+      console.log(`📱 [Android Gateway] Perfil guardado en MongoDB Atlas para ${updated.username}.`);
 
-      const returnedUser: User = updated ? {
+      const returnedUser: User = {
         id: updated.id,
         originalId: updated._id ? updated._id.toString() : updated.id,
         username: updated.username,
@@ -881,7 +884,7 @@ export function createAndroidRouter(deps: AndroidRouterDependencies): Router {
         following: updated.following || 0,
         followingUserIds: updated.followingUserIds || [],
         savedReelIds: updated.savedReelIds || [],
-        isGuest: false,
+        isGuest: updated.isGuest === true,
         isOnline: true,
         email: updated.email || "",
         address: updated.address || address || "",
@@ -892,12 +895,17 @@ export function createAndroidRouter(deps: AndroidRouterDependencies): Router {
         canSell: updated.canSell === true || isConfiguredSuperadmin(updated),
         isAdmin: isConfiguredSuperadmin(updated),
         role: isConfiguredSuperadmin(updated) ? "superadmin" : (updated.canSell ? "seller" : "user")
-      } : { id: targetId || "current_user", ...updateFields };
+      };
 
       res.json({ success: true, user: returnedUser });
     } catch (err: any) {
       console.error("❌ [Android Gateway] Error al actualizar perfil:", err);
-      res.status(500).json({ error: "Error al actualizar perfil", details: err.message });
+      res.status(err?.code === 11000 ? 409 : 500).json({
+        error: err?.code === 11000
+          ? "El correo electrónico ya está asociado a otra cuenta."
+          : "No se pudo guardar el perfil en MongoDB Atlas.",
+        details: err.message
+      });
     }
   });
 

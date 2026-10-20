@@ -1210,18 +1210,23 @@ export async function toggleFollow(req: Request, res: Response): Promise<void> {
  */
 export async function updateCurrentUser(req: Request, res: Response): Promise<void> {
   const { name, username, bio, avatar, coverPhoto, password, privacyPolicy, userId, currentUsername, email, address, shippingAddress, city, country, phone } = req.body;
+  if (mongoose.connection.readyState !== 1) {
+    res.status(503).json({ error: "MongoDB Atlas no está disponible. El perfil no se guardó." });
+    return;
+  }
+
   const headerUsername = (req.headers["x-user-username"] as string)?.trim().toLowerCase();
   const headerUserId = (req.headers["x-user-id"] as string)?.trim();
   let currentUserObj: any = null;
 
-  if (mongoose.connection.readyState === 1) {
-    const idCandidates = [activeOriginalUserId, userId, headerUserId].filter(
-      id => id && id !== "user_guest" && id !== "current_user" && id !== "invitado" && id !== "guest"
-    );
-    const usernameCandidates = [currentUsername, headerUsername].filter(
-      u => u && u !== "invitado" && u !== "user_guest" && u !== "guest"
-    );
+  const idCandidates = [activeOriginalUserId, userId, headerUserId].filter(
+    id => id && id !== "user_guest" && id !== "current_user" && id !== "invitado" && id !== "guest"
+  );
+  const usernameCandidates = [currentUsername, headerUsername].filter(
+    u => u && u !== "invitado" && u !== "user_guest" && u !== "guest"
+  );
 
+  try {
     for (const cid of idCandidates) {
       currentUserObj = await MongoUser.findOne({ id: cid });
       if (currentUserObj) break;
@@ -1233,6 +1238,10 @@ export async function updateCurrentUser(req: Request, res: Response): Promise<vo
         if (currentUserObj) break;
       }
     }
+  } catch (err) {
+    console.error("Failed to find profile in MongoDB Atlas:", err);
+    res.status(503).json({ error: "No se pudo consultar la cuenta en MongoDB Atlas." });
+    return;
   }
 
   if (!currentUserObj) {
@@ -1248,7 +1257,7 @@ export async function updateCurrentUser(req: Request, res: Response): Promise<vo
   if (bio !== undefined) updateFields.bio = bio;
   if (password !== undefined) updateFields.password = password;
   if (privacyPolicy !== undefined) updateFields.privacyPolicy = privacyPolicy;
-  if (email !== undefined) updateFields.email = email;
+  if (email !== undefined) updateFields.email = String(email).trim().toLowerCase();
   if (address !== undefined) updateFields.address = address;
   if (shippingAddress !== undefined) updateFields.shippingAddress = shippingAddress;
   if (city !== undefined) updateFields.city = city;
@@ -1259,14 +1268,16 @@ export async function updateCurrentUser(req: Request, res: Response): Promise<vo
     if (avatar && avatar.startsWith("data:")) {
       try {
         console.log("📸 Base64 avatar detected in update, uploading to GCS...");
-        const savedAvatar = await uploadBase64ToGCS(avatar, "avatars");
+        const savedAvatar = await uploadBase64ToGCS(avatar, "avatars", { fallbackToMongo: false });
+        if (!savedAvatar || !savedAvatar.startsWith("https://storage.googleapis.com/")) {
+          throw new Error("La foto de perfil no se pudo guardar en Google Cloud Storage.");
+        }
         console.log(`✅ Base64 avatar uploaded: ${savedAvatar}`);
-        updateFields.avatar = (savedAvatar && !savedAvatar.startsWith("data:"))
-          ? savedAvatar
-          : `https://storage.googleapis.com/${bucketName || "elegan-bucket"}/avatars/${Date.now()}-${currentUserObj.username || currentUserObj.id}.png`;
+        updateFields.avatar = savedAvatar;
       } catch (uploadErr) {
         console.error("❌ Failed to upload base64 avatar to GCS:", uploadErr);
-        updateFields.avatar = `https://storage.googleapis.com/${bucketName || "elegan-bucket"}/avatars/${Date.now()}-${currentUserObj.username || currentUserObj.id}.png`;
+        res.status(502).json({ error: "No se pudo guardar la foto de perfil en Google Cloud Storage." });
+        return;
       }
     } else {
       updateFields.avatar = avatar;
@@ -1278,43 +1289,53 @@ export async function updateCurrentUser(req: Request, res: Response): Promise<vo
       try {
         console.log("📸 Base64 cover photo detected in update, uploading to GCS...");
         const savedCover = await uploadBase64ToGCS(coverPhoto, "covers");
+        if (!savedCover || savedCover.startsWith("data:")) {
+          throw new Error("La portada no se pudo almacenar permanentemente.");
+        }
         console.log(`✅ Base64 cover photo uploaded: ${savedCover}`);
-        updateFields.coverPhoto = (savedCover && !savedCover.startsWith("data:"))
-          ? savedCover
-          : `https://storage.googleapis.com/${bucketName || "elegan-bucket"}/covers/${Date.now()}-${currentUserObj.username || currentUserObj.id}.jpg`;
+        updateFields.coverPhoto = savedCover;
       } catch (uploadErr) {
         console.error("❌ Failed to upload base64 cover photo to GCS:", uploadErr);
-        updateFields.coverPhoto = `https://storage.googleapis.com/${bucketName || "elegan-bucket"}/covers/${Date.now()}-${currentUserObj.username || currentUserObj.id}.jpg`;
+        res.status(502).json({ error: "No se pudo guardar la foto de portada en el almacenamiento permanente." });
+        return;
       }
     } else {
       updateFields.coverPhoto = coverPhoto;
     }
   }
 
-  let updatedUser = currentUserObj;
-  if (mongoose.connection.readyState === 1 && currentUserObj.id !== "user_guest") {
-    try {
-      updatedUser = await MongoUser.findOneAndUpdate(
-        { id: currentUserObj.id },
-        updateFields,
-        { returnDocument: "after" }
-      );
-      console.log(`💾 User profile updated directly in MongoDB Atlas for ${updatedUser.username}, privacyPolicy length: ${(updatedUser.privacyPolicy || "").length}`);
-    } catch (err) {
-      console.error("Failed to update profile in MongoDB:", err);
-    }
+  let updatedUser: any;
+  try {
+    updatedUser = await MongoUser.findOneAndUpdate(
+      { id: currentUserObj.id },
+      updateFields,
+      { returnDocument: "after", runValidators: true }
+    );
+  } catch (err: any) {
+    console.error("Failed to update profile in MongoDB Atlas:", err);
+    res.status(err?.code === 11000 ? 409 : 500).json({
+      error: err?.code === 11000
+        ? "El correo electrónico ya está asociado a otra cuenta."
+        : "No se pudo guardar el perfil en MongoDB Atlas."
+    });
+    return;
   }
+  if (!updatedUser) {
+    res.status(404).json({ error: "No se encontró la cuenta en MongoDB Atlas. El perfil no se guardó." });
+    return;
+  }
+  console.log(`💾 User profile updated directly in MongoDB Atlas for ${updatedUser.username}.`);
 
   // Update in memory items that reference this user
   reels.forEach(r => {
     if (r.creatorId === "current_user" || r.creatorId === currentUserObj.id) {
       if (name !== undefined) r.creatorName = name;
-      if (avatar !== undefined) r.creatorAvatar = avatar;
+      if (avatar !== undefined) r.creatorAvatar = updatedUser.avatar;
     }
     r.comments.forEach(c => {
       if (c.username === "cg0220037" || c.username === (updatedUser?.username || "")) {
         if (username !== undefined) c.username = username;
-        if (avatar !== undefined) c.avatar = avatar;
+        if (avatar !== undefined) c.avatar = updatedUser.avatar;
       }
     });
   });

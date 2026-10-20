@@ -163,63 +163,55 @@ export function ConfigPerfilView({
     };
 
     try {
-      let res = await androidApiFetch("/users/current/update", {
+      const res = await androidApiFetch("/users/current/update", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
-      if (!res.ok) {
-        res = await fetch("/api/android/users/current/update", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
+      let resData: any;
+      try {
+        resData = await res.json();
+      } catch {
+        throw new Error("El servidor devolvió una respuesta inválida al guardar el perfil.");
       }
 
-      if (!res.ok) {
-        res = await fetch("/api/users/current/update", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
+      if (!res.ok || resData?.success !== true || !resData.user) {
+        throw new Error(resData?.error || "No se pudo guardar el perfil en la base de datos.");
       }
 
-      if (res.ok) {
-        const resData = await res.json().catch(() => ({}));
-        const serverUser = resData?.user || {};
+      const serverUser = resData.user;
+      if (
+        editAvatar.startsWith("data:") &&
+        (!serverUser.avatar || !serverUser.avatar.startsWith("https://storage.googleapis.com/"))
+      ) {
+        throw new Error("La foto no se guardó en Google Cloud Storage. Intenta de nuevo.");
+      }
+      const updated: User = {
+        ...activeUser,
+        ...serverUser,
+      };
 
-        const updated: User = {
-          ...activeUser,
-          ...serverUser,
-          name: editName.trim(),
-          avatar: serverUser.avatar || editAvatar.trim(),
-          email: editEmail.trim(),
-          address: editAddress.trim(),
-          shippingAddress: editAddress.trim(),
-          city: editCity.trim(),
-          country: editCountry.trim(),
-          phone: editPhone.trim(),
-        };
+      sessionState.setUser(updated);
+      try {
+        localStorage.setItem("mall_user", JSON.stringify(updated));
+      } catch {}
 
-        // Guardar en sesión de ejecución y persistencia de dispositivo
-        sessionState.setUser(updated);
-        try {
-          localStorage.setItem("mall_user", JSON.stringify(updated));
-        } catch {}
+      window.dispatchEvent(new CustomEvent("mall_user_changed", { detail: updated }));
 
-        window.dispatchEvent(new CustomEvent("mall_user_changed", { detail: updated }));
+      if (onProfileUpdate) onProfileUpdate(updated);
+      if (onUpdateUser) onUpdateUser(updated);
 
-        if (onProfileUpdate) onProfileUpdate(updated);
-        if (onUpdateUser) onUpdateUser(updated);
-
-        setStatusMessage({ type: "success", text: "¡Datos guardados con éxito en la base de datos!" });
+      setStatusMessage({
+        type: "success",
+        text: activeUser.isGuest || currentUser.isGuest
+          ? "Datos guardados. Los perfiles de invitado se eliminan automáticamente después de 60 días."
+          : "¡Datos guardados con éxito en MongoDB Atlas!",
+      });
+      if (!activeUser.isGuest && !currentUser.isGuest) {
         setTimeout(() => {
           if (onClose) onClose();
         }, 800);
-      } else {
-        const data = await res.json().catch(() => ({}));
-        setStatusMessage({ type: "error", text: data.error || "No se pudo actualizar el perfil" });
       }
     } catch (err: any) {
       console.error("Failed to update profile on Android:", err);
