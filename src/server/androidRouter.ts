@@ -215,6 +215,11 @@ export function createAndroidRouter(deps: AndroidRouterDependencies): Router {
           isOnline: true,
           lastSeenAt: targetUser.lastSeenAt,
           email: targetUser.email || "",
+          address: targetUser.address || "",
+          shippingAddress: targetUser.shippingAddress || targetUser.address || "",
+          city: targetUser.city || "",
+          country: targetUser.country || "",
+          phone: targetUser.phone || "",
         };
         res.json({ success: true, user: userObj });
         return;

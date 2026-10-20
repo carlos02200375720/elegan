@@ -84,38 +84,20 @@ export function ConfigPerfilView({
   const [statusMessage, setStatusMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Sincronizar campos si los datos del usuario se cargan o actualizan después de abrir la ventana
+  // Mantener el formulario sincronizado cuando el perfil actualizado llega desde el servidor.
   React.useEffect(() => {
-    const fresh = sessionState.getUser() || getCachedUserData();
-    const source = activeUser || currentUser || fresh;
-    if (!source) return;
+    const storedUser = sessionState.getUser() || getCachedUserData();
+    const sources = [activeUser, currentUser, storedUser].filter(Boolean);
+    const getValue = (key: "name" | "email" | "shippingAddress" | "address" | "city" | "country" | "phone" | "avatar") =>
+      sources.map((source) => source[key]).find((value) => typeof value === "string" && value.trim()) || "";
 
-    const resolvedAddress =
-      (source as any).shippingAddress ||
-      (source as any).address ||
-      fresh?.shippingAddress ||
-      fresh?.address;
-    if (resolvedAddress && !editAddress) {
-      setEditAddress(resolvedAddress);
-    }
-
-    const resolvedCity = (source as any).city || fresh?.city;
-    if (resolvedCity && !editCity) {
-      setEditCity(resolvedCity);
-    }
-
-    const resolvedCountry = (source as any).country || fresh?.country;
-    if (resolvedCountry && editCountry === "República Dominicana" && resolvedCountry !== "República Dominicana") {
-      setEditCountry(resolvedCountry);
-    }
-
-    const resolvedPhone = (source as any).phone || fresh?.phone;
-    if (resolvedPhone && !editPhone) {
-      setEditPhone(resolvedPhone);
-    }
-
-    if (source.name && !editName) setEditName(source.name);
-    if (source.email && !editEmail) setEditEmail(source.email);
+    setEditName(getValue("name"));
+    setEditEmail(getValue("email"));
+    setEditAddress(getValue("shippingAddress") || getValue("address"));
+    setEditCity(getValue("city"));
+    setEditCountry(getValue("country") || "República Dominicana");
+    setEditPhone(getValue("phone"));
+    setEditAvatar(getValue("avatar"));
   }, [activeUser, currentUser]);
 
   // Manejar selección de foto desde la galería local del celular o navegador
