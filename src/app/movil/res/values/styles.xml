@@ -16,7 +16,6 @@
         <item name="android:navigationBarColor">#FFFFFF</item>
         <item name="android:navigationBarDividerColor">#FFFFFF</item>
         <item name="android:windowLightNavigationBar">true</item>
-        <item name="android:windowNavigationBarContrastEnforced">false</item>
     </style>
 
     <style name="AppTheme.NoActionBarLaunch" parent="AppTheme.NoActionBar">
