@@ -144,7 +144,7 @@ export default function Inicio({
             user.originalId === product.sellerId ||
             user.username === product.sellerUsername
         );
-        const description = product.description || `${product.name} - ${formatPrice(Number(product.price) || 0)}`;
+        const description = product.description?.trim() || "";
 
         return {
           id: `reel_prod_${product.id}`,
@@ -602,39 +602,41 @@ export default function Inicio({
           className="sticky top-0 inset-x-0 z-40 flex shrink-0 items-center justify-between px-4 bg-white border-b border-slate-100 shadow-2xs pointer-events-auto"
           style={{
             backgroundColor: "#ffffff",
-            paddingTop: "max(12px, calc(env(safe-area-inset-top, 0px) + 0.5rem))",
-            paddingBottom: "0.5rem",
+            paddingTop: "max(8px, calc(env(safe-area-inset-top, 0px) + 0.25rem))",
+            paddingBottom: "0.25rem",
           }}
           id="android-reels-fixed-header"
         >
-          <h1
-            className="pointer-events-none absolute left-1/2 top-1/2 max-w-[calc(100%-10rem)] -translate-x-1/2 -translate-y-1/2 truncate text-center text-base font-bold text-slate-900"
-            title={currentUser?.name && !isGuestUser(currentUser) ? currentUser.name : "Inicio"}
-          >
-            {currentUser?.name?.trim() && !isGuestUser(currentUser) ? currentUser.name : "Inicio"}
-          </h1>
-          <div className="flex items-center space-x-2">
-            <MovilHamburgerButton
-              dark={true}
-              onOpen={() => setShowHamburgerMenu(true)}
-              totalUnreads={totalUnreads || unreadCount || 0}
-            />
-          </div>
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={() => setShowCartPanel(true)}
-              className="relative p-2 rounded-xl text-slate-800 hover:bg-slate-100 active:scale-95 transition-all cursor-pointer flex items-center justify-center pointer-events-auto"
-              id="android-reels-cart-btn"
-              title="Ver carrito de compras"
-              aria-label={`Ver carrito (${totalCartCount} productos)`}
+          <div className="relative flex min-h-10 items-center justify-between">
+            <h1
+              className="pointer-events-none absolute left-1/2 top-1/2 max-w-[calc(100%-10rem)] -translate-x-1/2 -translate-y-1/2 truncate text-center text-base font-bold text-slate-900"
+              title={currentUser?.name && !isGuestUser(currentUser) ? currentUser.name : "Inicio"}
             >
-              <ShoppingBag className="w-5 h-5 text-slate-800" />
-              {totalCartCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-amber-500 text-slate-950 font-mono text-[10px] font-black w-4.5 h-4.5 rounded-full flex items-center justify-center border-2 border-white shadow-xs">
-                  {totalCartCount > 99 ? "99+" : totalCartCount}
-                </span>
-              )}
-            </button>
+              {currentUser?.name?.trim() && !isGuestUser(currentUser) ? currentUser.name : "Inicio"}
+            </h1>
+            <div className="flex items-center space-x-2">
+              <MovilHamburgerButton
+                dark={true}
+                onOpen={() => setShowHamburgerMenu(true)}
+                totalUnreads={totalUnreads || unreadCount || 0}
+              />
+            </div>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => setShowCartPanel(true)}
+                className="relative p-1.5 rounded-xl text-slate-800 hover:bg-slate-100 active:scale-95 transition-all cursor-pointer flex items-center justify-center pointer-events-auto"
+                id="android-reels-cart-btn"
+                title="Ver carrito de compras"
+                aria-label={`Ver carrito (${totalCartCount} productos)`}
+              >
+                <ShoppingBag className="w-5 h-5 text-slate-800" />
+                {totalCartCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-amber-500 text-slate-950 font-mono text-[10px] font-black w-4.5 h-4.5 rounded-full flex items-center justify-center border-2 border-white shadow-xs">
+                    {totalCartCount > 99 ? "99+" : totalCartCount}
+                  </span>
+                )}
+              </button>
+            </div>
           </div>
         </header>
         {selectedCategory && reels.length === 0 && (
@@ -742,53 +744,48 @@ export default function Inicio({
                   </button>
                 )}
               </div>
-              {(reelItem.title || reelItem.description) && (
+              {reelItem.description && (
                 <div className="mx-auto w-full max-w-xl shrink-0 px-2">
-                  {reelItem.title && (
-                    <h2 className="mb-1 text-base font-bold text-slate-900">{reelItem.title}</h2>
-                  )}
-                  {reelItem.description && (
-                    <div className="relative">
-                      <p
-                        ref={(element) => {
-                          descriptionRefs.current[reelItem.id] = element;
-                        }}
-                        className={`text-sm leading-5 text-slate-700 break-words ${
-                          expandedDescriptions[reelItem.id] ? "" : "line-clamp-2"
-                        }`}
-                      >
-                        {reelItem.description}
-                        {expandedDescriptions[reelItem.id] && (
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setExpandedDescriptions((previous) => ({
-                                ...previous,
-                                [reelItem.id]: false,
-                              }))
-                            }
-                            className="ml-1 font-semibold text-slate-500 hover:text-slate-800"
-                          >
-                            Ver menos
-                          </button>
-                        )}
-                      </p>
-                      {!expandedDescriptions[reelItem.id] && descriptionOverflow[reelItem.id] && (
+                  <div className="relative">
+                    <p
+                      ref={(element) => {
+                        descriptionRefs.current[reelItem.id] = element;
+                      }}
+                      className={`text-sm leading-5 text-slate-700 break-words ${
+                        expandedDescriptions[reelItem.id] ? "" : "line-clamp-2"
+                      }`}
+                    >
+                      {reelItem.description}
+                      {expandedDescriptions[reelItem.id] && (
                         <button
                           type="button"
                           onClick={() =>
                             setExpandedDescriptions((previous) => ({
                               ...previous,
-                              [reelItem.id]: true,
+                              [reelItem.id]: false,
                             }))
                           }
-                          className="absolute bottom-0 right-0 bg-white pl-1 font-semibold leading-5 text-slate-500 hover:text-slate-800"
+                          className="ml-1 font-semibold text-slate-500 hover:text-slate-800"
                         >
-                          …más
+                          Ver menos
                         </button>
                       )}
-                    </div>
-                  )}
+                    </p>
+                    {!expandedDescriptions[reelItem.id] && descriptionOverflow[reelItem.id] && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setExpandedDescriptions((previous) => ({
+                            ...previous,
+                            [reelItem.id]: true,
+                          }))
+                        }
+                        className="absolute bottom-0 right-0 bg-white pl-1 font-semibold leading-5 text-slate-500 hover:text-slate-800"
+                      >
+                        …más
+                      </button>
+                    )}
+                  </div>
                 </div>
               )}
               <div
@@ -824,7 +821,7 @@ export default function Inicio({
               >
                 {reelMediaItems.length > 1 && (
                   <div
-                    className="absolute right-3 top-3 z-30 flex items-center gap-1 bg-transparent text-xs font-bold text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]"
+                    className="absolute right-3 top-3 z-30 flex items-center gap-1 rounded-xl bg-black/45 px-2 py-1 text-xs font-bold text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)] backdrop-blur-sm"
                     aria-label={`Contenido ${activeMediaIdx + 1} de ${reelMediaItems.length}`}
                   >
                     <span className="font-mono font-black">{activeMediaIdx + 1}</span>
@@ -905,8 +902,8 @@ export default function Inicio({
                   )}
                 </AnimatePresence>
                 {isProductPub && taggedProduct && handleProductSelect && (
-                  <div className="absolute bottom-3 left-3 z-30 flex items-center gap-2 rounded-lg bg-black/70 px-2.5 py-2 text-white shadow-lg backdrop-blur-sm">
-                    <span className="text-sm font-bold">
+                  <div className="absolute bottom-3 left-3 z-30 flex items-center gap-1.5 rounded-xl bg-black/45 px-2 py-1.5 text-white shadow-lg backdrop-blur-sm">
+                    <span className="text-xs font-bold">
                       {formatPrice(Number(taggedProduct.price) || 0)}
                     </span>
                     <button
@@ -915,7 +912,7 @@ export default function Inicio({
                         event.stopPropagation();
                         handleProductSelect(taggedProduct);
                       }}
-                      className="rounded-md bg-amber-400 px-3 py-1.5 text-xs font-black text-slate-950 hover:bg-amber-300"
+                      className="rounded-full bg-amber-400 px-2.5 py-1 text-[11px] font-black text-slate-950 hover:bg-amber-300"
                     >
                       Comprar
                     </button>
@@ -923,7 +920,7 @@ export default function Inicio({
                 )}
               </div>
 
-              <div className="-mt-2 w-full max-w-xl shrink-0 border-y border-slate-300 px-2 py-1">
+              <div className="-mt-2 w-full max-w-xl shrink-0 border-b-2 border-slate-300 px-2 py-1">
                 <div
                   className="flex items-center justify-around"
                   id={`android-reel-interaction-bar-${reelItem.id}`}
@@ -1188,7 +1185,7 @@ export default function Inicio({
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 26, stiffness: 260 }}
-              className="h-full w-[92vw] max-w-[430px] overflow-hidden border-l border-slate-200 bg-white shadow-2xl"
+              className="h-full w-full max-w-none overflow-hidden bg-white shadow-2xl"
               onClick={(event) => event.stopPropagation()}
             >
               <CarritoTiendaView

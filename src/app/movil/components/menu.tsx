@@ -99,13 +99,13 @@ export function MovilHamburgerMenu({
             animate={{ x: 0 }}
             exit={{ x: "-100%" }}
             transition={{ type: "spring", damping: 25, stiffness: 220 }}
-            className="w-72 max-w-[82vw] h-full bg-transparent backdrop-blur-md border-r border-white/15 flex flex-col justify-between p-4 shadow-2xl text-white select-none"
+            className="w-72 max-w-[82vw] h-full bg-white border-r border-slate-200 flex flex-col justify-between p-4 shadow-2xl text-slate-900 select-none"
             id="movil-hamburger-drawer"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex min-h-0 flex-1 flex-col">
               <div
-                className="flex items-center justify-between px-2 pb-4 mb-4 border-b border-white/15"
+                className="flex items-center justify-between px-2 pb-4 mb-4 border-b border-slate-200"
                 style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top, 0px))" }}
               >
                 <div
@@ -119,7 +119,7 @@ export function MovilHamburgerMenu({
                     <h2 className="font-display font-black text-lg tracking-tight leading-none bg-gradient-to-r from-amber-400 via-orange-500 to-rose-500 bg-clip-text text-transparent drop-shadow-sm">
                       Mall
                     </h2>
-                    <span className="text-[10px] font-mono tracking-widest uppercase block mt-0.5 text-white/80 drop-shadow-xs">
+                    <span className="text-[10px] font-mono tracking-widest uppercase block mt-0.5 text-slate-500">
                       Menú Móvil
                     </span>
                   </div>
@@ -127,10 +127,10 @@ export function MovilHamburgerMenu({
                 <button
                   type="button"
                   onClick={onClose}
-                  className="p-1.5 rounded-full bg-transparent hover:bg-white/15 text-white/80 hover:text-white transition-colors cursor-pointer"
+                  className="p-1.5 rounded-full bg-transparent hover:bg-slate-100 text-slate-500 hover:text-slate-900 transition-colors cursor-pointer"
                   id="close-movil-hamburger-drawer-btn"
                 >
-                  <X className="w-5 h-5 drop-shadow-sm" />
+                  <X className="w-5 h-5" />
                 </button>
               </div>
 
@@ -148,7 +148,7 @@ export function MovilHamburgerMenu({
                 <button
                   type="button"
                   onClick={() => handleSelectTab("shop")}
-                  className="w-full flex items-center space-x-3.5 px-4 py-3 rounded-2xl font-black text-xs transition-all cursor-pointer bg-transparent text-white hover:bg-white/15 drop-shadow-sm"
+                  className="w-full flex items-center space-x-3.5 px-4 py-3 rounded-2xl font-black text-xs transition-all cursor-pointer bg-transparent text-slate-700 hover:bg-slate-100"
                   id="movil-hamburger-nav-shop"
                 >
                   <ShoppingBag strokeWidth={2.6} className="w-5 h-5" />
@@ -158,7 +158,7 @@ export function MovilHamburgerMenu({
                 <button
                   type="button"
                   onClick={() => handleSelectTab("messages")}
-                  className="w-full flex items-center justify-between px-4 py-3 rounded-2xl font-black text-xs transition-all cursor-pointer bg-transparent text-white hover:bg-white/15 drop-shadow-sm"
+                  className="w-full flex items-center justify-between px-4 py-3 rounded-2xl font-black text-xs transition-all cursor-pointer bg-transparent text-slate-700 hover:bg-slate-100"
                   id="movil-hamburger-nav-messages"
                 >
                   <div className="flex items-center space-x-3.5">
@@ -175,7 +175,7 @@ export function MovilHamburgerMenu({
                 <button
                   type="button"
                   onClick={() => handleSelectTab("profile")}
-                  className="w-full flex items-center space-x-3.5 px-4 py-3 rounded-2xl font-black text-xs transition-all cursor-pointer bg-transparent text-white hover:bg-white/15 drop-shadow-sm"
+                  className="w-full flex items-center space-x-3.5 px-4 py-3 rounded-2xl font-black text-xs transition-all cursor-pointer bg-transparent text-slate-700 hover:bg-slate-100"
                   id="movil-hamburger-nav-profile"
                 >
                   <UserIcon strokeWidth={2.6} className="w-5 h-5" />
@@ -188,7 +188,7 @@ export function MovilHamburgerMenu({
                   <button
                     type="button"
                     onClick={() => handleSelectTab("admin")}
-                    className="w-full flex items-center space-x-3.5 px-4 py-3 rounded-2xl font-black text-xs transition-all cursor-pointer bg-transparent text-white hover:bg-white/15 drop-shadow-sm"
+                    className="w-full flex items-center space-x-3.5 px-4 py-3 rounded-2xl font-black text-xs transition-all cursor-pointer bg-transparent text-slate-700 hover:bg-slate-100"
                     id="movil-hamburger-nav-admin"
                   >
                     <ShieldCheck strokeWidth={2.6} className="w-5 h-5" />
@@ -196,8 +196,8 @@ export function MovilHamburgerMenu({
                   </button>
                 )}
               </nav>
-              <section className="mt-4 min-h-0 flex-1 overflow-y-auto border-t border-white/15 pt-4" aria-label="Categorías">
-                <h3 className="px-4 pb-2 text-[10px] font-black uppercase tracking-widest text-white/70">
+              <section className="mt-4 min-h-0 flex-1 overflow-y-auto border-t border-slate-200 pt-4" aria-label="Categorías">
+                <h3 className="px-4 pb-2 text-[10px] font-black uppercase tracking-widest text-slate-500">
                   Categorías
                 </h3>
                 <div className="space-y-1">
@@ -210,7 +210,7 @@ export function MovilHamburgerMenu({
                         if (onSelectCategory) onSelectCategory(category);
                         else handleSelectTab("shop");
                       }}
-                      className="w-full rounded-xl bg-transparent px-4 py-2.5 text-left text-xs font-bold text-white/90 transition-colors hover:bg-white/15"
+                      className="w-full rounded-xl bg-transparent px-4 py-2.5 text-left text-xs font-bold text-slate-700 transition-colors hover:bg-slate-100"
                     >
                       {category}
                     </button>
@@ -220,12 +220,12 @@ export function MovilHamburgerMenu({
             </div>
 
             <div
-              className="pt-4 border-t border-white/15"
+              className="pt-4 border-t border-slate-200"
               style={{ paddingBottom: "max(0.5rem, env(safe-area-inset-bottom, 0px))" }}
             >
               <div
                 onClick={() => handleSelectTab("profile")}
-                className="flex items-center space-x-3 p-2.5 rounded-2xl border border-white/15 bg-transparent hover:bg-white/10 transition-all cursor-pointer group"
+                className="flex items-center space-x-3 p-2.5 rounded-2xl border border-slate-200 bg-transparent hover:bg-slate-50 transition-all cursor-pointer group"
               >
                 <img
                   src={currentUser?.avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80"}
@@ -234,10 +234,10 @@ export function MovilHamburgerMenu({
                   className="w-9 h-9 rounded-full object-cover border border-amber-500/40 shrink-0"
                 />
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs font-bold truncate text-white group-hover:text-amber-400 transition-colors drop-shadow-xs">
+                  <p className="text-xs font-bold truncate text-slate-900 group-hover:text-amber-600 transition-colors">
                     {currentUser?.name || "Invitado"}
                   </p>
-                  <p className="text-[10px] truncate font-mono text-white/75 drop-shadow-xs">
+                  <p className="text-[10px] truncate font-mono text-slate-500">
                     @{currentUser?.username || "invitado"}
                   </p>
                 </div>
