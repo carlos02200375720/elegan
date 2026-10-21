@@ -183,7 +183,8 @@ export default function AndroidApp({
     const updateNavHeight = () => {
       const nav = document.getElementById("android-bottom-nav-bar");
       if (nav) {
-        const h = nav.offsetHeight || nav.getBoundingClientRect().height || 56;
+        const navRect = nav.getBoundingClientRect();
+        const h = Math.ceil(nav.offsetHeight + Math.max(0, window.innerHeight - navRect.bottom)) || 56;
         setNavBarHeight((prev) => (prev === h ? prev : h));
       }
     };

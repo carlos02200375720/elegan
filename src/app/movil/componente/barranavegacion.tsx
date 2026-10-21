@@ -33,6 +33,7 @@ export default function BarraNavegacion({
       id="android-bottom-nav-bar"
       className="fixed bottom-0 inset-x-0 z-30 flex h-14 box-border items-center px-1 transition-colors shadow-none bg-white text-slate-900 border-t border-slate-100"
       style={{
+        bottom: "env(safe-area-inset-bottom, 0px)",
         backgroundColor: "#ffffff",
         paddingBottom: "0px",
       }}
