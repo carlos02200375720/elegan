@@ -821,7 +821,7 @@ export default function Inicio({
               >
                 {reelMediaItems.length > 1 && (
                   <div
-                    className="absolute right-3 top-3 z-30 flex items-center gap-1 rounded-xl bg-black/45 px-2 py-1 text-xs font-bold text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)] backdrop-blur-sm"
+                    className="absolute right-3 top-3 z-30 flex items-center gap-1 rounded-xl bg-black/25 px-2 py-1 text-xs font-bold text-white backdrop-blur-sm"
                     aria-label={`Contenido ${activeMediaIdx + 1} de ${reelMediaItems.length}`}
                   >
                     <span className="font-mono font-black">{activeMediaIdx + 1}</span>
@@ -902,8 +902,8 @@ export default function Inicio({
                   )}
                 </AnimatePresence>
                 {isProductPub && taggedProduct && handleProductSelect && (
-                  <div className="absolute bottom-3 left-3 z-30 flex items-center gap-1.5 rounded-xl bg-black/45 px-2 py-1.5 text-white shadow-lg backdrop-blur-sm">
-                    <span className="text-xs font-bold">
+                  <div className="absolute bottom-3 left-3 z-30 flex items-center gap-1 rounded-full bg-black/30 px-1.5 py-1 text-white shadow-lg backdrop-blur-sm">
+                    <span className="text-[11px] font-bold">
                       {formatPrice(Number(taggedProduct.price) || 0)}
                     </span>
                     <button
@@ -912,7 +912,7 @@ export default function Inicio({
                         event.stopPropagation();
                         handleProductSelect(taggedProduct);
                       }}
-                      className="rounded-full bg-amber-400 px-2.5 py-1 text-[11px] font-black text-slate-950 hover:bg-amber-300"
+                      className="rounded-full bg-amber-400 px-2 py-0.5 text-[10px] font-black text-slate-950 hover:bg-amber-300"
                     >
                       Comprar
                     </button>
