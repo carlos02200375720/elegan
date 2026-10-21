@@ -15,7 +15,7 @@ import {
   X,
 } from "lucide-react";
 import { androidApiFetch } from "./api";
-import AndroidVideoUploadPreview from "./components/vistapreviavideo";
+import AndroidVideoUploadPreview from "./componente/vistapreviavideo";
 import { formatPrice } from "../../utils/currency";
 
 export interface AndroidPublishViewProps {

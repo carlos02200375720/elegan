@@ -21,7 +21,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { Product, CartItem, User } from "../../../types";
-import { AndroidVideoPlayer } from "../components/videoplay";
+import { AndroidVideoPlayer } from "../componente/videoplay";
 import { StatusBar, Style } from "@capacitor/status-bar";
 import { formatPrice } from "../../../utils/currency";
 

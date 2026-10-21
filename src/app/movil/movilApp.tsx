@@ -183,7 +183,8 @@ export default function AndroidApp({
     const updateNavHeight = () => {
       const nav = document.getElementById("android-bottom-nav-bar");
       if (nav) {
-        setNavBarHeight(nav.offsetHeight || nav.getBoundingClientRect().height || 56);
+        const h = nav.offsetHeight || nav.getBoundingClientRect().height || 56;
+        setNavBarHeight((prev) => (prev === h ? prev : h));
       }
     };
     updateNavHeight();
@@ -199,6 +200,14 @@ export default function AndroidApp({
       ro?.disconnect();
     };
   }, [activeTab]);
+
+  const handleActiveReelChange = React.useCallback((reelId: string) => {
+    const activeReel = reels.find((r) => r.id === reelId);
+    const targetPath = getInicioPath(activeReel || reelId);
+    if (typeof window !== "undefined" && window.location.pathname !== targetPath) {
+      navigateTo(targetPath, { replace: true });
+    }
+  }, [reels]);
 
   const handleDeleteReel = async (reelId: string) => {
     try {
@@ -306,10 +315,7 @@ export default function AndroidApp({
                 }}
                 onGuestInteraction={() => {}}
                 initialReelId={targetReelId}
-                onActiveReelChange={(reelId) => {
-                  const activeReel = reels.find((r) => r.id === reelId);
-                  navigateTo(getInicioPath(activeReel || reelId), { replace: true });
-                }}
+                onActiveReelChange={handleActiveReelChange}
               />
             )}
 

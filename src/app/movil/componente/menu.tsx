@@ -201,9 +201,9 @@ export function MovilHamburgerMenu({
                   Categorías
                 </h3>
                 <div className="space-y-1">
-                  {categories.map((category) => (
+                  {categories.map((category, index) => (
                     <button
-                      key={category}
+                      key={`menu-category-${category}-${index}`}
                       type="button"
                       onClick={() => {
                         onClose();

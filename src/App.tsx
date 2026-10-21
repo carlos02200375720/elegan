@@ -340,13 +340,13 @@ export default function App() {
           findReelByInicioParam(reels, currentRoute.reelId) ||
           findReelByInicioParam(reels, currentRoute.reelSlug);
         if (existingReel) {
-          setTargetReelId(existingReel.id);
+          setTargetReelId((prev) => (prev === existingReel.id ? prev : existingReel.id));
           const canonicalPath = getInicioPath(existingReel);
           if (typeof window !== 'undefined' && window.location.pathname !== canonicalPath) {
             navigateTo(canonicalPath, { replace: true });
           }
         } else {
-          setTargetReelId(currentRoute.reelId);
+          setTargetReelId((prev) => (prev === currentRoute.reelId ? prev : currentRoute.reelId));
         }
       } else if (reels.length > 0) {
         const activeOrFirst =

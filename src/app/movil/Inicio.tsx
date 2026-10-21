@@ -2,9 +2,13 @@ import React, { useState, useRef, useEffect, useCallback, useMemo } from "react"
 import { Reel, ReelMedia, Product, User, Comment, CartItem, NavigationTab, isGuestUser } from "../../types";
 import { Heart, MessageCircle, Share2, Bookmark, ShoppingBag, Volume2, VolumeX, Send, X, RefreshCw, Video } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import { MovilVideoPlay, MovilVideoPlayHandle } from "./components/videoplay";
-import { AndroidProgressBar } from "./components/barraprogreso";
-import { MovilHamburgerButton, MovilHamburgerMenu } from "./components/menu";
+import { MovilVideoPlay, MovilVideoPlayHandle } from "./componente/videoplay";
+import { AndroidProgressBar } from "./componente/barraprogreso";
+import { MovilHamburgerButton, MovilHamburgerMenu } from "./componente/menu";
+import { LikeButton } from "./componente/like";
+import { ComentarioButton } from "./componente/comentario";
+import { GuardadoButton } from "./componente/guardado";
+import { ConpartilButton } from "./componente/conpartil";
 import { CATEGORIES_WITH_IMAGES } from "./tienda/catalogo";
 import { CarritoTiendaView } from "./tienda/carrito";
 import { getMediaUrl } from "../../config";
@@ -176,12 +180,25 @@ export default function Inicio({
     return [...publishedReels, ...productPublications];
   }, [publishedReels, products, users]);
   const menuCategories = useMemo(() => {
-    const categories = ["Todos", ...CATEGORIES_WITH_IMAGES.map((category) => category.name)];
-    for (const product of products) {
-      const category = product.category?.trim();
-      if (category && !categories.some((existing) => existing.toLowerCase() === category.toLowerCase())) {
-        categories.push(category);
+    const seen = new Set<string>();
+    const categories: string[] = [];
+
+    const addCategory = (name?: string) => {
+      const clean = name?.trim();
+      if (!clean) return;
+      const lower = clean.toLowerCase();
+      if (!seen.has(lower)) {
+        seen.add(lower);
+        categories.push(clean);
       }
+    };
+
+    addCategory("Todos");
+    for (const category of CATEGORIES_WITH_IMAGES) {
+      addCategory(category.name);
+    }
+    for (const product of products) {
+      addCategory(product.category);
     }
     return categories;
   }, [products]);
@@ -212,9 +229,15 @@ export default function Inicio({
   const lastSeenInitialReelIdPropRef = useRef<string | null>(
     initialReelId && reels.length > 0 ? initialReelId : null
   );
+  const lastReportedActiveReelIdRef = useRef<string | null>(initialReelId || null);
   const internalSwipedReelIdsRef = useRef<Set<string>>(new Set());
   const onActiveReelChangeRef = useRef(onActiveReelChange);
   onActiveReelChangeRef.current = onActiveReelChange;
+  const isProgrammaticScrollRef = useRef(false);
+  const programmaticScrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scrollRafRef = useRef<number | null>(null);
+  const activeReelNotifyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isRefreshingRef = useRef(false);
   const [localMuted, setLocalMuted] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [commentInput, setCommentInput] = useState("");
@@ -244,8 +267,9 @@ export default function Inicio({
   // Synchronize cart selection when cart items change
   useEffect(() => {
     setSelectedCartIndices((prev) => {
-      if (!cart || cart.length === 0) return [];
+      if (!cart || cart.length === 0) return prev.length === 0 ? prev : [];
       const valid = prev.filter((i) => i < cart.length);
+      if (valid.length === cart.length && valid.length === prev.length) return prev;
       if (valid.length > 0) return valid;
       return cart.map((_, i) => i);
     });
@@ -285,9 +309,10 @@ export default function Inicio({
     const updateHeight = () => {
       const navEl = document.getElementById("android-bottom-nav-bar");
       if (navEl) {
-        setActualNavHeight(navEl.getBoundingClientRect().height || navEl.offsetHeight || 56);
+        const nextH = navEl.getBoundingClientRect().height || navEl.offsetHeight || 56;
+        setActualNavHeight((prev) => (prev === nextH ? prev : nextH));
       } else if (bottomNavHeight) {
-        setActualNavHeight(bottomNavHeight);
+        setActualNavHeight((prev) => (prev === bottomNavHeight ? prev : bottomNavHeight));
       }
     };
     updateHeight();
@@ -326,10 +351,26 @@ export default function Inicio({
 
   const playerRef = useRef<MovilVideoPlayHandle>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const mediaTouchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const mediaSliderRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const [carouselIndices, setCarouselIndices] = useState<Record<string, number>>({});
   const [activeCommentsReelId, setActiveCommentsReelId] = useState<string | null>(null);
   const [heartAnimReelId, setHeartAnimReelId] = useState<string | null>(null);
+
+  const handleMediaScroll = useCallback(
+    (reelId: string, element: HTMLDivElement, totalItems: number) => {
+      const width = element.clientWidth;
+      if (width > 0) {
+        const newIdx = Math.round(element.scrollLeft / width);
+        if (newIdx >= 0 && newIdx < totalItems) {
+          setCarouselIndices((prev) => {
+            if (prev[reelId] === newIdx) return prev;
+            return { ...prev, [reelId]: newIdx };
+          });
+        }
+      }
+    },
+    []
+  );
 
   const getReelMediaItems = useCallback((reel?: Reel): ReelMedia[] => {
     if (!reel) return [{ type: "image", url: "" }];
@@ -385,7 +426,7 @@ export default function Inicio({
     const observer = typeof ResizeObserver !== "undefined"
       ? new ResizeObserver(measureDescriptions)
       : null;
-    Object.values(descriptionRefs.current).forEach((element) => {
+    Object.values(descriptionRefs.current).forEach((element: HTMLParagraphElement | null) => {
       if (element) observer?.observe(element);
     });
     window.addEventListener("resize", measureDescriptions);
@@ -395,12 +436,28 @@ export default function Inicio({
     };
   }, [reels, expandedDescriptions]);
 
+  // Cleanup timers and RAF on unmount
+  useEffect(() => {
+    return () => {
+      if (scrollRafRef.current) cancelAnimationFrame(scrollRafRef.current);
+      if (programmaticScrollTimerRef.current) clearTimeout(programmaticScrollTimerRef.current);
+      if (activeReelNotifyTimerRef.current) clearTimeout(activeReelNotifyTimerRef.current);
+    };
+  }, []);
+
   const scrollToReelIndex = useCallback((targetIdx: number, smooth = true) => {
     if (!containerRef.current) return;
     const container = containerRef.current;
     const card = container.children.item(targetIdx + 1);
     if (!(card instanceof HTMLElement)) return;
     const headerHeight = container.querySelector("header")?.getBoundingClientRect().height || 0;
+
+    isProgrammaticScrollRef.current = true;
+    if (programmaticScrollTimerRef.current) clearTimeout(programmaticScrollTimerRef.current);
+    programmaticScrollTimerRef.current = setTimeout(() => {
+      isProgrammaticScrollRef.current = false;
+    }, smooth ? 450 : 150);
+
     container.scrollTo({
       top: Math.max(0, card.offsetTop - headerHeight),
       behavior: smooth ? "smooth" : "auto",
@@ -416,22 +473,46 @@ export default function Inicio({
   }, [selectedCategory]);
 
   const handleScroll = useCallback(() => {
-    if (!containerRef.current) return;
-    const container = containerRef.current;
-    const headerHeight = container.querySelector("header")?.getBoundingClientRect().height || 0;
-    const visiblePosition = container.scrollTop + headerHeight + 1;
-    const cards = Array.from(container.children).slice(1);
-    const visibleCardIndex = cards.findIndex((card) => {
-      const element = card as HTMLElement;
-      return element.offsetTop + element.offsetHeight > visiblePosition;
-    });
-    const newIdx = visibleCardIndex === -1 ? reels.length - 1 : visibleCardIndex;
-    if (newIdx >= 0 && newIdx < reels.length && newIdx !== currentIndex) {
-      setCurrentIndex(newIdx);
-      if (newIdx >= reels.length - 2 && onRefreshReels) {
-        onRefreshReels();
+    if (isProgrammaticScrollRef.current || !containerRef.current) return;
+
+    if (scrollRafRef.current) cancelAnimationFrame(scrollRafRef.current);
+    scrollRafRef.current = requestAnimationFrame(() => {
+      if (!containerRef.current || isProgrammaticScrollRef.current) return;
+      const container = containerRef.current;
+      const containerHeight = container.clientHeight;
+      if (!containerHeight) return;
+
+      const headerHeight = container.querySelector("header")?.getBoundingClientRect().height || 0;
+      const focalCenter = container.scrollTop + headerHeight + (containerHeight - headerHeight) / 2;
+      const cards = Array.from(container.children).slice(1);
+      if (cards.length === 0) return;
+
+      let bestIdx = 0;
+      let minDistance = Infinity;
+
+      for (let i = 0; i < cards.length; i++) {
+        const el = cards[i] as HTMLElement;
+        const cardCenter = el.offsetTop + el.offsetHeight / 2;
+        const dist = Math.abs(cardCenter - focalCenter);
+        if (dist < minDistance) {
+          minDistance = dist;
+          bestIdx = i;
+        }
       }
-    }
+
+      if (bestIdx >= 0 && bestIdx < reels.length) {
+        if (bestIdx !== currentIndex) {
+          setCurrentIndex(bestIdx);
+        }
+        if (bestIdx >= reels.length - 2 && onRefreshReels && !isRefreshingRef.current) {
+          isRefreshingRef.current = true;
+          onRefreshReels();
+          setTimeout(() => {
+            isRefreshingRef.current = false;
+          }, 3500);
+        }
+      }
+    });
   }, [currentIndex, reels.length, onRefreshReels]);
 
   const handleNext = useCallback(() => {
@@ -450,23 +531,52 @@ export default function Inicio({
 
   useEffect(() => {
     if (!initialReelId || reels.length === 0) return;
-    if (lastSeenInitialReelIdPropRef.current === initialReelId) return;
     const matched = findReelByInicioParam(reels, initialReelId);
+    const resolvedId = matched?.id || initialReelId;
+    if (
+      lastSeenInitialReelIdPropRef.current === initialReelId ||
+      lastSeenInitialReelIdPropRef.current === resolvedId
+    ) {
+      return;
+    }
+    lastSeenInitialReelIdPropRef.current = resolvedId;
+    lastReportedActiveReelIdRef.current = resolvedId;
+
+    // If user already scrolled to this reel, do not programmatically scroll
+    if (
+      internalSwipedReelIdsRef.current.has(initialReelId) ||
+      internalSwipedReelIdsRef.current.has(resolvedId)
+    ) {
+      internalSwipedReelIdsRef.current.delete(initialReelId);
+      internalSwipedReelIdsRef.current.delete(resolvedId);
+      return;
+    }
+
     const idx = matched ? reels.findIndex((r) => r.id === matched.id) : -1;
-    if (idx !== -1) {
-      lastSeenInitialReelIdPropRef.current = initialReelId;
-      if (idx !== currentIndex) {
-        setCurrentIndex(idx);
-        scrollToReelIndex(idx, false);
-      }
+    if (idx !== -1 && idx !== currentIndex) {
+      setCurrentIndex(idx);
+      scrollToReelIndex(idx, false);
     }
   }, [initialReelId, reels, currentIndex, scrollToReelIndex]);
 
   useEffect(() => {
-    const activeReel = reels[currentIndex];
-    if (!activeReel) return;
-    internalSwipedReelIdsRef.current.add(activeReel.id);
-    onActiveReelChangeRef.current?.(activeReel.id);
+    if (activeReelNotifyTimerRef.current) {
+      clearTimeout(activeReelNotifyTimerRef.current);
+    }
+    activeReelNotifyTimerRef.current = setTimeout(() => {
+      const activeReel = reels[currentIndex];
+      if (!activeReel?.id) return;
+      if (lastReportedActiveReelIdRef.current === activeReel.id) return;
+      lastReportedActiveReelIdRef.current = activeReel.id;
+      internalSwipedReelIdsRef.current.add(activeReel.id);
+      onActiveReelChangeRef.current?.(activeReel.id);
+    }, 150);
+
+    return () => {
+      if (activeReelNotifyTimerRef.current) {
+        clearTimeout(activeReelNotifyTimerRef.current);
+      }
+    };
   }, [currentIndex, reels]);
 
   // Keyboard navigation (ArrowDown / ArrowUp)
@@ -599,7 +709,6 @@ export default function Inicio({
         className="w-full flex-1 overflow-y-scroll no-scrollbar relative bg-white"
         style={{
           scrollbarWidth: "none",
-          scrollBehavior: "smooth",
           WebkitOverflowScrolling: "touch",
           height: `calc(100dvh - ${actualNavHeight}px)`,
           touchAction: "pan-y",
@@ -687,6 +796,11 @@ export default function Inicio({
             reelItem.creatorUsername ||
             (reelItem.creatorId === "current_user" ? currentUser?.username : "") ||
             "usuario";
+          const displayName =
+            creatorUser?.name?.trim() ||
+            reelItem.creatorName?.trim() ||
+            (reelItem.creatorId === "current_user" ? currentUser?.name?.trim() : "") ||
+            displayUsername;
           const displayAvatar =
             creatorUser?.avatar ||
             reelItem.creatorAvatar ||
@@ -729,7 +843,7 @@ export default function Inicio({
                   type="button"
                   onClick={() => handleCreatorNav(reelItem)}
                   className="shrink-0 rounded-full"
-                  aria-label={`Ver perfil de @${displayUsername}`}
+                  aria-label={`Ver perfil de ${displayName}`}
                 >
                   <img src={displayAvatar} alt="" className="h-10 w-10 rounded-full object-cover" />
                 </button>
@@ -739,7 +853,7 @@ export default function Inicio({
                     onClick={() => handleCreatorNav(reelItem)}
                     className="block max-w-full truncate text-left text-sm font-bold text-slate-900"
                   >
-                    @{displayUsername}
+                    {displayName}
                   </button>
                 </div>
                 {currentUser?.id !== reelItem.creatorId && onToggleFollowUser && (
@@ -800,91 +914,115 @@ export default function Inicio({
               )}
               <div
                 id={`android-publication-container-${reelItem.id}`}
-                className={`relative flex shrink-0 items-center justify-center overflow-hidden bg-black shadow-sm transition-all duration-300 mx-auto select-none ${
+                className={`relative flex shrink-0 items-center justify-center overflow-hidden bg-black shadow-none transition-all duration-300 mx-auto select-none ${
                   isProductPub && taggedProduct && handleProductSelect ? "cursor-pointer" : ""
                 }`}
-                style={{ ...formatStyle, touchAction: "pan-y" }}
+                style={{ ...formatStyle, touchAction: "pan-x pan-y", boxShadow: "none" }}
                 onClick={(event) => {
                   if (!isProductPub || !taggedProduct || !handleProductSelect) return;
                   if (event.target instanceof Element && event.target.closest("button")) return;
                   handleProductSelect(taggedProduct);
                 }}
-                onTouchStart={(event) => {
-                  const touch = event.touches[0];
-                  if (touch) mediaTouchStartRef.current = { x: touch.clientX, y: touch.clientY };
-                }}
-                onTouchEnd={(event) => {
-                  const start = mediaTouchStartRef.current;
-                  const touch = event.changedTouches[0];
-                  mediaTouchStartRef.current = null;
-                  if (!start || !touch || reelMediaItems.length < 2) return;
-
-                  const deltaX = touch.clientX - start.x;
-                  const deltaY = touch.clientY - start.y;
-                  if (Math.abs(deltaX) < 40 || Math.abs(deltaX) <= Math.abs(deltaY)) return;
-
-                  const nextIndex = activeMediaIdx + (deltaX < 0 ? 1 : -1);
-                  if (nextIndex >= 0 && nextIndex < reelMediaItems.length) {
-                    setCarouselIndices((previous) => ({ ...previous, [reelItem.id]: nextIndex }));
-                  }
-                }}
               >
+                {/* Horizontal Scroll Gallery Slider - exactly like productoid.tsx */}
+                <div
+                  ref={(el) => {
+                    mediaSliderRefs.current[reelItem.id] = el;
+                  }}
+                  onScroll={(e) =>
+                    handleMediaScroll(reelItem.id, e.currentTarget, reelMediaItems.length)
+                  }
+                  className="w-full h-full flex overflow-x-auto snap-x snap-mandatory scroll-smooth no-scrollbar"
+                  style={{
+                    scrollbarWidth: "none",
+                    msOverflowStyle: "none",
+                    WebkitOverflowScrolling: "touch",
+                    touchAction: "pan-x pan-y",
+                  }}
+                >
+                  {reelMediaItems.map((mediaItem, mediaIdx) => {
+                    const isThisVideo = mediaItem.type === "video" && Boolean(mediaItem.url);
+                    const isThisActive = isCurrent && activeMediaIdx === mediaIdx;
+
+                    return (
+                      <div
+                        key={`${reelItem.id}-media-${mediaIdx}`}
+                        className="w-full h-full flex-shrink-0 snap-center relative flex items-center justify-center bg-black overflow-hidden select-none"
+                        onDoubleClick={() => handleDoubleTap(reelItem)}
+                      >
+                        {isThisVideo ? (
+                          <div className="w-full h-full overflow-hidden bg-black flex items-center justify-center">
+                            {shouldPreload ? (
+                              <MovilVideoPlay
+                                key={`${reelItem.id}-${mediaIdx}`}
+                                ref={isThisActive ? playerRef : undefined}
+                                src={getMediaUrl(mediaItem.url)}
+                                hlsUrl={getMediaUrl(
+                                  mediaItem.hlsUrl ||
+                                    (mediaItem.url?.includes(".m3u8")
+                                      ? mediaItem.url
+                                      : reelItem.hlsUrl)
+                                )}
+                                poster={
+                                  reelItem.thumbnailUrl
+                                    ? getMediaUrl(reelItem.thumbnailUrl)
+                                    : undefined
+                                }
+                                autoPlay={isThisActive && isFeedActive}
+                                loop={true}
+                                muted={isMuted}
+                                isCurrent={isThisActive && isFeedActive}
+                                aspectRatio={effectiveFormat}
+                                onDoubleTap={() => handleDoubleTap(reelItem)}
+                                onMuteChange={handleMuteChange}
+                                onVideoReady={isThisActive ? handleVideoReady : undefined}
+                                className="w-full h-full"
+                              />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center bg-black">
+                                <img
+                                  src={getMediaUrl(reelItem.thumbnailUrl || mediaItem.url || "")}
+                                  alt={reelItem.description || ""}
+                                  className="w-full h-full object-cover"
+                                  loading="lazy"
+                                />
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center bg-black overflow-hidden">
+                            <img
+                              src={getMediaUrl(
+                                mediaItem.url ||
+                                  reelItem.thumbnailUrl ||
+                                  (reelItem.images && reelItem.images[0]) ||
+                                  ""
+                              )}
+                              alt={reelItem.description || ""}
+                              className="w-full h-full object-cover object-center block"
+                              loading={reelIndex <= 2 && mediaIdx === 0 ? "eager" : "lazy"}
+                              draggable={false}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Media Counter Badge in Top-Right Corner */}
                 {reelMediaItems.length > 1 && (
                   <div
-                    className="absolute right-3 top-3 z-30 flex items-center gap-1 rounded-xl bg-black/25 px-2 py-1 text-xs font-bold text-white backdrop-blur-sm"
+                    className="absolute right-3 top-3 z-30 flex items-center gap-1 rounded-xl bg-black/40 px-2 py-1 text-xs font-bold text-white backdrop-blur-sm pointer-events-none select-none"
                     aria-label={`Contenido ${activeMediaIdx + 1} de ${reelMediaItems.length}`}
                   >
-                    <span className="font-mono font-black">{activeMediaIdx + 1}</span>
-                    <span className="font-mono">/</span>
-                    <span className="font-mono font-bold">{reelMediaItems.length}</span>
-                  </div>
-                )}
-                {/* Media Player Container */}
-                {isVideo ? (
-                  <div className="w-full h-full overflow-hidden bg-black flex items-center justify-center">
-                    {shouldPreload ? (
-                      <MovilVideoPlay
-                        key={`${reelItem.id}-${activeMediaIdx}`}
-                        ref={isCurrent ? playerRef : undefined}
-                        src={getMediaUrl(currentMedia.url)}
-                        hlsUrl={getMediaUrl(currentMedia.hlsUrl || (currentMedia.url?.includes(".m3u8") ? currentMedia.url : reelItem.hlsUrl))}
-                        poster={reelItem.thumbnailUrl ? getMediaUrl(reelItem.thumbnailUrl) : undefined}
-                        autoPlay={isCurrent && isFeedActive}
-                        loop={true}
-                        muted={isMuted}
-                        isCurrent={isCurrent && isFeedActive}
-                        aspectRatio={effectiveFormat}
-                        onDoubleTap={() => handleDoubleTap(reelItem)}
-                        onMuteChange={handleMuteChange}
-                        onVideoReady={isCurrent ? handleVideoReady : undefined}
-                        className="w-full h-full"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-black">
-                        <img
-                          src={getMediaUrl(reelItem.thumbnailUrl || "")}
-                          alt={reelItem.description || ""}
-                          className="w-full h-full object-cover"
-                          loading="lazy"
-                        />
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  /* Image / Carousel publication */
-                  <div className="w-full h-full flex flex-col items-center justify-center overflow-hidden bg-black">
-                    <div
-                      className="w-full h-full flex items-center justify-center bg-black overflow-hidden cursor-pointer"
-                      onDoubleClick={() => handleDoubleTap(reelItem)}
-                    >
-                      <img
-                        src={getMediaUrl(currentMedia?.url || reelItem.thumbnailUrl || (reelItem.images && reelItem.images[0]))}
-                        alt={reelItem.description}
-                        className="w-full h-full object-cover object-center block"
-                        loading={reelIndex <= 2 ? "eager" : "lazy"}
-                      />
-                    </div>
-
+                    <span className="font-mono font-black text-amber-400">
+                      {activeMediaIdx + 1}
+                    </span>
+                    <span className="font-mono text-white/80">/</span>
+                    <span className="font-mono font-bold text-white">
+                      {reelMediaItems.length}
+                    </span>
                   </div>
                 )}
 
@@ -935,60 +1073,38 @@ export default function Inicio({
                   className="flex items-center justify-around"
                   id={`android-reel-interaction-bar-${reelItem.id}`}
                 >
-                  <button
-                    type="button"
+                  <LikeButton
+                    reelId={reelItem.id}
+                    likes={reelItem.likes || 0}
+                    isLiked={isLiked}
                     onClick={() => {
                       if (!requireLoginForInteraction("dar me gusta")) onLikeReel(reelItem.id);
                     }}
-                    className={`flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-sm font-semibold ${
-                      isLiked ? "bg-rose-500 text-white hover:bg-rose-600" : "text-slate-600 hover:bg-slate-50"
-                    }`}
-                    id={`android-reel-like-btn-${reelItem.id}`}
-                    aria-label={`Me gusta, ${reelItem.likes || 0}`}
-                  >
-                    <Heart className={`h-5 w-5 text-slate-900 ${isLiked ? "fill-slate-900" : ""}`} />
-                    <span>{reelItem.likes || 0}</span>
-                  </button>
-                  <button
-                    type="button"
+                  />
+                  <ComentarioButton
+                    reelId={reelItem.id}
+                    commentsCount={reelItem.comments?.length || 0}
                     onClick={() => {
                       if (requireLoginForInteraction("comentar una publicación")) return;
                       setActiveCommentsReelId(reelItem.id);
                       setShowComments(true);
                     }}
-                    className="flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
-                    id={`android-reel-comment-btn-${reelItem.id}`}
-                    aria-label={`Comentar, ${reelItem.comments?.length || 0}`}
-                  >
-                    <MessageCircle className="h-5 w-5 text-slate-900" />
-                    <span>{reelItem.comments?.length || 0}</span>
-                  </button>
-                  <button
-                    type="button"
+                  />
+                  <GuardadoButton
+                    reelId={reelItem.id}
+                    savesCount={reelItem.saves ?? 0}
+                    isSaved={isSaved}
                     onClick={() => {
                       if (!requireLoginForInteraction("guardar una publicación")) {
                         onToggleSaveReel(reelItem.id);
                       }
                     }}
-                    className={`flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-sm font-semibold hover:bg-slate-50 ${
-                      isSaved ? "text-amber-600" : "text-slate-600"
-                    }`}
-                    id={`android-reel-save-btn-${reelItem.id}`}
-                    aria-label={`Guardar, ${reelItem.saves ?? 0}`}
-                  >
-                    <Bookmark className={`h-5 w-5 text-slate-900 ${isSaved ? "fill-slate-900" : ""}`} />
-                    <span>{reelItem.saves ?? 0}</span>
-                  </button>
-                  <button
-                    type="button"
+                  />
+                  <ConpartilButton
+                    reelId={reelItem.id}
+                    sharesCount={reelItem.shares || 0}
                     onClick={() => handleShare(reelItem)}
-                    className="flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
-                    id={`android-reel-share-btn-${reelItem.id}`}
-                    aria-label={`Compartir, ${reelItem.shares || 0}`}
-                  >
-                    <Share2 className="h-5 w-5 text-slate-900" />
-                    <span>{reelItem.shares || 0}</span>
-                  </button>
+                  />
                 </div>
               </div>
 
@@ -1096,7 +1212,7 @@ export default function Inicio({
                         onClick={() => handleCreatorNav(reelItem)}
                         className="cursor-pointer hover:underline text-white font-bold drop-shadow-sm pointer-events-auto"
                       >
-                        @{displayUsername}
+                        {displayName}
                       </span>
                       {currentUser?.id !== reelItem.creatorId && onToggleFollowUser && (
                         <button

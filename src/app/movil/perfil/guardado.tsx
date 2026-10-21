@@ -2,7 +2,7 @@ import React, { useState, useMemo } from "react";
 import { Bookmark, Play, ShoppingBag } from "lucide-react";
 import { Product, Reel } from "../../../types";
 import { formatPrice } from "../../../utils/currency";
-import AndroidPublicationCover from "../components/miniaturapublicacion";
+import AndroidPublicationCover from "../componente/miniaturapublicacion";
 
 export interface GuardadoPerfilProps {
   savedProducts?: Product[];
