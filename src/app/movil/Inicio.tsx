@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { Reel, ReelMedia, Product, User, Comment, CartItem, NavigationTab, isGuestUser } from "../../types";
 import { Heart, MessageCircle, Share2, Bookmark, ShoppingBag, Volume2, VolumeX, Plus, Send, X, RefreshCw, Video, Minus, Trash2, CreditCard, Check, ChevronLeft, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
@@ -78,7 +78,7 @@ export const getPublicationFormatStyles = (format: PublicationFormat): React.CSS
 };
 
 export default function Inicio({
-  reels,
+  reels: publishedReels,
   currentUser,
   onLikeReel,
   onCommentReel,
@@ -112,6 +112,68 @@ export default function Inicio({
   initialReelId,
   onActiveReelChange,
 }: AndroidInicioProps) {
+  const reels = useMemo(() => {
+    const productPublications = products
+      .filter((product) => {
+        if (!product.id) return false;
+        return !publishedReels.some(
+          (reel) =>
+            reel.id === `reel_prod_${product.id}` ||
+            (reel.type === "product" && reel.productId === product.id)
+        );
+      })
+      .map((product): Reel => {
+        const productImages = (product.images || []).filter(
+          (image): image is string => typeof image === "string" && image.trim().length > 0
+        );
+        if (productImages.length === 0 && product.imageUrl) {
+          productImages.push(product.imageUrl);
+        }
+        const productVideos = (product.videos || []).filter(
+          (video): video is string => typeof video === "string" && video.trim().length > 0
+        );
+        const media: ReelMedia[] = [
+          ...productVideos.map((url) => ({ type: "video" as const, url })),
+          ...productImages.map((url) => ({ type: "image" as const, url })),
+        ];
+        const seller = users.find(
+          (user) =>
+            user.id === product.sellerId ||
+            user.originalId === product.sellerId ||
+            user.username === product.sellerUsername
+        );
+        const description = product.description || `${product.name} - ${formatPrice(Number(product.price) || 0)}`;
+
+        return {
+          id: `reel_prod_${product.id}`,
+          type: "product",
+          title: product.name,
+          description,
+          caption: description,
+          creatorId: seller?.id || product.sellerId || "seller",
+          creatorName: seller?.name || product.sellerName || "Vendedor",
+          creatorUsername: seller?.username || product.sellerUsername,
+          creatorAvatar:
+            seller?.avatar ||
+            "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80",
+          videoUrl: productVideos[0] || "",
+          thumbnailUrl: product.imageUrl || productImages[0] || "",
+          images: productImages,
+          media,
+          likes: 0,
+          likedBy: [],
+          comments: [],
+          shares: 0,
+          saves: 0,
+          views: 0,
+          productId: product.id,
+          aspectRatio: "square",
+        };
+      });
+
+    return [...publishedReels, ...productPublications];
+  }, [publishedReels, products, users]);
+
   const [currentIndex, setCurrentIndex] = useState(() => {
     if (initialReelId && reels.length > 0) {
       const matched = findReelByInicioParam(reels, initialReelId);
@@ -138,6 +200,8 @@ export default function Inicio({
   const [showCartPanel, setShowCartPanel] = useState(false);
   const [showHamburgerMenu, setShowHamburgerMenu] = useState(false);
   const [expandedDescriptions, setExpandedDescriptions] = useState<{ [key: string]: boolean }>({});
+  const [descriptionOverflow, setDescriptionOverflow] = useState<{ [key: string]: boolean }>({});
+  const descriptionRefs = useRef<Record<string, HTMLParagraphElement | null>>({});
   const [publicationFormats, setPublicationFormats] = useState<Record<string, PublicationFormat>>({});
 
   const getEffectiveFormat = (item: Reel): PublicationFormat => {
@@ -271,22 +335,61 @@ export default function Inicio({
   const currentMediaItems = getReelMediaItems(currentReel);
   const currentActiveMediaIdx = carouselIndices[currentReel?.id] || 0;
 
+  useEffect(() => {
+    const measureDescriptions = () => {
+      setDescriptionOverflow((previous) => {
+        let changed = false;
+        const next = { ...previous };
+        for (const reel of reels) {
+          if (expandedDescriptions[reel.id]) continue;
+          const element = descriptionRefs.current[reel.id];
+          const overflows = Boolean(element && element.scrollHeight > element.clientHeight + 1);
+          if (next[reel.id] !== overflows) {
+            next[reel.id] = overflows;
+            changed = true;
+          }
+        }
+        return changed ? next : previous;
+      });
+    };
+
+    measureDescriptions();
+    const observer = typeof ResizeObserver !== "undefined"
+      ? new ResizeObserver(measureDescriptions)
+      : null;
+    Object.values(descriptionRefs.current).forEach((element) => {
+      if (element) observer?.observe(element);
+    });
+    window.addEventListener("resize", measureDescriptions);
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener("resize", measureDescriptions);
+    };
+  }, [reels, expandedDescriptions]);
+
   const scrollToReelIndex = useCallback((targetIdx: number, smooth = true) => {
     if (!containerRef.current) return;
-    const ch = containerRef.current.clientHeight;
-    if (ch > 0) {
-      containerRef.current.scrollTo({
-        top: targetIdx * ch,
-        behavior: smooth ? "smooth" : "auto",
-      });
-    }
+    const container = containerRef.current;
+    const card = container.children.item(targetIdx + 1);
+    if (!(card instanceof HTMLElement)) return;
+    const headerHeight = container.querySelector("header")?.getBoundingClientRect().height || 0;
+    container.scrollTo({
+      top: Math.max(0, card.offsetTop - headerHeight),
+      behavior: smooth ? "smooth" : "auto",
+    });
   }, []);
 
   const handleScroll = useCallback(() => {
     if (!containerRef.current) return;
-    const { scrollTop, clientHeight } = containerRef.current;
-    if (clientHeight <= 0) return;
-    const newIdx = Math.round(scrollTop / clientHeight);
+    const container = containerRef.current;
+    const headerHeight = container.querySelector("header")?.getBoundingClientRect().height || 0;
+    const visiblePosition = container.scrollTop + headerHeight + 1;
+    const cards = Array.from(container.children).slice(1);
+    const visibleCardIndex = cards.findIndex((card) => {
+      const element = card as HTMLElement;
+      return element.offsetTop + element.offsetHeight > visiblePosition;
+    });
+    const newIdx = visibleCardIndex === -1 ? reels.length - 1 : visibleCardIndex;
     if (newIdx >= 0 && newIdx < reels.length && newIdx !== currentIndex) {
       setCurrentIndex(newIdx);
       if (newIdx >= reels.length - 2 && onRefreshReels) {
@@ -443,56 +546,14 @@ export default function Inicio({
       }}
       id="android-reels-view"
     >
-      {/* Cabecera fija con fondo blanco que se acopla con la barra de estado de Android */}
-      <header
-        className="absolute top-0 inset-x-0 z-40 flex items-center justify-between px-4 bg-white border-b border-slate-100 shadow-2xs pointer-events-auto"
-        style={{
-          backgroundColor: "#ffffff",
-          paddingTop: "max(12px, calc(env(safe-area-inset-top, 0px) + 0.5rem))",
-          paddingBottom: "0.5rem",
-        }}
-        id="android-reels-fixed-header"
-      >
-        <div className="flex items-center space-x-2">
-          <MovilHamburgerButton
-            dark={true}
-            onOpen={() => setShowHamburgerMenu(true)}
-            totalUnreads={totalUnreads || unreadCount || 0}
-          />
-        </div>
-        <div className="flex items-center space-x-2">
-          {currentMediaItems.length > 1 && (
-            <div className="inline-flex items-center space-x-1 px-2.5 py-1 bg-slate-100 rounded-full text-xs font-bold text-slate-800 border border-slate-200 shadow-2xs">
-              <span className="text-amber-600 font-mono font-black">{currentActiveMediaIdx + 1}</span>
-              <span className="text-slate-400 font-mono">/</span>
-              <span className="text-slate-700 font-mono font-bold">{currentMediaItems.length}</span>
-            </div>
-          )}
-          <button
-            onClick={() => setShowCartPanel(true)}
-            className="relative p-2 rounded-xl text-slate-800 hover:bg-slate-100 active:scale-95 transition-all cursor-pointer flex items-center justify-center pointer-events-auto"
-            id="android-reels-cart-btn"
-            title="Ver carrito de compras"
-            aria-label={`Ver carrito (${totalCartCount} productos)`}
-          >
-            <ShoppingBag className="w-5 h-5 text-slate-800" />
-            {totalCartCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-amber-500 text-slate-950 font-mono text-[10px] font-black w-4.5 h-4.5 rounded-full flex items-center justify-center border-2 border-white shadow-xs">
-                {totalCartCount > 99 ? "99+" : totalCartCount}
-              </span>
-            )}
-          </button>
-        </div>
-      </header>
-
-      {/* Contenedor vertical deslizable como en catálogo (Continuous Vertical Snap-Scroll Feed) */}
+      {/* Contenedor vertical con desplazamiento continuo */}
       <div
         ref={containerRef}
         onScroll={handleScroll}
-        className="w-full flex-1 overflow-y-scroll snap-y snap-mandatory no-scrollbar relative bg-white"
+        className="w-full flex-1 overflow-y-scroll no-scrollbar relative bg-white"
         style={{
           scrollbarWidth: "none",
-          scrollSnapType: "y mandatory",
+          scrollBehavior: "smooth",
           WebkitOverflowScrolling: "touch",
           height: `calc(100dvh - ${actualNavHeight}px)`,
           touchAction: "pan-y",
@@ -500,6 +561,47 @@ export default function Inicio({
         }}
         id="android-reels-scroll-container"
       >
+        {/* Cabecera fija dentro del área de scroll para que solo se reserve espacio una vez */}
+        <header
+          className="sticky top-0 inset-x-0 z-40 flex shrink-0 items-center justify-between px-4 bg-white border-b border-slate-100 shadow-2xs pointer-events-auto"
+          style={{
+            backgroundColor: "#ffffff",
+            paddingTop: "max(12px, calc(env(safe-area-inset-top, 0px) + 0.5rem))",
+            paddingBottom: "0.5rem",
+          }}
+          id="android-reels-fixed-header"
+        >
+          <div className="flex items-center space-x-2">
+            <MovilHamburgerButton
+              dark={true}
+              onOpen={() => setShowHamburgerMenu(true)}
+              totalUnreads={totalUnreads || unreadCount || 0}
+            />
+          </div>
+          <div className="flex items-center space-x-2">
+            {currentMediaItems.length > 1 && (
+              <div className="inline-flex items-center space-x-1 px-2.5 py-1 bg-slate-100 rounded-full text-xs font-bold text-slate-800 border border-slate-200 shadow-2xs">
+                <span className="text-amber-600 font-mono font-black">{currentActiveMediaIdx + 1}</span>
+                <span className="text-slate-400 font-mono">/</span>
+                <span className="text-slate-700 font-mono font-bold">{currentMediaItems.length}</span>
+              </div>
+            )}
+            <button
+              onClick={() => setShowCartPanel(true)}
+              className="relative p-2 rounded-xl text-slate-800 hover:bg-slate-100 active:scale-95 transition-all cursor-pointer flex items-center justify-center pointer-events-auto"
+              id="android-reels-cart-btn"
+              title="Ver carrito de compras"
+              aria-label={`Ver carrito (${totalCartCount} productos)`}
+            >
+              <ShoppingBag className="w-5 h-5 text-slate-800" />
+              {totalCartCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-amber-500 text-slate-950 font-mono text-[10px] font-black w-4.5 h-4.5 rounded-full flex items-center justify-center border-2 border-white shadow-xs">
+                  {totalCartCount > 99 ? "99+" : totalCartCount}
+                </span>
+              )}
+            </button>
+          </div>
+        </header>
         {reels.map((reelItem, reelIndex) => {
           const isCurrent = reelIndex === currentIndex;
           const shouldPreload = isCurrent || Math.abs(reelIndex - currentIndex) <= 1;
@@ -559,13 +661,8 @@ export default function Inicio({
             <div
               key={reelItem.id || reelIndex}
               id={`android-reel-card-${reelItem.id}`}
-              className="w-full shrink-0 snap-start snap-always relative flex flex-col items-center justify-start gap-2 bg-white overflow-hidden select-none px-0 pt-[76px] pb-2"
+              className="w-full shrink-0 relative flex flex-col items-center justify-start gap-2 bg-white overflow-hidden select-none px-0 pt-2"
               style={{
-                height: `calc(100dvh - ${actualNavHeight}px)`,
-                minHeight: `calc(100dvh - ${actualNavHeight}px)`,
-                maxHeight: `calc(100dvh - ${actualNavHeight}px)`,
-                scrollSnapAlign: "start",
-                scrollSnapStop: "always",
                 backgroundColor: "#ffffff",
               }}
             >
@@ -600,6 +697,55 @@ export default function Inicio({
                   </button>
                 )}
               </div>
+              {(reelItem.title || reelItem.description) && (
+                <div className="mx-auto w-full max-w-xl shrink-0 px-2">
+                  {reelItem.title && (
+                    <h2 className="mb-1 text-base font-bold text-slate-900">{reelItem.title}</h2>
+                  )}
+                  {reelItem.description && (
+                    <div className="relative">
+                      <p
+                        ref={(element) => {
+                          descriptionRefs.current[reelItem.id] = element;
+                        }}
+                        className={`text-sm leading-5 text-slate-700 break-words ${
+                          expandedDescriptions[reelItem.id] ? "" : "line-clamp-2"
+                        }`}
+                      >
+                        {reelItem.description}
+                        {expandedDescriptions[reelItem.id] && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setExpandedDescriptions((previous) => ({
+                                ...previous,
+                                [reelItem.id]: false,
+                              }))
+                            }
+                            className="ml-1 font-semibold text-slate-500 hover:text-slate-800"
+                          >
+                            Ver menos
+                          </button>
+                        )}
+                      </p>
+                      {!expandedDescriptions[reelItem.id] && descriptionOverflow[reelItem.id] && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setExpandedDescriptions((previous) => ({
+                              ...previous,
+                              [reelItem.id]: true,
+                            }))
+                          }
+                          className="absolute bottom-0 right-0 bg-white pl-1 font-semibold leading-5 text-slate-500 hover:text-slate-800"
+                        >
+                          …más
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
               <div
                 id={`android-publication-container-${reelItem.id}`}
                 className="relative flex shrink-0 items-center justify-center overflow-hidden bg-black shadow-sm transition-all duration-300 mx-auto select-none"
@@ -740,7 +886,40 @@ export default function Inicio({
                 </AnimatePresence>
               </div>
 
-              <div className="w-full max-w-xl shrink-0 border-y border-slate-100 px-2 py-1">
+              <div className="w-full max-w-xl shrink-0 px-2 pb-3">
+                {taggedProduct && handleProductSelect && (
+                  <button
+                    type="button"
+                    onClick={() => handleProductSelect(taggedProduct)}
+                    className="mt-2 flex w-full items-center gap-3 overflow-hidden rounded-xl border border-slate-200 bg-white p-2 text-left hover:bg-slate-50"
+                    id={`tagged-product-${reelItem.id}`}
+                  >
+                    {taggedProduct.imageUrl || taggedProduct.images?.[0] ? (
+                      <img
+                        src={taggedProduct.imageUrl || taggedProduct.images?.[0]}
+                        alt=""
+                        className="h-14 w-14 shrink-0 rounded-lg object-cover"
+                      />
+                    ) : (
+                      <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-amber-500">
+                        <ShoppingBag className="h-5 w-5" />
+                      </span>
+                    )}
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[10px] font-bold uppercase tracking-wide text-amber-600">
+                        Producto destacado
+                      </span>
+                      <span className="block truncate text-sm font-semibold text-slate-900">{taggedProduct.name}</span>
+                      <span className="text-xs font-bold text-emerald-700">
+                        {formatPrice(Number(taggedProduct.price) || 0)}
+                      </span>
+                    </span>
+                    <span className="text-xs font-semibold text-amber-700">Ver</span>
+                  </button>
+                )}
+              </div>
+
+              <div className="w-full max-w-xl shrink-0 border-y border-slate-300 px-2 py-1">
                 <div
                   className="flex items-center justify-around"
                   id={`android-reel-interaction-bar-${reelItem.id}`}
@@ -793,65 +972,6 @@ export default function Inicio({
                     <span>{reelItem.shares || 0}</span>
                   </button>
                 </div>
-              </div>
-
-              <div className="w-full max-w-xl min-h-0 flex-1 overflow-y-auto px-2 pb-3">
-                {reelItem.title && (
-                  <h2 className="mb-1 text-base font-bold text-slate-900">{reelItem.title}</h2>
-                )}
-                {reelItem.description && (
-                  <p className="text-sm leading-5 text-slate-700 break-words">
-                    {expandedDescriptions[reelItem.id]
-                      ? reelItem.description
-                      : reelItem.description.length > 140
-                        ? `${reelItem.description.slice(0, 140)}...`
-                        : reelItem.description}
-                    {reelItem.description.length > 140 && (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setExpandedDescriptions((prev) => ({
-                            ...prev,
-                            [reelItem.id]: !prev[reelItem.id],
-                          }))
-                        }
-                        className="ml-1 font-semibold text-slate-500 hover:text-slate-800"
-                      >
-                        {expandedDescriptions[reelItem.id] ? "Ver menos" : "Ver más"}
-                      </button>
-                    )}
-                  </p>
-                )}
-                {taggedProduct && handleProductSelect && (
-                  <button
-                    type="button"
-                    onClick={() => handleProductSelect(taggedProduct)}
-                    className="mt-2 flex w-full items-center gap-3 overflow-hidden rounded-xl border border-slate-200 bg-white p-2 text-left hover:bg-slate-50"
-                    id={`tagged-product-${reelItem.id}`}
-                  >
-                    {taggedProduct.imageUrl || taggedProduct.images?.[0] ? (
-                      <img
-                        src={taggedProduct.imageUrl || taggedProduct.images?.[0]}
-                        alt=""
-                        className="h-14 w-14 shrink-0 rounded-lg object-cover"
-                      />
-                    ) : (
-                      <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-amber-500">
-                        <ShoppingBag className="h-5 w-5" />
-                      </span>
-                    )}
-                    <span className="min-w-0 flex-1">
-                      <span className="block text-[10px] font-bold uppercase tracking-wide text-amber-600">
-                        Producto destacado
-                      </span>
-                      <span className="block truncate text-sm font-semibold text-slate-900">{taggedProduct.name}</span>
-                      <span className="text-xs font-bold text-emerald-700">
-                        {formatPrice(Number(taggedProduct.price) || 0)}
-                      </span>
-                    </span>
-                    <span className="text-xs font-semibold text-amber-700">Ver</span>
-                  </button>
-                )}
               </div>
 
               {/* Interaction Bar on the Right */}
