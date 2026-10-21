@@ -946,7 +946,7 @@ export default function Inicio({
                     id={`android-reel-like-btn-${reelItem.id}`}
                     aria-label={`Me gusta, ${reelItem.likes || 0}`}
                   >
-                    <Heart className={`h-5 w-5 ${isLiked ? "fill-white text-white" : ""}`} />
+                    <Heart className={`h-5 w-5 text-slate-900 ${isLiked ? "fill-slate-900" : ""}`} />
                     <span>{reelItem.likes || 0}</span>
                   </button>
                   <button
@@ -960,7 +960,7 @@ export default function Inicio({
                     id={`android-reel-comment-btn-${reelItem.id}`}
                     aria-label={`Comentar, ${reelItem.comments?.length || 0}`}
                   >
-                    <MessageCircle className="h-5 w-5" />
+                    <MessageCircle className="h-5 w-5 text-slate-900" />
                     <span>{reelItem.comments?.length || 0}</span>
                   </button>
                   <button
@@ -976,7 +976,7 @@ export default function Inicio({
                     id={`android-reel-save-btn-${reelItem.id}`}
                     aria-label={`Guardar, ${reelItem.saves ?? 0}`}
                   >
-                    <Bookmark className={`h-5 w-5 ${isSaved ? "fill-amber-400" : ""}`} />
+                    <Bookmark className={`h-5 w-5 text-slate-900 ${isSaved ? "fill-slate-900" : ""}`} />
                     <span>{reelItem.saves ?? 0}</span>
                   </button>
                   <button
@@ -986,7 +986,7 @@ export default function Inicio({
                     id={`android-reel-share-btn-${reelItem.id}`}
                     aria-label={`Compartir, ${reelItem.shares || 0}`}
                   >
-                    <Share2 className="h-5 w-5" />
+                    <Share2 className="h-5 w-5 text-slate-900" />
                     <span>{reelItem.shares || 0}</span>
                   </button>
                 </div>
