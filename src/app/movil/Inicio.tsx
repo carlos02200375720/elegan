@@ -599,7 +599,7 @@ export default function Inicio({
       >
         {/* Cabecera fija dentro del área de scroll para que solo se reserve espacio una vez */}
         <header
-          className="sticky top-0 inset-x-0 z-40 flex shrink-0 items-center justify-between px-4 bg-white border-b border-slate-100 shadow-2xs pointer-events-auto"
+          className="sticky top-0 inset-x-0 z-40 flex shrink-0 items-center justify-between px-4 bg-white border-b border-slate-200 shadow-2xs pointer-events-auto"
           style={{
             backgroundColor: "#ffffff",
             paddingTop: "max(8px, calc(env(safe-area-inset-top, 0px) + 0.25rem))",
