@@ -721,7 +721,7 @@ export default function Inicio({
           className="sticky top-0 inset-x-0 z-40 flex shrink-0 items-center justify-between px-4 bg-white border-b border-slate-200 shadow-2xs pointer-events-auto"
           style={{
             backgroundColor: "#ffffff",
-            paddingTop: "max(8px, calc(env(safe-area-inset-top, 0px) + 0.25rem))",
+            paddingTop: "0px",
             paddingBottom: "0.25rem",
           }}
           id="android-reels-fixed-header"
