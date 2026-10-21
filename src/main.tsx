@@ -10,8 +10,8 @@ import ErrorBoundary from './app/web/components/ErrorBoundary';
 try {
   if (typeof window !== 'undefined' && typeof Capacitor !== 'undefined' && Capacitor?.isNativePlatform && Capacitor.isNativePlatform()) {
     StatusBar.setOverlaysWebView({ overlay: false }).catch(() => {});
-    StatusBar.setBackgroundColor({ color: '#000000' }).catch(() => {});
-    StatusBar.setStyle({ style: Style.Dark }).catch(() => {});
+    StatusBar.setBackgroundColor({ color: '#ffffff' }).catch(() => {});
+    StatusBar.setStyle({ style: Style.Light }).catch(() => {});
   }
 } catch (err) {
   console.warn('Native status bar initialization note:', err);
