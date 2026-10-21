@@ -718,15 +718,13 @@ export default function Inicio({
       >
         {/* Cabecera fija dentro del área de scroll para que solo se reserve espacio una vez */}
         <header
-          className="sticky top-0 inset-x-0 z-40 flex shrink-0 items-center justify-between px-4 bg-white border-b border-slate-200 shadow-2xs pointer-events-auto"
+          className="sticky top-0 inset-x-0 z-40 flex h-14 shrink-0 box-border items-center justify-between px-4 bg-white border-b border-slate-200 shadow-2xs pointer-events-auto"
           style={{
             backgroundColor: "#ffffff",
-            paddingTop: "0px",
-            paddingBottom: "0.25rem",
           }}
           id="android-reels-fixed-header"
         >
-          <div className="relative flex min-h-10 w-full items-center justify-between">
+          <div className="relative flex h-full w-full items-center justify-between">
             <h1
               className="pointer-events-none absolute left-1/2 top-1/2 max-w-[calc(100%-10rem)] -translate-x-1/2 -translate-y-1/2 truncate text-center text-base font-bold text-slate-900"
               title={currentUser?.name && !isGuestUser(currentUser) ? currentUser.name : "Inicio"}
