@@ -607,7 +607,7 @@ export default function Inicio({
           }}
           id="android-reels-fixed-header"
         >
-          <div className="relative flex min-h-10 items-center justify-between">
+          <div className="relative flex min-h-10 w-full items-center justify-between">
             <h1
               className="pointer-events-none absolute left-1/2 top-1/2 max-w-[calc(100%-10rem)] -translate-x-1/2 -translate-y-1/2 truncate text-center text-base font-bold text-slate-900"
               title={currentUser?.name && !isGuestUser(currentUser) ? currentUser.name : "Inicio"}
