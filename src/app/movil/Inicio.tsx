@@ -482,6 +482,15 @@ export default function Inicio({
 
   const handleProductSelect = onProductClick || onSelectProduct;
   const currentGuestToken = currentUser?.guestToken || getLocalGuestToken();
+  const requireLoginForInteraction = (actionDescription: string) => {
+    if (!isGuestUser(currentUser)) return false;
+    if (onAuthRequired) {
+      onAuthRequired(actionDescription);
+    } else {
+      navigateTo("/perfil/login");
+    }
+    return true;
+  };
 
   const handleDoubleTap = (reelItem: Reel) => {
     const isLiked = Boolean(
@@ -501,6 +510,7 @@ export default function Inicio({
   };
 
   const handleShare = async (reelToShare: Reel) => {
+    if (requireLoginForInteraction("compartir una publicación")) return;
     const shareUrl = getInicioShareUrl(reelToShare);
     if (typeof navigator !== "undefined" && navigator.share) {
       try {
@@ -927,19 +937,22 @@ export default function Inicio({
                 >
                   <button
                     type="button"
-                    onClick={() => onLikeReel(reelItem.id)}
-                    className={`flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-sm font-semibold hover:bg-slate-50 ${
-                      isLiked ? "text-rose-600" : "text-slate-600"
+                    onClick={() => {
+                      if (!requireLoginForInteraction("dar me gusta")) onLikeReel(reelItem.id);
+                    }}
+                    className={`flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-sm font-semibold ${
+                      isLiked ? "bg-rose-500 text-white hover:bg-rose-600" : "text-slate-600 hover:bg-slate-50"
                     }`}
                     id={`android-reel-like-btn-${reelItem.id}`}
                     aria-label={`Me gusta, ${reelItem.likes || 0}`}
                   >
-                    <Heart className={`h-5 w-5 ${isLiked ? "fill-rose-500 text-rose-500" : ""}`} />
+                    <Heart className={`h-5 w-5 ${isLiked ? "fill-white text-white" : ""}`} />
                     <span>{reelItem.likes || 0}</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => {
+                      if (requireLoginForInteraction("comentar una publicación")) return;
                       setActiveCommentsReelId(reelItem.id);
                       setShowComments(true);
                     }}
@@ -952,7 +965,11 @@ export default function Inicio({
                   </button>
                   <button
                     type="button"
-                    onClick={() => onToggleSaveReel(reelItem.id)}
+                    onClick={() => {
+                      if (!requireLoginForInteraction("guardar una publicación")) {
+                        onToggleSaveReel(reelItem.id);
+                      }
+                    }}
                     className={`flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-sm font-semibold hover:bg-slate-50 ${
                       isSaved ? "text-amber-600" : "text-slate-600"
                     }`}

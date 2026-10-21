@@ -294,6 +294,11 @@ export default function AndroidApp({
                 savedReelIds={savedReelIds}
                 onToggleSaveReel={handleToggleSaveReel}
                 onToggleFollowUser={handleToggleFollowUser}
+                onAuthRequired={() => {
+                  setSelectedCreatorProfileId(null);
+                  setActiveTab('profile');
+                  navigateTo('/perfil/login');
+                }}
                 onNavigateToProfile={() => {
                   setSelectedCreatorProfileId(null);
                   setActiveTab('profile');
