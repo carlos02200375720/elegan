@@ -159,6 +159,7 @@ export default function AndroidApp({
   const [navBarHeight, setNavBarHeight] = React.useState(56);
   const [cartDrawerRequest, setCartDrawerRequest] = React.useState(0);
   const [isCartPageOpen, setIsCartPageOpen] = React.useState(false);
+  const [shopInitialCategory, setShopInitialCategory] = React.useState("Todos");
   const [profileInitialTab, setProfileInitialTab] = React.useState<"reels" | "products" | "saved" | "orders" | undefined>(undefined);
   const [pendingCheckoutItems, setPendingCheckoutItems] = React.useState<CartItem[] | null>(null);
 
@@ -310,6 +311,7 @@ export default function AndroidApp({
             {activeTab === 'shop' && (
               <Tienda
                 products={products}
+                initialCategory={shopInitialCategory}
                 cart={cart}
                 users={users}
                 currentUser={currentUser}

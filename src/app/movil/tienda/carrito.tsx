@@ -19,6 +19,7 @@ export interface AndroidCarritoProps {
   onProceedToCheckout: () => void;
   onCloseCart: () => void;
   onExploreProducts: () => void;
+  presentation?: "page" | "drawer";
 }
 
 export function CarritoTiendaView({
@@ -37,7 +38,9 @@ export function CarritoTiendaView({
   onProceedToCheckout,
   onCloseCart,
   onExploreProducts,
+  presentation = "page",
 }: AndroidCarritoProps) {
+  const isDrawer = presentation === "drawer";
   const fixedFooterRef = useRef<HTMLDivElement | null>(null);
   const [footerHeight, setFooterHeight] = useState<number>(160);
 
@@ -58,7 +61,12 @@ export function CarritoTiendaView({
     };
   }, [cart.length]);
   return (
-    <div className="w-full min-h-screen bg-white text-slate-900 flex flex-col font-sans select-none" id="android-cart-page">
+    <div
+      className={`w-full bg-white text-slate-900 flex flex-col font-sans select-none ${
+        isDrawer ? "relative h-full min-h-0 overflow-hidden" : "min-h-screen"
+      }`}
+      id="android-cart-page"
+    >
       {/* Cart Top Header */}
       <div
         className="sticky top-0 z-30 bg-white/95 backdrop-blur-md px-3 py-2 border-b border-slate-100 flex items-center justify-between"
@@ -81,7 +89,7 @@ export function CarritoTiendaView({
 
       {/* Cart Items List */}
       <div
-        className="flex-1 overflow-y-auto px-4 py-4 space-y-3"
+        className="min-h-0 flex-1 overflow-y-auto px-4 py-4 space-y-3"
         style={{
           paddingBottom: cart.length > 0 ? `${footerHeight + 5}px` : "2.5rem",
         }}
@@ -247,7 +255,7 @@ export function CarritoTiendaView({
         <div
           ref={fixedFooterRef}
           id="android-cart-footer-summary"
-          className="fixed bottom-0 inset-x-0 z-40 bg-white/98 backdrop-blur-md border-t border-slate-200 px-4 py-3"
+          className={`${isDrawer ? "absolute" : "fixed"} bottom-0 inset-x-0 z-40 bg-white/98 backdrop-blur-md border-t border-slate-200 px-4 py-3`}
           style={{ paddingBottom: "max(1rem, calc(env(safe-area-inset-bottom, 0px) + 0.5rem))" }}
         >
           <div className="max-w-md mx-auto w-full">

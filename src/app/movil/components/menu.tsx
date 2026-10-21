@@ -15,6 +15,8 @@ export interface MovilHamburgerMenuProps {
   onRefreshReels?: () => void;
   onNavigateToShop?: () => void;
   onNavigateToProfile?: () => void;
+  categories?: string[];
+  onSelectCategory?: (category: string) => void;
 }
 
 export function MovilHamburgerButton({
@@ -53,6 +55,8 @@ export function MovilHamburgerMenu({
   onRefreshReels,
   onNavigateToShop,
   onNavigateToProfile,
+  categories = [],
+  onSelectCategory,
 }: MovilHamburgerMenuProps) {
   const handleSelectTab = (tab: NavigationTab) => {
     onClose();
@@ -99,7 +103,7 @@ export function MovilHamburgerMenu({
             id="movil-hamburger-drawer"
             onClick={(e) => e.stopPropagation()}
           >
-            <div>
+            <div className="flex min-h-0 flex-1 flex-col">
               <div
                 className="flex items-center justify-between px-2 pb-4 mb-4 border-b border-white/15"
                 style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top, 0px))" }}
@@ -130,7 +134,7 @@ export function MovilHamburgerMenu({
                 </button>
               </div>
 
-              <nav className="space-y-1.5" id="movil-hamburger-nav-links">
+              <nav className="shrink-0 space-y-1.5" id="movil-hamburger-nav-links">
                 <button
                   type="button"
                   onClick={() => handleSelectTab("inicio")}
@@ -192,6 +196,27 @@ export function MovilHamburgerMenu({
                   </button>
                 )}
               </nav>
+              <section className="mt-4 min-h-0 flex-1 overflow-y-auto border-t border-white/15 pt-4" aria-label="Categorías">
+                <h3 className="px-4 pb-2 text-[10px] font-black uppercase tracking-widest text-white/70">
+                  Categorías
+                </h3>
+                <div className="space-y-1">
+                  {categories.map((category) => (
+                    <button
+                      key={category}
+                      type="button"
+                      onClick={() => {
+                        onClose();
+                        if (onSelectCategory) onSelectCategory(category);
+                        else handleSelectTab("shop");
+                      }}
+                      className="w-full rounded-xl bg-transparent px-4 py-2.5 text-left text-xs font-bold text-white/90 transition-colors hover:bg-white/15"
+                    >
+                      {category}
+                    </button>
+                  ))}
+                </div>
+              </section>
             </div>
 
             <div

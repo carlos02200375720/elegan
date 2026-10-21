@@ -64,6 +64,7 @@ export interface AndroidShopProps {
   cartDrawerRequest?: number;
   savedReelIds?: string[];
   onToggleSave?: (productId: string) => void;
+  initialCategory?: string;
 }
 
 export type AndroidShopViewProps = AndroidShopProps;
@@ -199,14 +200,19 @@ export default function Catalogo({
   onToggleSave,
   onBackToCatalog,
   onNavigateToHistory,
+  initialCategory,
 }: AndroidShopProps) {
-  const [activeCategory, setActiveCategory] = useState("Todos");
+  const [activeCategory, setActiveCategory] = useState(initialCategory || "Todos");
   const [searchQuery, setSearchQuery] = useState("");
   const [displayCount, setDisplayCount] = useState(10);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [isCategoryVisible, setIsCategoryVisible] = useState(true);
   const isCategoryVisibleRef = useRef(true);
   const infiniteLoaderRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (initialCategory) setActiveCategory(initialCategory);
+  }, [initialCategory]);
 
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(() => {
     if (selectedProductDirectly || initialSelectedProduct) {

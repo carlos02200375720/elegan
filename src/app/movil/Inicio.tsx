@@ -1,10 +1,12 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { Reel, ReelMedia, Product, User, Comment, CartItem, NavigationTab, isGuestUser } from "../../types";
-import { Heart, MessageCircle, Share2, Bookmark, ShoppingBag, Volume2, VolumeX, Plus, Send, X, RefreshCw, Video, Minus, Trash2, CreditCard, Check, ChevronLeft, ChevronRight } from "lucide-react";
+import { Heart, MessageCircle, Share2, Bookmark, ShoppingBag, Volume2, VolumeX, Send, X, RefreshCw, Video } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { MovilVideoPlay, MovilVideoPlayHandle } from "./components/videoplay";
 import { AndroidProgressBar } from "./components/barraprogreso";
 import { MovilHamburgerButton, MovilHamburgerMenu } from "./components/menu";
+import { CATEGORIES_WITH_IMAGES } from "./tienda/catalogo";
+import { CarritoTiendaView } from "./tienda/carrito";
 import { getMediaUrl } from "../../config";
 import { getInicioShareUrl, findReelByInicioParam, navigateTo } from "../../router";
 import { getLocalGuestToken } from "../../utils/guestToken";
@@ -112,7 +114,7 @@ export default function Inicio({
   initialReelId,
   onActiveReelChange,
 }: AndroidInicioProps) {
-  const reels = useMemo(() => {
+  const allReels = useMemo(() => {
     const productPublications = products
       .filter((product) => {
         if (!product.id) return false;
@@ -173,6 +175,31 @@ export default function Inicio({
 
     return [...publishedReels, ...productPublications];
   }, [publishedReels, products, users]);
+  const menuCategories = useMemo(() => {
+    const categories = ["Todos", ...CATEGORIES_WITH_IMAGES.map((category) => category.name)];
+    for (const product of products) {
+      const category = product.category?.trim();
+      if (category && !categories.some((existing) => existing.toLowerCase() === category.toLowerCase())) {
+        categories.push(category);
+      }
+    }
+    return categories;
+  }, [products]);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const reels = useMemo(() => {
+    if (!selectedCategory) return allReels;
+    const normalizedCategory = selectedCategory.trim().toLowerCase();
+    return allReels.filter((reel) => {
+      const taggedProductId =
+        reel.productId ||
+        (reel as Reel & { taggedProductId?: string }).taggedProductId ||
+        (reel.id.startsWith("reel_prod_") ? reel.id.slice("reel_prod_".length) : undefined);
+      const taggedProduct =
+        (reel as Reel & { product?: Product }).product ||
+        products.find((product) => product.id === taggedProductId);
+      return taggedProduct?.category?.trim().toLowerCase() === normalizedCategory;
+    });
+  }, [allReels, products, selectedCategory]);
 
   const [currentIndex, setCurrentIndex] = useState(() => {
     if (initialReelId && reels.length > 0) {
@@ -202,12 +229,8 @@ export default function Inicio({
   const [expandedDescriptions, setExpandedDescriptions] = useState<{ [key: string]: boolean }>({});
   const [descriptionOverflow, setDescriptionOverflow] = useState<{ [key: string]: boolean }>({});
   const descriptionRefs = useRef<Record<string, HTMLParagraphElement | null>>({});
-  const [publicationFormats, setPublicationFormats] = useState<Record<string, PublicationFormat>>({});
 
   const getEffectiveFormat = (item: Reel): PublicationFormat => {
-    if (publicationFormats[item.id]) {
-      return publicationFormats[item.id];
-    }
     const ar = (item.aspectRatio || '').toLowerCase().trim();
     if (ar === '1:1' || ar === 'square') return '1:1';
     if (ar === '4:3' || ar === 'horizontal' || ar === 'landscape') return '4:3';
@@ -245,11 +268,17 @@ export default function Inicio({
   };
 
   const selectedCartItems = (cart || []).filter((_, idx) => selectedCartIndices.includes(idx));
-  const selectedCartTotal = selectedCartItems.reduce((sum, item) => {
+  const selectedCartSubtotal = selectedCartItems.reduce((sum, item) => {
     return sum + (item.product?.price || 0) * (item.quantity || 1);
   }, 0);
+  const selectedCartShipping = selectedCartItems.reduce((sum, item) => {
+    const shipping = item.selectedShippingCost !== undefined
+      ? Number(item.selectedShippingCost)
+      : Number(item.product?.shippingCost || 0);
+    return sum + (Number.isNaN(shipping) ? 0 : shipping) * (item.quantity || 1);
+  }, 0);
   const totalCartCount = (cart || []).reduce((sum, item) => sum + (item.quantity || 1), 0);
-  const cartTotal = selectedCartTotal;
+  const selectedCartTotal = selectedCartSubtotal + selectedCartShipping;
 
   // Track bottom navigation bar height dynamically for pixel-perfect alignment
   useEffect(() => {
@@ -297,6 +326,7 @@ export default function Inicio({
 
   const playerRef = useRef<MovilVideoPlayHandle>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const mediaTouchStartRef = useRef<{ x: number; y: number } | null>(null);
   const [carouselIndices, setCarouselIndices] = useState<Record<string, number>>({});
   const [activeCommentsReelId, setActiveCommentsReelId] = useState<string | null>(null);
   const [heartAnimReelId, setHeartAnimReelId] = useState<string | null>(null);
@@ -332,8 +362,6 @@ export default function Inicio({
   }, []);
 
   const currentReel = reels[currentIndex] || reels[0];
-  const currentMediaItems = getReelMediaItems(currentReel);
-  const currentActiveMediaIdx = carouselIndices[currentReel?.id] || 0;
 
   useEffect(() => {
     const measureDescriptions = () => {
@@ -378,6 +406,14 @@ export default function Inicio({
       behavior: smooth ? "smooth" : "auto",
     });
   }, []);
+
+  const previousCategoryRef = useRef(selectedCategory);
+  useEffect(() => {
+    if (previousCategoryRef.current === selectedCategory) return;
+    previousCategoryRef.current = selectedCategory;
+    setCurrentIndex(0);
+    containerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+  }, [selectedCategory]);
 
   const handleScroll = useCallback(() => {
     if (!containerRef.current) return;
@@ -501,7 +537,7 @@ export default function Inicio({
     setCommentInput("");
   };
 
-  if (!currentReel && reels.length === 0) {
+  if (!currentReel && reels.length === 0 && !selectedCategory) {
     if (isLoading) {
       return (
         <div className="w-full h-screen bg-white flex flex-col items-center justify-center text-slate-800 p-6 text-center">
@@ -571,6 +607,12 @@ export default function Inicio({
           }}
           id="android-reels-fixed-header"
         >
+          <h1
+            className="pointer-events-none absolute left-1/2 top-1/2 max-w-[calc(100%-10rem)] -translate-x-1/2 -translate-y-1/2 truncate text-center text-base font-bold text-slate-900"
+            title={currentUser?.name && !isGuestUser(currentUser) ? currentUser.name : "Inicio"}
+          >
+            {currentUser?.name?.trim() && !isGuestUser(currentUser) ? currentUser.name : "Inicio"}
+          </h1>
           <div className="flex items-center space-x-2">
             <MovilHamburgerButton
               dark={true}
@@ -579,13 +621,6 @@ export default function Inicio({
             />
           </div>
           <div className="flex items-center space-x-2">
-            {currentMediaItems.length > 1 && (
-              <div className="inline-flex items-center space-x-1 px-2.5 py-1 bg-slate-100 rounded-full text-xs font-bold text-slate-800 border border-slate-200 shadow-2xs">
-                <span className="text-amber-600 font-mono font-black">{currentActiveMediaIdx + 1}</span>
-                <span className="text-slate-400 font-mono">/</span>
-                <span className="text-slate-700 font-mono font-bold">{currentMediaItems.length}</span>
-              </div>
-            )}
             <button
               onClick={() => setShowCartPanel(true)}
               className="relative p-2 rounded-xl text-slate-800 hover:bg-slate-100 active:scale-95 transition-all cursor-pointer flex items-center justify-center pointer-events-auto"
@@ -602,6 +637,16 @@ export default function Inicio({
             </button>
           </div>
         </header>
+        {selectedCategory && reels.length === 0 && (
+          <div className="px-5 py-12 text-center">
+            <p className="text-base font-bold text-slate-800">
+              No hay productos en {selectedCategory}
+            </p>
+            <p className="mt-1 text-sm text-slate-500">
+              Elige otra categoría desde el menú.
+            </p>
+          </div>
+        )}
         {reels.map((reelItem, reelIndex) => {
           const isCurrent = reelIndex === currentIndex;
           const shouldPreload = isCurrent || Math.abs(reelIndex - currentIndex) <= 1;
@@ -748,33 +793,45 @@ export default function Inicio({
               )}
               <div
                 id={`android-publication-container-${reelItem.id}`}
-                className="relative flex shrink-0 items-center justify-center overflow-hidden bg-black shadow-sm transition-all duration-300 mx-auto select-none"
-                style={formatStyle}
-              >
-                {/* Selector interactivo de formatos: Formato 1 (1:1), Formato 2 (3:4), Formato 3 (4:3) */}
-                <div className="absolute top-2.5 left-2.5 z-30 flex items-center bg-black/65 backdrop-blur-md px-2 py-1 rounded-full border border-white/20 shadow-md pointer-events-auto">
-                  <span className="text-[10px] text-white/80 font-bold px-1 select-none">Formato:</span>
-                  {(['1:1', '3:4', '4:3'] as const).map((fmt) => (
-                    <button
-                      key={fmt}
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        e.preventDefault();
-                        setPublicationFormats((prev) => ({ ...prev, [reelItem.id]: fmt }));
-                      }}
-                      className={`px-2 py-0.5 rounded-full text-[11px] font-black transition-all cursor-pointer ${
-                        effectiveFormat === fmt
-                          ? 'bg-white text-slate-950 shadow-sm scale-105'
-                          : 'text-white/75 hover:text-white hover:bg-white/20'
-                      }`}
-                      title={`Cambiar a formato ${fmt}`}
-                    >
-                      {fmt}
-                    </button>
-                  ))}
-                </div>
+                className={`relative flex shrink-0 items-center justify-center overflow-hidden bg-black shadow-sm transition-all duration-300 mx-auto select-none ${
+                  isProductPub && taggedProduct && handleProductSelect ? "cursor-pointer" : ""
+                }`}
+                style={{ ...formatStyle, touchAction: "pan-y" }}
+                onClick={(event) => {
+                  if (!isProductPub || !taggedProduct || !handleProductSelect) return;
+                  if (event.target instanceof Element && event.target.closest("button")) return;
+                  handleProductSelect(taggedProduct);
+                }}
+                onTouchStart={(event) => {
+                  const touch = event.touches[0];
+                  if (touch) mediaTouchStartRef.current = { x: touch.clientX, y: touch.clientY };
+                }}
+                onTouchEnd={(event) => {
+                  const start = mediaTouchStartRef.current;
+                  const touch = event.changedTouches[0];
+                  mediaTouchStartRef.current = null;
+                  if (!start || !touch || reelMediaItems.length < 2) return;
 
+                  const deltaX = touch.clientX - start.x;
+                  const deltaY = touch.clientY - start.y;
+                  if (Math.abs(deltaX) < 40 || Math.abs(deltaX) <= Math.abs(deltaY)) return;
+
+                  const nextIndex = activeMediaIdx + (deltaX < 0 ? 1 : -1);
+                  if (nextIndex >= 0 && nextIndex < reelMediaItems.length) {
+                    setCarouselIndices((previous) => ({ ...previous, [reelItem.id]: nextIndex }));
+                  }
+                }}
+              >
+                {reelMediaItems.length > 1 && (
+                  <div
+                    className="absolute right-3 top-3 z-30 flex items-center gap-1 bg-transparent text-xs font-bold text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]"
+                    aria-label={`Contenido ${activeMediaIdx + 1} de ${reelMediaItems.length}`}
+                  >
+                    <span className="font-mono font-black">{activeMediaIdx + 1}</span>
+                    <span className="font-mono">/</span>
+                    <span className="font-mono font-bold">{reelMediaItems.length}</span>
+                  </div>
+                )}
                 {/* Media Player Container */}
                 {isVideo ? (
                   <div className="w-full h-full overflow-hidden bg-black flex items-center justify-center">
@@ -821,43 +878,6 @@ export default function Inicio({
                       />
                     </div>
 
-                    {/* Carousel lateral buttons */}
-                    {reelMediaItems.length > 1 && (
-                      <>
-                        {activeMediaIdx > 0 && (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setCarouselIndices((prev) => ({
-                                ...prev,
-                                [reelItem.id]: Math.max(0, activeMediaIdx - 1),
-                              }));
-                            }}
-                            className="absolute left-2.5 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-black/50 text-white backdrop-blur-xs flex items-center justify-center hover:bg-black/70 transition-all cursor-pointer pointer-events-auto shadow-md"
-                            aria-label="Foto anterior"
-                          >
-                            <ChevronLeft className="w-4 h-4" />
-                          </button>
-                        )}
-                        {activeMediaIdx < reelMediaItems.length - 1 && (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setCarouselIndices((prev) => ({
-                                ...prev,
-                                [reelItem.id]: Math.min(reelMediaItems.length - 1, activeMediaIdx + 1),
-                              }));
-                            }}
-                            className="absolute right-2.5 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-black/50 text-white backdrop-blur-xs flex items-center justify-center hover:bg-black/70 transition-all cursor-pointer pointer-events-auto shadow-md"
-                            aria-label="Siguiente foto"
-                          >
-                            <ChevronRight className="w-4 h-4" />
-                          </button>
-                        )}
-                      </>
-                    )}
                   </div>
                 )}
 
@@ -884,42 +904,26 @@ export default function Inicio({
                     </motion.div>
                   )}
                 </AnimatePresence>
-              </div>
-
-              <div className="w-full max-w-xl shrink-0 px-2 pb-3">
-                {taggedProduct && handleProductSelect && (
-                  <button
-                    type="button"
-                    onClick={() => handleProductSelect(taggedProduct)}
-                    className="mt-2 flex w-full items-center gap-3 overflow-hidden rounded-xl border border-slate-200 bg-white p-2 text-left hover:bg-slate-50"
-                    id={`tagged-product-${reelItem.id}`}
-                  >
-                    {taggedProduct.imageUrl || taggedProduct.images?.[0] ? (
-                      <img
-                        src={taggedProduct.imageUrl || taggedProduct.images?.[0]}
-                        alt=""
-                        className="h-14 w-14 shrink-0 rounded-lg object-cover"
-                      />
-                    ) : (
-                      <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-amber-500">
-                        <ShoppingBag className="h-5 w-5" />
-                      </span>
-                    )}
-                    <span className="min-w-0 flex-1">
-                      <span className="block text-[10px] font-bold uppercase tracking-wide text-amber-600">
-                        Producto destacado
-                      </span>
-                      <span className="block truncate text-sm font-semibold text-slate-900">{taggedProduct.name}</span>
-                      <span className="text-xs font-bold text-emerald-700">
-                        {formatPrice(Number(taggedProduct.price) || 0)}
-                      </span>
+                {isProductPub && taggedProduct && handleProductSelect && (
+                  <div className="absolute bottom-3 left-3 z-30 flex items-center gap-2 rounded-lg bg-black/70 px-2.5 py-2 text-white shadow-lg backdrop-blur-sm">
+                    <span className="text-sm font-bold">
+                      {formatPrice(Number(taggedProduct.price) || 0)}
                     </span>
-                    <span className="text-xs font-semibold text-amber-700">Ver</span>
-                  </button>
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleProductSelect(taggedProduct);
+                      }}
+                      className="rounded-md bg-amber-400 px-3 py-1.5 text-xs font-black text-slate-950 hover:bg-amber-300"
+                    >
+                      Comprar
+                    </button>
+                  </div>
                 )}
               </div>
 
-              <div className="w-full max-w-xl shrink-0 border-y border-slate-300 px-2 py-1">
+              <div className="-mt-2 w-full max-w-xl shrink-0 border-y border-slate-300 px-2 py-1">
                 <div
                   className="flex items-center justify-around"
                   id={`android-reel-interaction-bar-${reelItem.id}`}
@@ -1149,56 +1153,6 @@ export default function Inicio({
                       </p>
                     )}
 
-                    {/* Tarjeta de producto con fondo blanco */}
-                    {taggedProduct && handleProductSelect && (
-                      <motion.div
-                        initial={{ y: 20, opacity: 0 }}
-                        animate={{ y: 0, opacity: 1 }}
-                        transition={{ delay: 0.2 }}
-                        onClick={() => handleProductSelect(taggedProduct)}
-                        className="bg-white border border-slate-200/90 text-slate-900 rounded-xl flex items-stretch cursor-pointer hover:bg-slate-50 hover:border-amber-400 active:scale-[0.98] transition-all shadow-xl overflow-hidden pointer-events-auto select-none mt-2"
-                        data-legacy-id={`tagged-product-${reelItem.id}`}
-                        style={{
-                          marginLeft: "-4px",
-                          width: "285.606px",
-                          maxWidth: "100%",
-                          height: "68.3438px",
-                          backgroundColor: "#ffffff",
-                        }}
-                      >
-                        <div className="w-20 shrink-0 h-full relative overflow-hidden bg-slate-100 border-r border-slate-200">
-                          {taggedProduct.imageUrl || taggedProduct.images?.[0] ? (
-                            <img
-                              src={taggedProduct.imageUrl || taggedProduct.images?.[0]}
-                              alt={taggedProduct.name}
-                              referrerPolicy="no-referrer"
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center bg-slate-100 text-amber-500">
-                              <ShoppingBag className="w-5 h-5" />
-                            </div>
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0 px-2.5 py-1.5 flex flex-col justify-between bg-white">
-                          <span className="text-[9.5px] uppercase tracking-wider font-bold text-amber-600 flex items-center">
-                            <ShoppingBag className="w-2.5 h-2.5 mr-1 shrink-0 text-amber-600" />
-                            Producto Destacado
-                          </span>
-                          <h4 className="text-xs font-bold truncate text-slate-900">
-                            {taggedProduct.name}
-                          </h4>
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-extrabold text-emerald-600 font-mono">
-                              {formatPrice(Number(taggedProduct.price) || 0)}
-                            </span>
-                            <span className="text-[9px] text-amber-600 font-bold hover:underline">
-                              Ver detalles →
-                            </span>
-                          </div>
-                        </div>
-                      </motion.div>
-                    )}
                   </div>
                 </div>
               </div>
@@ -1206,256 +1160,67 @@ export default function Inicio({
           );
         })}
       </div>
-      {/* Left Cart Side Panel */}
+      <MovilHamburgerMenu
+        isOpen={showHamburgerMenu}
+        onOpen={() => setShowHamburgerMenu(true)}
+        onClose={() => setShowHamburgerMenu(false)}
+        currentUser={currentUser}
+        totalUnreads={totalUnreads || unreadCount || 0}
+        onNavigateToTab={onNavigateToTab}
+        onRefreshReels={onRefreshReels}
+        onNavigateToShop={onNavigateToShop}
+        onNavigateToProfile={onNavigateToProfile}
+        categories={menuCategories}
+        onSelectCategory={(category) => setSelectedCategory(category === "Todos" ? null : category)}
+      />
       <AnimatePresence>
         {showCartPanel && (
           <div
-            className="fixed inset-0 z-[60] flex items-stretch"
-            onWheel={(e) => e.stopPropagation()}
-            onTouchStart={(e) => e.stopPropagation()}
-            onTouchMove={(e) => e.stopPropagation()}
-            onTouchEnd={(e) => e.stopPropagation()}
+            className="fixed inset-0 z-[60] flex justify-end bg-black/30"
+            onClick={() => setShowCartPanel(false)}
+            onWheel={(event) => event.stopPropagation()}
+            onTouchStart={(event) => event.stopPropagation()}
+            onTouchMove={(event) => event.stopPropagation()}
+            onTouchEnd={(event) => event.stopPropagation()}
           >
             <motion.aside
-              initial={{ x: -360, opacity: 0.8 }}
-              animate={{ x: 0, opacity: 1 }}
-              exit={{ x: -360, opacity: 0.8 }}
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
               transition={{ type: "spring", damping: 26, stiffness: 260 }}
-              className="w-[86vw] max-w-[380px] h-full bg-white text-slate-900 shadow-2xl border-r border-slate-200 overflow-hidden flex flex-col"
-              onClick={(e) => e.stopPropagation()}
-              onWheel={(e) => e.stopPropagation()}
-              onTouchStart={(e) => e.stopPropagation()}
-              onTouchMove={(e) => e.stopPropagation()}
-              onTouchEnd={(e) => e.stopPropagation()}
-              onMouseDown={(e) => e.stopPropagation()}
-              onMouseUp={(e) => e.stopPropagation()}
+              className="h-full w-[92vw] max-w-[430px] overflow-hidden border-l border-slate-200 bg-white shadow-2xl"
+              onClick={(event) => event.stopPropagation()}
             >
-              <div className="flex flex-col border-b border-slate-200 bg-amber-50 px-4 py-3 gap-2" style={{ paddingTop: "max(14px, env(safe-area-inset-top))" }}>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <ShoppingBag className="w-5 h-5 text-amber-600" />
-                    <span className="text-sm font-black text-slate-900">Carrito</span>
-                    {cart.length > 0 && (
-                      <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-amber-200/90 text-amber-950">
-                        {selectedCartIndices.length}/{cart.length}
-                      </span>
-                    )}
-                  </div>
-                  <button onClick={() => setShowCartPanel(false)} className="p-1 rounded-full hover:bg-slate-100 cursor-pointer">
-                    <X className="w-5 h-5 text-slate-500" />
-                  </button>
-                </div>
-
-                {cart.length > 0 && (
-                  <div className="flex items-center justify-between pt-1 border-t border-amber-200/60">
-                    <button
-                      type="button"
-                      onClick={toggleSelectAll}
-                      className="flex items-center gap-1.5 text-xs font-bold text-slate-800 hover:text-amber-700 transition-colors cursor-pointer select-none"
-                    >
-                      <div
-                        className={`w-4 h-4 rounded-md flex items-center justify-center transition-all ${
-                          isAllSelected
-                            ? "bg-amber-500 text-slate-950 shadow-xs"
-                            : selectedCartIndices.length > 0
-                            ? "bg-amber-200 text-amber-900"
-                            : "border border-slate-300 bg-white"
-                        }`}
-                      >
-                        {isAllSelected ? (
-                          <Check className="w-3 h-3 stroke-[3]" />
-                        ) : selectedCartIndices.length > 0 ? (
-                          <div className="w-1.5 h-1.5 bg-amber-900 rounded-xs" />
-                        ) : null}
-                      </div>
-                      <span className="text-[11px]">
-                        {isAllSelected ? "Deseleccionar todo" : "Seleccionar todo"}
-                      </span>
-                    </button>
-                    <span className="text-[10.5px] font-extrabold text-amber-800">
-                      {selectedCartIndices.length} para pagar
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              <div
-                className="flex-1 overflow-y-auto px-4 py-3 overscroll-contain"
-                style={{ touchAction: "pan-y" }}
-                onWheel={(e) => e.stopPropagation()}
-                onTouchStart={(e) => e.stopPropagation()}
-                onTouchMove={(e) => e.stopPropagation()}
-                onTouchEnd={(e) => e.stopPropagation()}
-              >
-                {cart.length === 0 ? (
-                  <div className="h-full flex flex-col items-center justify-center text-center text-slate-500 py-12">
-                    <ShoppingBag className="w-10 h-10 text-slate-300" />
-                    <p className="mt-3 text-sm font-bold text-slate-700">Tu carrito está vacío</p>
-                    <p className="text-xs mt-1">Agrega artículos desde la tienda.</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {cart.map((item, idx) => {
-                      const isSelected = selectedCartIndices.includes(idx);
-                      const shippingFee =
-                        item.selectedShippingCost !== undefined
-                          ? Number(item.selectedShippingCost)
-                          : Number(item.product.shippingCost ?? 0);
-                      const carrierName = item.selectedCarrier || item.product.selectedCarrier;
-
-                      return (
-                        <div
-                          key={`${item.product.id}-${idx}`}
-                          className={`flex items-stretch rounded-2xl border transition-all shadow-sm overflow-hidden h-28 shrink-0 relative ${
-                            isSelected
-                              ? "bg-amber-500/[0.04] border-amber-400/80 shadow-amber-500/10 ring-1 ring-amber-400/40"
-                              : "bg-slate-50/70 border-slate-200 opacity-70 hover:opacity-100"
-                          }`}
-                        >
-                          <div className="w-24 sm:w-28 shrink-0 relative bg-slate-200 h-full overflow-hidden">
-                            <img
-                              src={item.product.imageUrl}
-                              alt={item.product.name}
-                              referrerPolicy="no-referrer"
-                              className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform duration-300"
-                              onClick={() => {
-                                setShowCartPanel(false);
-                                if (handleProductSelect) handleProductSelect(item.product);
-                              }}
-                            />
-                          </div>
-
-                          <div className="flex-1 min-w-0 p-2.5 flex flex-col justify-between h-full">
-                            <div>
-                              <div className="flex items-start justify-between gap-1">
-                                <h4
-                                  className="text-xs font-extrabold text-slate-900 truncate cursor-pointer hover:text-amber-600 transition-colors"
-                                  title={item.product.name}
-                                  onClick={() => {
-                                    setShowCartPanel(false);
-                                    if (handleProductSelect) handleProductSelect(item.product);
-                                  }}
-                                >
-                                  {item.product.name}
-                                </h4>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    if (onRemoveFromCart) onRemoveFromCart(item.product.id, idx);
-                                  }}
-                                  className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer shrink-0 -mt-1 -mr-1"
-                                  title="Eliminar del carrito"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                              </div>
-
-                              <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
-                                <span className="text-xs font-mono font-extrabold text-amber-600">
-                                  {formatPrice(item.product.price)}
-                                </span>
-                                <span className="text-[9px] font-bold text-slate-600 bg-slate-200/80 px-1.5 py-0.5 rounded leading-tight">
-                                  Envío: {shippingFee > 0 ? formatPrice(shippingFee) : "Gratis"}
-                                  {carrierName ? ` (${carrierName})` : ""}
-                                </span>
-                              </div>
-                            </div>
-
-                            {/* Incrementor buttons & Selection in bottom-right */}
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center space-x-1.5">
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const newQty = Math.max(1, (item.quantity || 1) - 1);
-                                    if (onUpdateCartQuantity) onUpdateCartQuantity(item.product.id, newQty, idx);
-                                    else if (onRemoveFromCart) onRemoveFromCart(item.product.id, idx);
-                                  }}
-                                  className="w-6 h-6 rounded-lg bg-slate-200 hover:bg-slate-300 border border-slate-300 text-slate-800 font-bold flex items-center justify-center text-xs transition-colors cursor-pointer"
-                                >
-                                  <Minus className="w-3 h-3" />
-                                </button>
-                                <span className="text-xs font-mono font-extrabold text-slate-900 px-1">
-                                  {item.quantity || 1}
-                                </span>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    if (onUpdateCartQuantity) onUpdateCartQuantity(item.product.id, (item.quantity || 1) + 1, idx);
-                                  }}
-                                  disabled={item.product.stock !== undefined && (item.quantity || 1) >= item.product.stock}
-                                  className="w-6 h-6 rounded-lg bg-slate-200 hover:bg-slate-300 border border-slate-300 text-slate-800 font-bold flex items-center justify-center text-xs disabled:opacity-50 transition-colors cursor-pointer"
-                                >
-                                  <Plus className="w-3 h-3" />
-                                </button>
-                              </div>
-
-                              {/* Selector in bottom-right corner */}
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  toggleSelectCartItem(idx);
-                                }}
-                                className={`w-6 h-6 rounded-lg flex items-center justify-center transition-all cursor-pointer border ${
-                                  isSelected
-                                    ? "bg-amber-500 border-amber-500 text-slate-950 shadow-sm shadow-amber-500/30 scale-105"
-                                    : "bg-white border-slate-300 hover:border-amber-400 text-transparent hover:text-slate-300"
-                                }`}
-                                title={isSelected ? "Deseleccionar producto para pago" : "Seleccionar producto para pagar"}
-                                aria-label={isSelected ? "Deseleccionar producto" : "Seleccionar producto"}
-                              >
-                                <Check className="w-3.5 h-3.5 stroke-[3]" />
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
-
-              <div className="border-t border-slate-200 bg-white px-4 py-3" style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 5px)" }}>
-                <div className="flex items-center justify-between text-sm font-black text-slate-900">
-                  <div className="flex flex-col">
-                    <span>Total a pagar</span>
-                    <span className="text-[10px] font-bold text-slate-500">
-                      {selectedCartItems.length} de {cart.length} {cart.length === 1 ? "artículo" : "artículos"}
-                    </span>
-                  </div>
-                  <span className="text-amber-600 text-base font-black">{formatPrice(cartTotal)}</span>
-                </div>
-                <button
-                  type="button"
-                  id="android-reels-cart-checkout-btn"
-                  disabled={cart.length > 0 && selectedCartItems.length === 0}
-                  onClick={() => {
-                    setShowCartPanel(false);
-                    if (cart.length > 0 && onNavigateToCheckout) {
-                      onNavigateToCheckout(selectedCartIndices);
-                    } else if (onNavigateToShop) {
-                      onNavigateToShop();
-                    }
-                  }}
-                  className={`mt-3 w-full rounded-2xl font-black text-xs py-3.5 shadow-lg transition-all flex items-center justify-center space-x-2 ${
-                    cart.length > 0 && selectedCartItems.length === 0
-                      ? "bg-slate-200 text-slate-400 cursor-not-allowed shadow-none"
-                      : "bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 active:scale-[0.98] cursor-pointer"
-                  }`}
-                >
-                  <CreditCard className="w-4 h-4" />
-                  <span>
-                    {cart.length === 0
-                      ? "Ver tienda"
-                      : selectedCartItems.length === 0
-                      ? "Selecciona productos para pagar"
-                      : `Completar Compra (${selectedCartItems.length}) - ${formatPrice(cartTotal)}`}
-                  </span>
-                </button>
-              </div>
+              <CarritoTiendaView
+                presentation="drawer"
+                cart={cart}
+                selectedCartIndices={selectedCartIndices}
+                isAllCartSelected={isAllSelected}
+                toggleSelectAllCart={toggleSelectAll}
+                toggleSelectCartItem={toggleSelectCartItem}
+                selectedCartItems={selectedCartItems}
+                cartSubtotal={selectedCartSubtotal}
+                cartShippingTotal={selectedCartShipping}
+                cartTotal={selectedCartTotal}
+                handleItemRemove={(index, item) => onRemoveFromCart?.(item.product.id, index)}
+                handleItemQtyChange={(index, item, quantity) =>
+                  onUpdateCartQuantity?.(item.product.id, quantity, index)
+                }
+                onSelectProduct={(product) => {
+                  setShowCartPanel(false);
+                  handleProductSelect?.(product);
+                }}
+                onProceedToCheckout={() => {
+                  setShowCartPanel(false);
+                  if (cart.length > 0) onNavigateToCheckout?.(selectedCartIndices);
+                }}
+                onCloseCart={() => setShowCartPanel(false)}
+                onExploreProducts={() => {
+                  setShowCartPanel(false);
+                  onNavigateToShop?.();
+                }}
+              />
             </motion.aside>
-            <button className="flex-1 bg-black/30 backdrop-blur-[1px]" onClick={() => setShowCartPanel(false)} aria-label="Cerrar carrito" />
           </div>
         )}
       </AnimatePresence>
