@@ -1,13 +1,13 @@
 import { sessionState } from "../../utils/sessionState";
 import { User, Reel, Product, CartItem, Order, ChatMessage } from "../../types";
-import { BACKEND_URL } from "../../config";
+import { BACKEND_URL, CLOUD_RUN_BACKEND_URL, isExternalStaticHost } from "../../config";
 
 /**
  * Single Android network layer.
  * Native Android always talks to the configured backend and never falls back
  * to a second/unknown origin.
  */
-export { BACKEND_URL };
+export { BACKEND_URL, CLOUD_RUN_BACKEND_URL };
 
 export const isAndroidNative = (): boolean => {
   if (typeof window === "undefined") return false;
@@ -29,12 +29,18 @@ export const getAndroidApiUrl = (endpoint: string): string => {
     clean = `/api/android${clean}`;
   }
 
-  // When running in a standard web browser (preview, local dev, or web hosting), use relative URL
-  if (typeof window !== "undefined" && window.location && window.location.protocol.startsWith("http") && !isAndroidNative()) {
+  // When running in a standard web browser (preview, local dev) and NOT on an external static host:
+  if (
+    typeof window !== "undefined" &&
+    window.location &&
+    window.location.protocol.startsWith("http") &&
+    !isAndroidNative() &&
+    !isExternalStaticHost()
+  ) {
     return clean;
   }
 
-  const base = (BACKEND_URL || "").replace(/\/$/, "");
+  const base = (BACKEND_URL || CLOUD_RUN_BACKEND_URL || "").replace(/\/$/, "");
   if (!base) {
     return clean;
   }
@@ -61,9 +67,8 @@ const readResponseBody = async (response: Response): Promise<any> => {
   const preview = text.replace(/\s+/g, " ").slice(0, 180);
   if (/^<!doctype html/i.test(text) || /<html[\s>]/i.test(text)) {
     throw new Error(
-      `El backend de Android respondió HTML en vez de JSON (HTTP ${response.status}). ` +
-      `Revisa que el APK use el backend configurado y que /api/android esté desplegado. ` +
-      `Respuesta: ${preview}`
+      `El backend respondió HTML en vez de JSON (HTTP ${response.status}). ` +
+      `Verifica que el servicio API esté disponible.`
     );
   }
 
@@ -343,16 +348,39 @@ export const androidApi = {
   },
 
   getPaypalConfig: async (): Promise<{
+    configured: boolean;
     clientId: string;
     currency: string;
     mode: "sandbox" | "live";
+    error?: string;
   }> => {
-    const res = await androidApiFetch("/paypal/config");
-    const data = await readResponseBody(res);
-    if (!res.ok || data.error || !data.clientId) {
-      throw new Error(data.error || "PayPal no está configurado correctamente en el servidor.");
+    try {
+      const res = await androidApiFetch("/paypal/config");
+      const data = await readResponseBody(res);
+      if (!res.ok || data.error || !data.clientId) {
+        return {
+          configured: false,
+          clientId: data?.clientId || "",
+          currency: data?.currency || "USD",
+          mode: data?.mode || "sandbox",
+          error: data?.error || data?.message || "PayPal no está configurado en el servidor.",
+        };
+      }
+      return {
+        configured: Boolean(data.configured ?? true),
+        clientId: data.clientId,
+        currency: data.currency || "USD",
+        mode: data.mode || "sandbox",
+      };
+    } catch (err: any) {
+      return {
+        configured: false,
+        clientId: "",
+        currency: "USD",
+        mode: "sandbox",
+        error: err?.message || "No se pudo consultar la configuración de PayPal.",
+      };
     }
-    return data;
   },
 
   createPaypalOrder: async (items: CartItem[], shippingCost: number): Promise<{ id: string }> => {

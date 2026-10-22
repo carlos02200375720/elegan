@@ -6,7 +6,7 @@ import { androidApi } from "../api";
 
 interface PaypalSdk {
   Buttons: (options: {
-    createOrder: () => Promise<string>;
+    createOrder: (data?: any, actions?: any) => Promise<string>;
     onApprove: (data: { orderID: string }) => Promise<void>;
     onCancel: () => void;
     onError: (error: unknown) => void;
@@ -63,8 +63,39 @@ export function VerificacionTiendaView({
   const [paypalError, setPaypalError] = useState("");
   const [paypalCurrency, setPaypalCurrency] = useState("USD");
   const [paypalMode, setPaypalMode] = useState<"sandbox" | "live">("sandbox");
+  const [isPaypalConfigured, setIsPaypalConfigured] = useState<boolean>(false);
+  const [isLoadingConfig, setIsLoadingConfig] = useState<boolean>(true);
 
   checkoutDataRef.current = { checkoutForm, effectiveCheckoutItems, cartShippingTotal, handleCheckout };
+
+  const validateForm = (): boolean => {
+    const { checkoutForm: form } = checkoutDataRef.current;
+    if (
+      !form.fullName.trim() ||
+      !form.email.trim() ||
+      !form.phone.trim() ||
+      !form.shippingAddress.trim() ||
+      !form.city?.trim() ||
+      !form.country.trim() ||
+      !form.postalCode.trim()
+    ) {
+      setPaypalError("Completa todos tus datos de contacto y dirección antes de continuar.");
+      return false;
+    }
+    setPaypalError("");
+    return true;
+  };
+
+  const handleManualConfirm = async () => {
+    if (!validateForm()) return;
+    if (isCheckingOut) return;
+    try {
+      const orderId = `manual_${Date.now()}`;
+      await checkoutDataRef.current.handleCheckout(orderId);
+    } catch (err: any) {
+      setPaypalError(err?.message || "No se pudo procesar el pedido. Inténtalo de nuevo.");
+    }
+  };
 
   useEffect(() => {
     if (!fixedFooterRef.current) return;
@@ -86,15 +117,32 @@ export function VerificacionTiendaView({
       try {
         const config = await androidApi.getPaypalConfig();
         if (cancelled) return;
-        setPaypalCurrency(config.currency);
-        setPaypalMode(config.mode);
+
+        // Check both backend config and build-time GitHub Action secrets
+        const envClientId = (import.meta as any).env?.VITE_PAYPAL_CLIENT_ID?.trim() || "";
+        const envMode = ((import.meta as any).env?.VITE_PAYPAL_MODE?.trim() || "sandbox") as "sandbox" | "live";
+
+        const effectiveClientId = config.clientId || envClientId;
+        const effectiveCurrency = config.currency || "USD";
+        const effectiveMode = (config.mode || envMode) as "sandbox" | "live";
+
+        setPaypalCurrency(effectiveCurrency);
+        setPaypalMode(effectiveMode);
+
+        if (!effectiveClientId) {
+          setIsPaypalConfigured(false);
+          setIsLoadingConfig(false);
+          return;
+        }
+
+        setIsPaypalConfigured(true);
 
         if (!window.paypal) {
           let script = document.getElementById("paypal-checkout-sdk") as HTMLScriptElement | null;
           if (!script) {
             script = document.createElement("script");
             script.id = "paypal-checkout-sdk";
-            script.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(config.clientId)}&currency=${encodeURIComponent(config.currency)}&intent=capture&components=buttons`;
+            script.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(effectiveClientId)}&currency=${encodeURIComponent(effectiveCurrency)}&intent=capture&components=buttons`;
             script.async = true;
             document.body.appendChild(script);
           }
@@ -104,32 +152,45 @@ export function VerificacionTiendaView({
               return;
             }
             script?.addEventListener("load", () => resolve(), { once: true });
-            script?.addEventListener("error", () => reject(new Error("No se pudo cargar el botón seguro de PayPal.")), { once: true });
+            script?.addEventListener("error", () => reject(new Error("No se pudo cargar el componente seguro de PayPal.")), { once: true });
           });
         }
 
         const paypalSdk = window.paypal;
         const buttonsContainer = paypalButtonsRef.current;
-        if (cancelled || !paypalSdk || !buttonsContainer) return;
+        if (cancelled || !paypalSdk || !buttonsContainer) {
+          setIsLoadingConfig(false);
+          return;
+        }
+
+        buttonsContainer.replaceChildren();
+
         const buttons = paypalSdk.Buttons({
-          createOrder: async () => {
-            const { checkoutForm: form, effectiveCheckoutItems: items, cartShippingTotal: shipping } = checkoutDataRef.current;
-            if (
-              !form.fullName.trim() ||
-              !form.email.trim() ||
-              !form.phone.trim() ||
-              !form.shippingAddress.trim() ||
-              !form.city?.trim() ||
-              !form.country.trim() ||
-              !form.postalCode.trim()
-            ) {
-              const message = "Completa tus datos de contacto y envío antes de continuar.";
-              setPaypalError(message);
-              throw new Error(message);
+          createOrder: async (_data: any, actions?: any) => {
+            if (!validateForm()) {
+              throw new Error("Completa tus datos de envío.");
             }
-            setPaypalError("");
-            const paypalOrder = await androidApi.createPaypalOrder(items, shipping);
-            return paypalOrder.id;
+            const { effectiveCheckoutItems: items, cartShippingTotal: shipping, cartTotal: total } = checkoutDataRef.current;
+            // 1. Intento por backend seguro
+            try {
+              const paypalOrder = await androidApi.createPaypalOrder(items, shipping);
+              if (paypalOrder?.id) return paypalOrder.id;
+            } catch (err: any) {
+              console.warn("Backend PayPal order fallback:", err?.message);
+            }
+            // 2. Respaldo directo en cliente si el backend de Cloud Run aún no tiene PAYPAL_CLIENT_SECRET
+            if (actions?.order?.create) {
+              return actions.order.create({
+                purchase_units: [{
+                  amount: {
+                    value: total.toFixed(2),
+                    currency_code: effectiveCurrency,
+                  },
+                  description: `Compra MallSocial (${total.toFixed(2)} ${effectiveCurrency})`,
+                }],
+              });
+            }
+            throw new Error("No se pudo iniciar la transacción de PayPal.");
           },
           onApprove: async ({ orderID }) => {
             const succeeded = await checkoutDataRef.current.handleCheckout(orderID);
@@ -140,13 +201,15 @@ export function VerificacionTiendaView({
           onCancel: () => setPaypalError("Pago cancelado. No se realizó ningún cobro."),
           onError: (error) => {
             console.error("Error al procesar PayPal:", error);
-            setPaypalError(error instanceof Error ? error.message : "PayPal no pudo completar el pago. Inténtalo de nuevo.");
+            setPaypalError("PayPal no pudo completar el pago. Puedes confirmar con pago contra entrega.");
           },
         });
         await buttons.render(buttonsContainer);
+        setIsLoadingConfig(false);
       } catch (error) {
         if (cancelled) return;
-        setPaypalError(error instanceof Error ? error.message : "No se pudo preparar PayPal.");
+        setIsPaypalConfigured(false);
+        setIsLoadingConfig(false);
       }
     };
 
@@ -267,16 +330,27 @@ export function VerificacionTiendaView({
           <div className="flex items-center gap-2">
             <ShieldCheck className="h-5 w-5 text-emerald-600" />
             <span className="text-xs font-black uppercase tracking-wide text-slate-500">
-              Pago seguro con PayPal
+              {isPaypalConfigured ? "Pago seguro con PayPal" : "Método de Pago y Entrega"}
             </span>
           </div>
-          <p className="mt-2 text-xs leading-5 text-slate-600">
-            Los precios de la tienda y el pago se realizan directamente en {paypalCurrency}.
-          </p>
-          {paypalMode === "sandbox" && (
-            <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-[11px] font-semibold text-amber-800">
-              Modo de prueba: los pagos no son cobros reales.
-            </p>
+          {isPaypalConfigured ? (
+            <>
+              <p className="mt-2 text-xs leading-5 text-slate-600">
+                Los precios de la tienda y el pago se realizan directamente en {paypalCurrency}.
+              </p>
+              {paypalMode === "sandbox" && (
+                <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-[11px] font-semibold text-amber-800">
+                  Modo de prueba: los pagos no son cobros reales.
+                </p>
+              )}
+            </>
+          ) : (
+            <div className="mt-2 text-xs leading-5 text-slate-600 space-y-1">
+              <p className="font-semibold text-slate-800">Pago contra entrega / Acordar con el vendedor</p>
+              <p className="text-[11px] text-slate-500">
+                Tu pedido quedará registrado de inmediato y la tienda coordinará contigo la entrega y el pago.
+              </p>
+            </div>
           )}
         </div>
 
@@ -355,15 +429,32 @@ export function VerificacionTiendaView({
               </p>
             )}
             <p className="mb-2 text-center text-sm font-black text-slate-900">
-              Total en PayPal:{" "}
+              Total a pagar:{" "}
               {new Intl.NumberFormat("en-US", {
                 style: "currency",
                 currency: paypalCurrency,
               }).format(cartTotal)}
             </p>
-            <div ref={paypalButtonsRef} aria-label={`Pagar ${formatPrice(cartTotal)} con PayPal`} />
+
+            {isPaypalConfigured && (
+              <div ref={paypalButtonsRef} aria-label={`Pagar ${formatPrice(cartTotal)} con PayPal`} className="mb-2" />
+            )}
+
+            {(!isPaypalConfigured || paypalError) && (
+              <button
+                type="button"
+                id="android-checkout-confirm-direct-btn"
+                disabled={isCheckingOut || effectiveCheckoutItems.length === 0}
+                onClick={handleManualConfirm}
+                className="w-full py-3 px-4 bg-amber-500 hover:bg-amber-600 active:scale-[0.98] text-slate-950 font-black text-xs rounded-2xl shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+              >
+                <ShoppingBag className="w-4 h-4 text-slate-950" />
+                {isCheckingOut ? "Confirmando pedido..." : `Confirmar Pedido (${formatPrice(cartTotal)})`}
+              </button>
+            )}
+
             {isCheckingOut && (
-              <p className="mt-2 text-center text-xs font-semibold text-slate-500">Confirmando el pago...</p>
+              <p className="mt-2 text-center text-xs font-semibold text-slate-500">Confirmando el pedido...</p>
             )}
           </div>
         </div>

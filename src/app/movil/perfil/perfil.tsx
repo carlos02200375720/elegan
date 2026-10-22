@@ -140,6 +140,51 @@ export default function Perfil({
     applyProfileStatusBar();
   }, []);
 
+  // Asegurar que al navegar a la página de perfil siempre abra en la parte superior de la pantalla
+  useEffect(() => {
+    const scrollToTop = () => {
+      if (typeof window !== "undefined") {
+        window.scrollTo({ top: 0, left: 0, behavior: "instant" as ScrollBehavior });
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+        const scrollableSelectors = [
+          "#android-app-layout",
+          "#android-profile-view",
+          "#android-profile-container",
+          "#app-android-container",
+          "main"
+        ];
+        scrollableSelectors.forEach((selector) => {
+          const el = document.querySelector(selector);
+          if (el) {
+            el.scrollTop = 0;
+          }
+        });
+      }
+    };
+
+    // Scroll inmediato
+    scrollToTop();
+
+    // Re-verificar tras el pintado del navegador (RAF y timeout corto) para neutralizar cualquier scroll previo
+    const rafId = requestAnimationFrame(scrollToTop);
+    const timeoutId = setTimeout(scrollToTop, 40);
+
+    const handleRouteChange = () => {
+      scrollToTop();
+    };
+
+    window.addEventListener("popstate", handleRouteChange);
+    window.addEventListener("app-route-change", handleRouteChange);
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      clearTimeout(timeoutId);
+      window.removeEventListener("popstate", handleRouteChange);
+      window.removeEventListener("app-route-change", handleRouteChange);
+    };
+  }, [activeUser.id, activeUser.username, selectedCreatorId]);
+
   const [activeTab, setActiveTab] = useState<TabType>(() => {
     if (typeof window !== "undefined") {
       const parsed = parseRoute(window.location.pathname);

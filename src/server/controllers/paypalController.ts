@@ -17,13 +17,13 @@ interface PaypalApiError extends Error {
 let cachedAccessToken: { value: string; expiresAt: number } | null = null;
 
 function getPaypalSettings() {
-  const clientId = process.env.PAYPAL_CLIENT_ID?.trim();
+  const clientId = process.env.PAYPAL_CLIENT_ID?.trim() || process.env.VITE_PAYPAL_CLIENT_ID?.trim();
   const clientSecret = process.env.PAYPAL_CLIENT_SECRET?.trim();
   if (!clientId || !clientSecret) {
     throw new Error("PayPal no está configurado en el servidor.");
   }
 
-  const mode = process.env.PAYPAL_MODE?.trim().toLowerCase() || "sandbox";
+  const mode = (process.env.PAYPAL_MODE?.trim().toLowerCase() || process.env.VITE_PAYPAL_MODE?.trim().toLowerCase() || "sandbox") as "sandbox" | "live";
   if (mode !== "sandbox" && mode !== "live") {
     throw new Error("PAYPAL_MODE debe ser sandbox o live.");
   }
@@ -150,13 +150,18 @@ export function getPaypalConfig(_req: Request, res: Response): void {
   try {
     const settings = getPaypalSettings();
     res.json({
+      configured: true,
       clientId: settings.clientId,
       currency: PAYPAL_CURRENCY,
       mode: settings.mode,
     });
   } catch (error) {
-    res.status(503).json({
-      error: error instanceof Error ? error.message : "PayPal no está disponible.",
+    res.status(200).json({
+      configured: false,
+      clientId: "",
+      currency: PAYPAL_CURRENCY,
+      mode: "sandbox",
+      message: error instanceof Error ? error.message : "PayPal no está configurado en el servidor.",
     });
   }
 }

@@ -15,6 +15,7 @@ import {
   uploadAvatar,
   uploadCover,
 } from "./src/server/controllers/uploadController";
+import { getPaypalConfig, createPaypalOrder } from "./src/server/controllers/paypalController";
 import { getUsers } from "./src/server/controllers/userController";
 import {
   MongoUser,
@@ -321,6 +322,8 @@ async function startServer() {
   app.get("/health", (req, res) => {
     res.json({ status: "ok", server: "mall-social-cloudrun", timestamp: new Date().toISOString() });
   });
+  app.get("/paypal/config", getPaypalConfig);
+  app.post("/paypal/orders", createPaypalOrder);
   app.post("/upload", uploadSingleSafe("file"), processUploadHlsOnly);
   app.post("/upload-avatar", uploadSingleSafe("avatar"), uploadAvatar);
   app.post("/upload-cover", uploadSingleSafe("cover"), uploadCover);

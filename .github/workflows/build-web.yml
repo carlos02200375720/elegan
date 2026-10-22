@@ -19,6 +19,8 @@ jobs:
     env:
       VITE_APP_TARGET: web
       VITE_BACKEND_URL: https://elegan-backend-587849039182.us-east1.run.app
+      VITE_PAYPAL_CLIENT_ID: ${{ secrets.PAYPAL_CLIENT_ID }}
+      VITE_PAYPAL_MODE: ${{ secrets.PAYPAL_MODE || 'sandbox' }}
 
     steps:
       - name: Descargar código actual
