@@ -1,17 +1,89 @@
 import { Request, Response } from "express";
 import mongoose from "mongoose";
-import { MongoReel } from "../models";
-import { Comment } from "../../types";
+import { MongoReel, MongoProduct, MongoUser } from "../models";
+import { Comment, Reel } from "../../types";
 import { generateId } from "../utils/helpers";
-import { formatReelDTO } from "../utils/reelUtils";
+import { formatReelDTO, createCompanionReelForProduct } from "../utils/reelUtils";
 import { getCanonicalReelsFromMongo, saveCanonicalReelToMongo } from "../services/reelService";
 import { resolveAuthenticatedUser, hasSellerPermission } from "./userController";
 import {
   reels,
   setReels,
+  products,
+  users,
   activeOriginalUserId,
   broadcastToAll,
 } from "../services/state";
+
+/**
+ * Finds a reel by ID, restoring from MongoReel or auto-generating
+ * and persisting a companion product reel if id starts with reel_prod_
+ */
+async function findOrCreateReel(reelId: string): Promise<Reel | null> {
+  let reel = reels.find((r) => r.id === reelId);
+  if (reel) return reel;
+
+  if (mongoose.connection.readyState === 1) {
+    try {
+      const dbReel = await MongoReel.findOne({ id: reelId });
+      if (dbReel) {
+        const formatted = formatReelDTO(dbReel.toObject ? dbReel.toObject() : dbReel);
+        if (!reels.some((r) => r.id === reelId)) {
+          reels.push(formatted);
+        }
+        return formatted;
+      }
+    } catch (e) {
+      console.warn("Error finding reel in MongoReel:", e);
+    }
+  }
+
+  // If this is a companion product reel (starts with reel_prod_), generate and persist it
+  if (reelId.startsWith("reel_prod_")) {
+    const productId = reelId.replace("reel_prod_", "");
+    let product = products.find((p) => p.id === productId);
+    if (!product && mongoose.connection.readyState === 1) {
+      try {
+        const dbProd = await MongoProduct.findOne({ id: productId });
+        if (dbProd) {
+          product = dbProd.toObject ? dbProd.toObject() : dbProd;
+        }
+      } catch (e) {}
+    }
+
+    if (product) {
+      let seller: any = null;
+      if (mongoose.connection.readyState === 1 && (product.sellerId || product.sellerUsername)) {
+        try {
+          seller = await MongoUser.findOne({
+            $or: [
+              ...(product.sellerId ? [{ id: product.sellerId }, { _id: mongoose.isValidObjectId(product.sellerId) ? product.sellerId : undefined }] : []),
+              ...(product.sellerUsername ? [{ username: product.sellerUsername }] : []),
+            ],
+          });
+        } catch (e) {}
+      }
+
+      const companionReel = createCompanionReelForProduct(product, seller);
+      companionReel.id = reelId;
+
+      if (mongoose.connection.readyState === 1) {
+        try {
+          await saveCanonicalReelToMongo(companionReel);
+        } catch (e) {
+          console.warn("Could not save canonical reel for product:", e);
+        }
+      }
+
+      if (!reels.some((r) => r.id === reelId)) {
+        reels.push(companionReel);
+      }
+      return companionReel;
+    }
+  }
+
+  return null;
+}
 
 /**
  * GET /api/reels
@@ -52,7 +124,7 @@ export async function getReels(req: Request, res: Response): Promise<void> {
  * Like a reel (1 like per user - toggle behavior with user isolation)
  */
 export async function likeReel(req: Request, res: Response): Promise<void> {
-  const reel = reels.find((r) => r.id === req.params.id);
+  const reel = await findOrCreateReel(req.params.id);
   if (!reel) {
     res.status(404).json({ error: "Reel not found" });
     return;
@@ -136,7 +208,7 @@ export async function likeReel(req: Request, res: Response): Promise<void> {
  * Post a comment on a reel
  */
 export async function commentReel(req: Request, res: Response): Promise<void> {
-  const reel = reels.find((r) => r.id === req.params.id);
+  const reel = await findOrCreateReel(req.params.id);
   if (!reel) {
     res.status(404).json({ error: "Reel not found" });
     return;
@@ -188,7 +260,7 @@ export async function commentReel(req: Request, res: Response): Promise<void> {
  * Record a view on a reel
  */
 export async function viewReel(req: Request, res: Response): Promise<void> {
-  const reel = reels.find((r) => r.id === req.params.id);
+  const reel = await findOrCreateReel(req.params.id);
   if (!reel) {
     res.status(404).json({ error: "Reel not found" });
     return;
@@ -211,7 +283,7 @@ export async function viewReel(req: Request, res: Response): Promise<void> {
  * Record a share on a reel
  */
 export async function shareReel(req: Request, res: Response): Promise<void> {
-  const reel = reels.find((r) => r.id === req.params.id);
+  const reel = await findOrCreateReel(req.params.id);
   if (!reel) {
     res.status(404).json({ error: "Reel not found" });
     return;

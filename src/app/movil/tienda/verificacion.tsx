@@ -6,6 +6,14 @@ import { androidApi } from "../api";
 
 interface PaypalSdk {
   Buttons: (options: {
+    style?: {
+      layout?: "vertical" | "horizontal";
+      color?: "gold" | "blue" | "silver" | "white" | "black";
+      shape?: "rect" | "pill";
+      label?: "paypal" | "checkout" | "buynow" | "pay";
+      tagline?: boolean;
+      borderRadius?: number;
+    };
     createOrder: (data?: any, actions?: any) => Promise<string>;
     onApprove: (data: { orderID: string }) => Promise<void>;
     onCancel: () => void;
@@ -56,10 +64,8 @@ export function VerificacionTiendaView({
   handleCheckout,
   isCheckingOut,
 }: AndroidVerificacionProps) {
-  const fixedFooterRef = useRef<HTMLDivElement | null>(null);
   const paypalButtonsRef = useRef<HTMLDivElement | null>(null);
   const checkoutDataRef = useRef({ checkoutForm, effectiveCheckoutItems, cartShippingTotal, handleCheckout });
-  const [footerHeight, setFooterHeight] = useState<number>(76);
   const [paypalError, setPaypalError] = useState("");
   const [paypalCurrency, setPaypalCurrency] = useState("USD");
   const [paypalMode, setPaypalMode] = useState<"sandbox" | "live">("sandbox");
@@ -98,19 +104,6 @@ export function VerificacionTiendaView({
   };
 
   useEffect(() => {
-    if (!fixedFooterRef.current) return;
-    const updateHeight = () => {
-      if (fixedFooterRef.current) {
-        setFooterHeight(fixedFooterRef.current.offsetHeight);
-      }
-    };
-    updateHeight();
-    const observer = new ResizeObserver(updateHeight);
-    observer.observe(fixedFooterRef.current);
-    return () => observer.disconnect();
-  }, []);
-
-  useEffect(() => {
     let cancelled = false;
 
     const loadPaypalButtons = async () => {
@@ -118,23 +111,16 @@ export function VerificacionTiendaView({
         const config = await androidApi.getPaypalConfig();
         if (cancelled) return;
 
-        // Check both backend config and build-time GitHub Action secrets
+        // Check both backend config, build-time GitHub Action secrets, or fallback to 'sb' (Sandbox)
         const envClientId = (import.meta as any).env?.VITE_PAYPAL_CLIENT_ID?.trim() || "";
         const envMode = ((import.meta as any).env?.VITE_PAYPAL_MODE?.trim() || "sandbox") as "sandbox" | "live";
 
-        const effectiveClientId = config.clientId || envClientId;
+        const effectiveClientId = config.clientId || envClientId || "sb";
         const effectiveCurrency = config.currency || "USD";
-        const effectiveMode = (config.mode || envMode) as "sandbox" | "live";
+        const effectiveMode = (config.mode || envMode || "sandbox") as "sandbox" | "live";
 
         setPaypalCurrency(effectiveCurrency);
         setPaypalMode(effectiveMode);
-
-        if (!effectiveClientId) {
-          setIsPaypalConfigured(false);
-          setIsLoadingConfig(false);
-          return;
-        }
-
         setIsPaypalConfigured(true);
 
         if (!window.paypal) {
@@ -243,9 +229,9 @@ export function VerificacionTiendaView({
       </div>
 
       <div
-        className="px-4 py-4 space-y-4"
+        className="px-4 py-4 space-y-4 pb-12"
         style={{
-          paddingBottom: `${footerHeight + 3}px`,
+          paddingBottom: "max(2.5rem, calc(env(safe-area-inset-bottom, 0px) + 2rem))",
         }}
       >
         <div className="bg-white border border-slate-200 rounded-3xl p-4 shadow-sm">
@@ -327,34 +313,6 @@ export function VerificacionTiendaView({
         </div>
 
         <div className="bg-white border border-slate-200 rounded-3xl p-4 shadow-sm">
-          <div className="flex items-center gap-2">
-            <ShieldCheck className="h-5 w-5 text-emerald-600" />
-            <span className="text-xs font-black uppercase tracking-wide text-slate-500">
-              {isPaypalConfigured ? "Pago seguro con PayPal" : "Método de Pago y Entrega"}
-            </span>
-          </div>
-          {isPaypalConfigured ? (
-            <>
-              <p className="mt-2 text-xs leading-5 text-slate-600">
-                Los precios de la tienda y el pago se realizan directamente en {paypalCurrency}.
-              </p>
-              {paypalMode === "sandbox" && (
-                <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-[11px] font-semibold text-amber-800">
-                  Modo de prueba: los pagos no son cobros reales.
-                </p>
-              )}
-            </>
-          ) : (
-            <div className="mt-2 text-xs leading-5 text-slate-600 space-y-1">
-              <p className="font-semibold text-slate-800">Pago contra entrega / Acordar con el vendedor</p>
-              <p className="text-[11px] text-slate-500">
-                Tu pedido quedará registrado de inmediato y la tienda coordinará contigo la entrega y el pago.
-              </p>
-            </div>
-          )}
-        </div>
-
-        <div className="bg-white border border-slate-200 rounded-3xl p-4 shadow-sm">
           <div className="flex items-center justify-between">
             <span className="text-xs font-black uppercase tracking-wide text-slate-500">
               Resumen de compra
@@ -415,48 +373,59 @@ export function VerificacionTiendaView({
           </div>
         </div>
 
-        {/* Fixed Checkout Footer */}
+        {/* Bloque de confirmación y pago (integrado en el flujo de la página, sin barra fija flotante) */}
         <div
-          ref={fixedFooterRef}
           id="android-checkout-footer-action"
-          className="fixed bottom-0 inset-x-0 z-40 bg-white/98 backdrop-blur-md border-t border-slate-200 px-4 py-3"
-          style={{ paddingBottom: "max(1rem, calc(env(safe-area-inset-bottom, 0px) + 0.5rem))" }}
+          className="bg-white border border-slate-200 rounded-3xl p-4 shadow-sm space-y-4"
         >
-          <div className="max-w-md mx-auto w-full">
-            {paypalError && (
-              <p role="alert" className="mb-2 rounded-xl bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700">
-                {paypalError}
-              </p>
-            )}
-            <p className="mb-2 text-center text-sm font-black text-slate-900">
-              Total a pagar:{" "}
+          {paypalError && (
+            <p role="alert" className="rounded-xl bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700">
+              {paypalError}
+            </p>
+          )}
+
+          <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+            <span className="text-xs font-bold text-slate-500">Total a pagar:</span>
+            <span className="text-base font-black text-slate-900 font-mono">
               {new Intl.NumberFormat("en-US", {
                 style: "currency",
                 currency: paypalCurrency,
               }).format(cartTotal)}
-            </p>
-
-            {isPaypalConfigured && (
-              <div ref={paypalButtonsRef} aria-label={`Pagar ${formatPrice(cartTotal)} con PayPal`} className="mb-2" />
-            )}
-
-            {(!isPaypalConfigured || paypalError) && (
-              <button
-                type="button"
-                id="android-checkout-confirm-direct-btn"
-                disabled={isCheckingOut || effectiveCheckoutItems.length === 0}
-                onClick={handleManualConfirm}
-                className="w-full py-3 px-4 bg-amber-500 hover:bg-amber-600 active:scale-[0.98] text-slate-950 font-black text-xs rounded-2xl shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
-              >
-                <ShoppingBag className="w-4 h-4 text-slate-950" />
-                {isCheckingOut ? "Confirmando pedido..." : `Confirmar Pedido (${formatPrice(cartTotal)})`}
-              </button>
-            )}
-
-            {isCheckingOut && (
-              <p className="mt-2 text-center text-xs font-semibold text-slate-500">Confirmando el pedido...</p>
-            )}
+            </span>
           </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center gap-1.5 text-slate-700">
+              <ShieldCheck className="w-4 h-4 text-emerald-600" />
+              <span className="text-xs font-black uppercase tracking-wide">Pagar con PayPal o Tarjeta</span>
+            </div>
+
+            {/* Contenedor oficial de botones de PayPal */}
+            <div
+              ref={paypalButtonsRef}
+              id="android-paypal-buttons-container"
+              aria-label={`Pagar ${formatPrice(cartTotal)} con PayPal`}
+              className="w-full min-h-[45px] relative z-10"
+            />
+          </div>
+
+          <div className="pt-2 border-t border-slate-100 text-center">
+            <span className="text-[11px] text-slate-400 font-medium">¿Prefieres pagar al recibir?</span>
+            <button
+              type="button"
+              id="android-checkout-confirm-direct-btn"
+              disabled={isCheckingOut || effectiveCheckoutItems.length === 0}
+              onClick={handleManualConfirm}
+              className="w-full mt-1.5 py-3 px-4 bg-slate-100 hover:bg-slate-200 active:scale-[0.98] text-slate-700 font-bold text-xs rounded-2xl transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+            >
+              <ShoppingBag className="w-4 h-4 text-slate-600" />
+              {isCheckingOut ? "Confirmando pedido..." : "Confirmar pedido (Pago contra entrega)"}
+            </button>
+          </div>
+
+          {isCheckingOut && (
+            <p className="text-center text-xs font-semibold text-slate-500">Confirmando el pedido...</p>
+          )}
         </div>
       </div>
     </div>

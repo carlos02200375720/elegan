@@ -149,7 +149,6 @@ export async function connectToMongoDB(): Promise<void> {
     await MongoReel.deleteMany({
       $or: [
         { id: "reel_pub_vatdfyio3" },
-        { id: { $regex: /reel_prod_prod_/ } },
         { creatorId: "creator" },
         { creatorId: "creador" },
         { creatorUsername: "creador" },
