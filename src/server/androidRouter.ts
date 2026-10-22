@@ -12,6 +12,7 @@ import {
   getUserCanonicalReelsFromMongo,
 } from "./services/reelService";
 import { isConfiguredSuperadmin, handleGuestSession } from "./controllers/userController";
+import { createPaypalOrder, getPaypalConfig } from "./controllers/paypalController";
 import { MongoCart, MongoChatMessage } from "./models";
 import {
   mergeGuestCartItems,
@@ -98,6 +99,9 @@ export function createAndroidRouter(deps: AndroidRouterDependencies): Router {
       mongoConnected: mongoose.connection.readyState === 1,
     });
   });
+
+  router.get("/paypal/config", getPaypalConfig);
+  router.post("/paypal/orders", createPaypalOrder);
 
   // Android: Real Users list from MongoDB Atlas
   router.get("/users", async (req: Request, res: Response) => {
@@ -1690,6 +1694,7 @@ export function createAndroidRouter(deps: AndroidRouterDependencies): Router {
               shippingCapital: p.shippingCapital !== undefined ? Number(p.shippingCapital) : 0,
               shippingProvince: p.shippingProvince !== undefined ? Number(p.shippingProvince) : 0,
               freeShipping: Boolean(p.freeShipping),
+              shippingOptions: Array.isArray(p.shippingOptions) ? p.shippingOptions : [],
               category: p.category || "General",
               images: p.images || [],
               videos: p.videos || [],
@@ -1698,6 +1703,7 @@ export function createAndroidRouter(deps: AndroidRouterDependencies): Router {
               views: p.views || 0,
             };
           });
+          if (setProducts) setProducts(prods);
         }
       }
       res.json(prods);

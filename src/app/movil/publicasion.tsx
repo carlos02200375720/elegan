@@ -658,7 +658,7 @@ export default function AndroidPublishView({
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                  Precio (RD$) <span className="text-amber-500">*</span>
+                  Precio (USD) <span className="text-amber-500">*</span>
                 </label>
                 <input
                   value={price}
@@ -697,7 +697,7 @@ export default function AndroidPublishView({
                 {/* 1. Precio de envío a la capital */}
                 <div>
                   <label className="block text-[11px] font-semibold text-slate-300 mb-1">
-                    1. Precio de envío a la capital (RD$)
+                    1. Precio de envío a la capital (USD)
                   </label>
                   <input
                     value={shippingCapital}
@@ -713,7 +713,7 @@ export default function AndroidPublishView({
                 {/* 2. Precio de envío a provincia */}
                 <div>
                   <label className="block text-[11px] font-semibold text-slate-300 mb-1">
-                    2. Precio de envío a provincia (RD$)
+                    2. Precio de envío a provincia (USD)
                   </label>
                   <input
                     value={shippingProvince}
@@ -771,7 +771,7 @@ export default function AndroidPublishView({
                       )}
                       {showFree && (
                         <span className="px-2 py-0.5 rounded-lg bg-emerald-500/20 text-emerald-400 font-extrabold border border-emerald-500/40">
-                          Envío Gratis (RD$0.00)
+                          Envío Gratis ($0.00 USD)
                         </span>
                       )}
                       {cap <= 0 && prov <= 0 && !showFree && (

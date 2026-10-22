@@ -1,7 +1,25 @@
 import React, { useRef, useState, useEffect } from "react";
-import { ArrowRight, ShoppingBag, CreditCard } from "lucide-react";
+import { ArrowRight, ShoppingBag, ShieldCheck } from "lucide-react";
 import { CartItem } from "../../../types";
 import { formatPrice } from "../../../utils/currency";
+import { androidApi } from "../api";
+
+interface PaypalSdk {
+  Buttons: (options: {
+    createOrder: () => Promise<string>;
+    onApprove: (data: { orderID: string }) => Promise<void>;
+    onCancel: () => void;
+    onError: (error: unknown) => void;
+  }) => {
+    render: (container: HTMLElement) => Promise<void>;
+  };
+}
+
+declare global {
+  interface Window {
+    paypal?: PaypalSdk;
+  }
+}
 
 export interface AndroidCheckoutForm {
   fullName: string;
@@ -11,10 +29,6 @@ export interface AndroidCheckoutForm {
   city?: string;
   country: string;
   postalCode: string;
-  cardName: string;
-  cardNumber: string;
-  expiry: string;
-  cvv: string;
 }
 
 export interface AndroidVerificacionProps {
@@ -26,7 +40,7 @@ export interface AndroidVerificacionProps {
   cartSubtotal: number;
   cartShippingTotal: number;
   cartTotal: number;
-  handleCheckout: () => void;
+  handleCheckout: (paypalOrderId: string) => Promise<boolean>;
   isCheckingOut: boolean;
 }
 
@@ -43,7 +57,14 @@ export function VerificacionTiendaView({
   isCheckingOut,
 }: AndroidVerificacionProps) {
   const fixedFooterRef = useRef<HTMLDivElement | null>(null);
+  const paypalButtonsRef = useRef<HTMLDivElement | null>(null);
+  const checkoutDataRef = useRef({ checkoutForm, effectiveCheckoutItems, cartShippingTotal, handleCheckout });
   const [footerHeight, setFooterHeight] = useState<number>(76);
+  const [paypalError, setPaypalError] = useState("");
+  const [paypalCurrency, setPaypalCurrency] = useState("USD");
+  const [paypalMode, setPaypalMode] = useState<"sandbox" | "live">("sandbox");
+
+  checkoutDataRef.current = { checkoutForm, effectiveCheckoutItems, cartShippingTotal, handleCheckout };
 
   useEffect(() => {
     if (!fixedFooterRef.current) return;
@@ -56,6 +77,84 @@ export function VerificacionTiendaView({
     const observer = new ResizeObserver(updateHeight);
     observer.observe(fixedFooterRef.current);
     return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadPaypalButtons = async () => {
+      try {
+        const config = await androidApi.getPaypalConfig();
+        if (cancelled) return;
+        setPaypalCurrency(config.currency);
+        setPaypalMode(config.mode);
+
+        if (!window.paypal) {
+          let script = document.getElementById("paypal-checkout-sdk") as HTMLScriptElement | null;
+          if (!script) {
+            script = document.createElement("script");
+            script.id = "paypal-checkout-sdk";
+            script.src = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(config.clientId)}&currency=${encodeURIComponent(config.currency)}&intent=capture&components=buttons`;
+            script.async = true;
+            document.body.appendChild(script);
+          }
+          await new Promise<void>((resolve, reject) => {
+            if (window.paypal) {
+              resolve();
+              return;
+            }
+            script?.addEventListener("load", () => resolve(), { once: true });
+            script?.addEventListener("error", () => reject(new Error("No se pudo cargar el botón seguro de PayPal.")), { once: true });
+          });
+        }
+
+        const paypalSdk = window.paypal;
+        const buttonsContainer = paypalButtonsRef.current;
+        if (cancelled || !paypalSdk || !buttonsContainer) return;
+        const buttons = paypalSdk.Buttons({
+          createOrder: async () => {
+            const { checkoutForm: form, effectiveCheckoutItems: items, cartShippingTotal: shipping } = checkoutDataRef.current;
+            if (
+              !form.fullName.trim() ||
+              !form.email.trim() ||
+              !form.phone.trim() ||
+              !form.shippingAddress.trim() ||
+              !form.city?.trim() ||
+              !form.country.trim() ||
+              !form.postalCode.trim()
+            ) {
+              const message = "Completa tus datos de contacto y envío antes de continuar.";
+              setPaypalError(message);
+              throw new Error(message);
+            }
+            setPaypalError("");
+            const paypalOrder = await androidApi.createPaypalOrder(items, shipping);
+            return paypalOrder.id;
+          },
+          onApprove: async ({ orderID }) => {
+            const succeeded = await checkoutDataRef.current.handleCheckout(orderID);
+            if (!succeeded) {
+              throw new Error("No se pudo confirmar el pago. Verifica la conexión e inténtalo de nuevo.");
+            }
+          },
+          onCancel: () => setPaypalError("Pago cancelado. No se realizó ningún cobro."),
+          onError: (error) => {
+            console.error("Error al procesar PayPal:", error);
+            setPaypalError(error instanceof Error ? error.message : "PayPal no pudo completar el pago. Inténtalo de nuevo.");
+          },
+        });
+        await buttons.render(buttonsContainer);
+      } catch (error) {
+        if (cancelled) return;
+        setPaypalError(error instanceof Error ? error.message : "No se pudo preparar PayPal.");
+      }
+    };
+
+    void loadPaypalButtons();
+    return () => {
+      cancelled = true;
+      paypalButtonsRef.current?.replaceChildren();
+    };
   }, []);
 
   return (
@@ -165,49 +264,20 @@ export function VerificacionTiendaView({
         </div>
 
         <div className="bg-white border border-slate-200 rounded-3xl p-4 shadow-sm">
-          <span className="text-xs font-black uppercase tracking-wide text-slate-500">
-            Datos de la tarjeta
-          </span>
-          <div className="mt-4 space-y-3">
-            <div>
-              <label className="text-[11px] font-black text-slate-700">Nombre en la tarjeta</label>
-              <input
-                value={checkoutForm.cardName}
-                onChange={(e) => setCheckoutForm({ ...checkoutForm, cardName: e.target.value })}
-                className="w-full mt-1 px-3 py-2.5 border border-slate-200 rounded-2xl text-xs text-slate-900 bg-slate-50 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                placeholder="Nombre en la tarjeta"
-              />
-            </div>
-            <div>
-              <label className="text-[11px] font-black text-slate-700">Número de tarjeta</label>
-              <input
-                value={checkoutForm.cardNumber}
-                onChange={(e) => setCheckoutForm({ ...checkoutForm, cardNumber: e.target.value })}
-                className="w-full mt-1 px-3 py-2.5 border border-slate-200 rounded-2xl text-xs text-slate-900 bg-slate-50 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                placeholder="1234 5678 9012 3456"
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-[11px] font-black text-slate-700">Expira</label>
-                <input
-                  value={checkoutForm.expiry}
-                  onChange={(e) => setCheckoutForm({ ...checkoutForm, expiry: e.target.value })}
-                  className="w-full mt-1 px-3 py-2.5 border border-slate-200 rounded-2xl text-xs text-slate-900 bg-slate-50 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                  placeholder="MM/AA"
-                />
-              </div>
-              <div>
-                <label className="text-[11px] font-black text-slate-700">CVV</label>
-                <input
-                  value={checkoutForm.cvv}
-                  onChange={(e) => setCheckoutForm({ ...checkoutForm, cvv: e.target.value })}
-                  className="w-full mt-1 px-3 py-2.5 border border-slate-200 rounded-2xl text-xs text-slate-900 bg-slate-50 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                  placeholder="123"
-                />
-              </div>
-            </div>
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="h-5 w-5 text-emerald-600" />
+            <span className="text-xs font-black uppercase tracking-wide text-slate-500">
+              Pago seguro con PayPal
+            </span>
           </div>
+          <p className="mt-2 text-xs leading-5 text-slate-600">
+            Los precios de la tienda y el pago se realizan directamente en {paypalCurrency}.
+          </p>
+          {paypalMode === "sandbox" && (
+            <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-[11px] font-semibold text-amber-800">
+              Modo de prueba: los pagos no son cobros reales.
+            </p>
+          )}
         </div>
 
         <div className="bg-white border border-slate-200 rounded-3xl p-4 shadow-sm">
@@ -279,19 +349,22 @@ export function VerificacionTiendaView({
           style={{ paddingBottom: "max(1rem, calc(env(safe-area-inset-bottom, 0px) + 0.5rem))" }}
         >
           <div className="max-w-md mx-auto w-full">
-            <button
-              type="button"
-              onClick={handleCheckout}
-              disabled={isCheckingOut || effectiveCheckoutItems.length === 0}
-              className="w-full py-3.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black rounded-2xl text-xs shadow-lg hover:brightness-110 active:scale-[0.98] transition-all flex items-center justify-center space-x-2 cursor-pointer disabled:opacity-50"
-            >
-              <CreditCard className="w-4 h-4" />
-              <span>
-                {isCheckingOut
-                  ? "Procesando..."
-                  : `Completar Compra (${effectiveCheckoutItems.length}) - ${formatPrice(cartTotal)}`}
-              </span>
-            </button>
+            {paypalError && (
+              <p role="alert" className="mb-2 rounded-xl bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700">
+                {paypalError}
+              </p>
+            )}
+            <p className="mb-2 text-center text-sm font-black text-slate-900">
+              Total en PayPal:{" "}
+              {new Intl.NumberFormat("en-US", {
+                style: "currency",
+                currency: paypalCurrency,
+              }).format(cartTotal)}
+            </p>
+            <div ref={paypalButtonsRef} aria-label={`Pagar ${formatPrice(cartTotal)} con PayPal`} />
+            {isCheckingOut && (
+              <p className="mt-2 text-center text-xs font-semibold text-slate-500">Confirmando el pago...</p>
+            )}
           </div>
         </div>
       </div>

@@ -11,6 +11,7 @@ import * as liveController from "../controllers/liveController";
 import * as uploadController from "../controllers/uploadController";
 import * as settingsController from "../controllers/settingsController";
 import * as analyticsController from "../controllers/analyticsController";
+import * as paypalController from "../controllers/paypalController";
 import { getMongoStatus, connectToMongoDB } from "../config/database";
 
 export function createApiRouter(): Router {
@@ -103,6 +104,10 @@ export function createApiRouter(): Router {
   router.get("/orders", orderController.getOrders);
   router.get("/orders/:id", orderController.getOrderById);
   router.post("/orders/:id/update-tracking", orderController.updateTracking);
+
+  // PayPal checkout
+  router.get("/paypal/config", paypalController.getPaypalConfig);
+  router.post("/paypal/orders", paypalController.createPaypalOrder);
 
   // Chat routes
   router.get("/chats/support/conversations", chatController.getSupportConversations);

@@ -189,6 +189,7 @@ export interface AutoCreatedUserSummary {
 
 export interface Order {
   id: string;
+  paypalOrderId?: string;
   buyerId?: string;
   buyerName?: string;
   buyerUsername?: string;

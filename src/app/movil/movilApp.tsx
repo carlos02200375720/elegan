@@ -46,8 +46,9 @@ export interface AndroidAppProps {
     shippingCost: number,
     onComplete: (newOrder: Order) => void,
     itemsToCheckout?: CartItem[],
-    buyerInfo?: { buyerName?: string; buyerEmail?: string; buyerPhone?: string }
-  ) => void;
+    buyerInfo?: { buyerName?: string; buyerEmail?: string; buyerPhone?: string },
+    paypalOrderId?: string
+  ) => Promise<boolean>;
   handleCreatorProfileLink: (creatorId: string) => void;
   handleProductDetailsLink: (product: Product) => void;
   handleReelLink: (reelId: string) => void;

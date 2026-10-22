@@ -843,7 +843,7 @@ export function ProductoIdTiendaView({
                               }`}
                             >
                               {option.shippingCost === 0
-                                ? "GRATIS (RD$0.00)"
+                                ? "GRATIS ($0.00 USD)"
                                 : formatPrice(option.shippingCost)}
                             </span>
                             {option.aging && (

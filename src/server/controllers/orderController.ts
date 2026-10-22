@@ -4,6 +4,7 @@ import { MongoOrder, MongoUser, MongoCart, MongoProduct } from "../models";
 import { Order } from "../../types";
 import { generateId } from "../utils/helpers";
 import { getUsers } from "./userController";
+import { capturePaypalOrder } from "./paypalController";
 import {
   orders,
   setOrders,
@@ -21,9 +22,27 @@ import {
  */
 export async function createOrder(req: Request, res: Response): Promise<void> {
   const { items, shippingAddress, shippingCost, userId, buyerName, buyerUsername, buyerAvatar, buyerEmail } = req.body;
+  const paypalOrderId = typeof req.body.paypalOrderId === "string" ? req.body.paypalOrderId.trim() : "";
   if (!items || !items.length) {
     res.status(400).json({ error: "Cart is empty" });
     return;
+  }
+
+  if (paypalOrderId) {
+    const existingMemoryOrder = orders.find((order) => order.paypalOrderId === paypalOrderId);
+    if (existingMemoryOrder) {
+      res.json(existingMemoryOrder);
+      return;
+    }
+
+    if (mongoose.connection.readyState === 1) {
+      const existingDatabaseOrder = await MongoOrder.findOne({ paypalOrderId });
+      if (existingDatabaseOrder) {
+        res.json(existingDatabaseOrder);
+        return;
+      }
+    }
+
   }
 
   let total = 0;
@@ -31,6 +50,17 @@ export async function createOrder(req: Request, res: Response): Promise<void> {
   const dbUsers = await getUsers();
   const userMap = new Map<string, any>();
   dbUsers.forEach((u: any) => userMap.set(u.id, u));
+
+  if (paypalOrderId) {
+    try {
+      await capturePaypalOrder(paypalOrderId, items, Number(shippingCost) || 0);
+    } catch (paymentError) {
+      res.status(400).json({
+        error: paymentError instanceof Error ? paymentError.message : "No se pudo confirmar el pago de PayPal.",
+      });
+      return;
+    }
+  }
 
   // Verify stock and calculate total
   for (const item of items) {
@@ -309,6 +339,7 @@ export async function createOrder(req: Request, res: Response): Promise<void> {
 
   const newOrder: Order = {
     id: "ord_" + generateId(),
+    paypalOrderId: paypalOrderId || undefined,
     buyerId: assignedBuyerId,
     buyerName: assignedBuyerName,
     buyerUsername: assignedBuyerUsername,

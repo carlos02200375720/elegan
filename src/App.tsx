@@ -1584,11 +1584,12 @@ export default function App() {
     shippingCost: number = 0,
     onComplete: (newOrder: Order) => void,
     itemsToCheckout?: CartItem[],
-    buyerInfo?: { buyerName?: string; buyerEmail?: string; buyerPhone?: string }
-  ) => {
+    buyerInfo?: { buyerName?: string; buyerEmail?: string; buyerPhone?: string },
+    paypalOrderId?: string
+  ): Promise<boolean> => {
     const userId = getCartUserId(currentUser);
     const checkoutItems = itemsToCheckout && itemsToCheckout.length > 0 ? itemsToCheckout : cart;
-    apiFetch("/api/orders", {
+    return apiFetch("/api/orders", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -1601,6 +1602,7 @@ export default function App() {
         buyerAvatar: currentUser.avatar,
         buyerEmail: buyerInfo?.buyerEmail || currentUser.email,
         buyerPhone: buyerInfo?.buyerPhone,
+        paypalOrderId,
       }),
     })
       .then((res) => res.json())
@@ -1692,11 +1694,17 @@ export default function App() {
           } catch {}
 
           onComplete(data);
+          return true;
         } else {
-          alert(data.error);
+          alert(data.error || "No se pudo crear el pedido.");
+          return false;
         }
       })
-      .catch((err) => console.error("Error checking out:", err));
+      .catch((err) => {
+        console.error("Error checking out:", err);
+        alert(err instanceof Error ? err.message : "No se pudo confirmar el pago.");
+        return false;
+      });
   };
 
   // Private Messages handler

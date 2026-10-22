@@ -342,6 +342,32 @@ export const androidApi = {
     return readResponseBody(res);
   },
 
+  getPaypalConfig: async (): Promise<{
+    clientId: string;
+    currency: string;
+    mode: "sandbox" | "live";
+  }> => {
+    const res = await androidApiFetch("/paypal/config");
+    const data = await readResponseBody(res);
+    if (!res.ok || data.error || !data.clientId) {
+      throw new Error(data.error || "PayPal no está configurado correctamente en el servidor.");
+    }
+    return data;
+  },
+
+  createPaypalOrder: async (items: CartItem[], shippingCost: number): Promise<{ id: string }> => {
+    const res = await androidApiFetch("/paypal/orders", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ items, shippingCost }),
+    });
+    const data = await readResponseBody(res);
+    if (!res.ok || data.error || !data.id) {
+      throw new Error(data.error || "PayPal no pudo iniciar el pago.");
+    }
+    return data;
+  },
+
   getChatMessages: async (partnerId: string): Promise<ChatMessage[]> => {
     const res = await androidApiFetch(`/chats/${partnerId}`);
     return readResponseBody(res);

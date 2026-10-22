@@ -49,8 +49,9 @@ export interface AndroidShopProps {
     shippingCost: number,
     onComplete: (newOrder: Order) => void,
     itemsToCheckout?: CartItem[],
-    buyerInfo?: { buyerName?: string; buyerEmail?: string; buyerPhone?: string }
-  ) => void;
+    buyerInfo?: { buyerName?: string; buyerEmail?: string; buyerPhone?: string },
+    paypalOrderId?: string
+  ) => Promise<boolean>;
   requiresLoginForCheckout?: boolean;
   onLoginRequiredForCheckout?: (itemsToCheckout: CartItem[]) => void;
   onNavigateToHistory?: () => void;
@@ -443,10 +444,6 @@ export default function Catalogo({
     city: (currentUser as any)?.city || "",
     country: (currentUser as any)?.country || "República Dominicana",
     postalCode: (currentUser as any)?.postalCode || "",
-    cardName: currentUser?.name || "",
-    cardNumber: "",
-    expiry: "",
-    cvv: "",
   }));
 
   // Sincronizar automáticamente los datos guardados en el perfil para autocompletar el checkout
@@ -460,7 +457,6 @@ export default function Catalogo({
         shippingAddress: prev.shippingAddress || (currentUser as any)?.shippingAddress || (currentUser as any)?.address || "",
         city: prev.city || (currentUser as any)?.city || "",
         country: prev.country || (currentUser as any)?.country || "República Dominicana",
-        cardName: prev.cardName || currentUser.name || "",
       }));
     }
   }, [currentUser]);
@@ -898,79 +894,55 @@ export default function Catalogo({
     }, 1500);
   };
 
-  const handleCheckout = async () => {
-    if (effectiveCheckoutItems.length === 0 || isCheckingOut) return;
+  const handleCheckout = async (paypalOrderId: string): Promise<boolean> => {
+    if (effectiveCheckoutItems.length === 0 || isCheckingOut) return false;
     setIsCheckingOut(true);
 
-    const shippingAddress = checkoutForm.shippingAddress || "Dirección Android Principal";
+    const shippingAddress = [
+      checkoutForm.shippingAddress,
+      checkoutForm.city,
+      checkoutForm.country,
+      checkoutForm.postalCode,
+      checkoutForm.phone,
+      checkoutForm.email,
+    ].filter(Boolean).join(", ") || "Dirección Android Principal";
 
     if (onCheckout) {
-      onCheckout(
-        shippingAddress,
-        cartShippingTotal,
-        (newOrder) => {
-          try {
-            if (newOrder) {
-              const uId = currentUser.originalId || currentUser.id;
-              const cacheKey = `mall_user_orders_${uId}`;
-              const prevSaved = JSON.parse(localStorage.getItem(cacheKey) || "[]");
-              const updated = [newOrder, ...prevSaved.filter((o: any) => o.id !== (newOrder as any).id)];
-              localStorage.setItem(cacheKey, JSON.stringify(updated));
-              window.dispatchEvent(new CustomEvent("mall_order_created", { detail: newOrder }));
-            }
-          } catch {}
-          finalizeOrder(shippingAddress, effectiveCheckoutItems);
-        },
-        effectiveCheckoutItems,
-        {
-          buyerName: checkoutForm.fullName.trim(),
-          buyerEmail: checkoutForm.email.trim().toLowerCase(),
-          buyerPhone: checkoutForm.phone.trim(),
-        }
-      );
-      return;
-    }
-
-    try {
-      const orderPayload = {
-        userId: currentUser.originalId || currentUser.id,
-        userName: checkoutForm.fullName || currentUser.name,
-        userEmail: checkoutForm.email || currentUser.email || `${currentUser.username}@android.mallsocial`,
-        buyerPhone: checkoutForm.phone,
-        buyerShippingAddress: shippingAddress,
-        buyerCountry: checkoutForm.country,
-        buyerPostalCode: checkoutForm.postalCode,
-        items: effectiveCheckoutItems,
-        total: cartTotal,
-        platform: "android",
-        createdAt: new Date().toISOString(),
-      };
-
-      const res = await androidApiFetch("/orders", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(orderPayload),
-      });
-
-      if (res.ok) {
-        try {
-          const resData = await res.json().catch(() => null);
-          const createdOrder = resData?.order;
-          if (createdOrder) {
-            const uId = currentUser.originalId || currentUser.id;
-            const cacheKey = `mall_user_orders_${uId}`;
-            const prevSaved = JSON.parse(localStorage.getItem(cacheKey) || "[]");
-            const updated = [createdOrder, ...prevSaved.filter((o: any) => o.id !== createdOrder.id)];
-            localStorage.setItem(cacheKey, JSON.stringify(updated));
-            window.dispatchEvent(new CustomEvent("mall_order_created", { detail: createdOrder }));
-          }
-        } catch {}
-        finalizeOrder(shippingAddress, effectiveCheckoutItems);
+      try {
+        const succeeded = await onCheckout(
+          shippingAddress,
+          cartShippingTotal,
+          (newOrder) => {
+            try {
+              if (newOrder) {
+                const uId = currentUser.originalId || currentUser.id;
+                const cacheKey = `mall_user_orders_${uId}`;
+                const prevSaved = JSON.parse(localStorage.getItem(cacheKey) || "[]");
+                const updated = [newOrder, ...prevSaved.filter((o: any) => o.id !== (newOrder as any).id)];
+                localStorage.setItem(cacheKey, JSON.stringify(updated));
+                window.dispatchEvent(new CustomEvent("mall_order_created", { detail: newOrder }));
+              }
+            } catch {}
+            finalizeOrder(shippingAddress, effectiveCheckoutItems);
+          },
+          effectiveCheckoutItems,
+          {
+            buyerName: checkoutForm.fullName.trim(),
+            buyerEmail: checkoutForm.email.trim().toLowerCase(),
+            buyerPhone: checkoutForm.phone.trim(),
+          },
+          paypalOrderId
+        );
+        if (!succeeded) setIsCheckingOut(false);
+        return succeeded;
+      } catch (error) {
+        setIsCheckingOut(false);
+        throw error;
       }
-    } catch (err) {
-      console.error("Android checkout error:", err);
-      setIsCheckingOut(false);
     }
+
+    setIsCheckingOut(false);
+    return false;
   };
 
   // 1. Thank You Page
