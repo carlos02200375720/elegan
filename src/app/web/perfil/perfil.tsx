@@ -129,11 +129,11 @@ export default function Perfil({
     }
     return null;
   });
-  const [userProducts, setUserProducts] = useState<Product[]>([]);
   const [userReels, setUserReels] = useState<Reel[]>([]);
   const [userOrders, setUserOrders] = useState<Order[]>([]);
   const [userSales, setUserSales] = useState<Order[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
+
 
   // Tracking inspection modal
   const [selectedTrackingOrder, setSelectedTrackingOrder] = useState<Order | null>(null);
@@ -179,6 +179,7 @@ export default function Perfil({
   });
 
 
+
   // Dedicated user publications feed state
   const [activeFeedReelId, setActiveFeedReelId] = useState<string | null>(null);
   const [editPrivacyPolicy, setEditPrivacyPolicy] = useState(currentUser.privacyPolicy || "");
@@ -205,13 +206,9 @@ export default function Perfil({
     if (typeof window === "undefined") return;
     const syncFromUrl = () => {
       const parsed = parseRoute(window.location.pathname);
-      if (parsed.type === "profile" && parsed.profileTab === "guardado") {
-        setActiveSubTab("saved");
-      } else if (parsed.type === "profile" && parsed.profileTab === "compra") {
-        setActiveSubTab("orders");
-      } else if (parsed.type === "profile" && parsed.profileTab === "config") {
-        setActiveSubTab("edit");
-      }
+      if (parsed.type === "profile" && parsed.profileTab === "guardado") setActiveSubTab("saved");
+      else if (parsed.type === "profile" && parsed.profileTab === "compra") setActiveSubTab("orders");
+      else if (parsed.type === "profile" && parsed.profileTab === "config") setActiveSubTab("edit");
     };
     window.addEventListener("popstate", syncFromUrl);
     window.addEventListener("app-route-change", syncFromUrl);
@@ -222,25 +219,14 @@ export default function Perfil({
   }, []);
 
   useEffect(() => {
-    if (typeof window === "undefined" || !isSelf) return;
-    if (isGuestUser(currentUser)) return;
+    if (typeof window === "undefined" || !isSelf || isGuestUser(currentUser)) return;
     const targetUser = profileUser || currentUser;
-    if (activeSubTab === "saved") {
-      const expectedPath = getProfileSavedPath(targetUser);
-      if (window.location.pathname !== expectedPath) {
-        navigateTo(expectedPath, { replace: true });
-      }
-    } else if (activeSubTab === "orders") {
-      const expectedPath = getProfileCompraPath(targetUser);
-      if (window.location.pathname !== expectedPath) {
-        navigateTo(expectedPath, { replace: true });
-      }
-    } else if (activeSubTab === "edit") {
-      const expectedPath = getProfileConfigPath(targetUser);
-      if (window.location.pathname !== expectedPath) {
-        navigateTo(expectedPath, { replace: true });
-      }
-    }
+    const targetPath = activeSubTab === "saved"
+      ? getProfileSavedPath(targetUser)
+      : activeSubTab === "orders"
+        ? getProfileCompraPath(targetUser)
+        : getProfileConfigPath(targetUser);
+    if (window.location.pathname !== targetPath) navigateTo(targetPath, { replace: true });
   }, [isSelf, activeSubTab, profileUser, currentUser]);
 
   useEffect(() => {
@@ -249,6 +235,7 @@ export default function Perfil({
       onClearInitialSubTab?.();
     }
   }, [initialSubTab, onClearInitialSubTab]);
+
 
   // Whenever the active subtab/tarjeta changes or ProfileView unmounts, dismiss any active reel feed and pause all videos
   useEffect(() => {
@@ -339,7 +326,6 @@ export default function Perfil({
           } else {
             setProfileUser(data.user);
           }
-          setUserProducts(deduplicateById(data.products || []));
           setUserReels(deduplicateById(data.reels || []));
           setUserOrders(deduplicateById(data.purchases || data.orders || []));
           if (data.sales) {
@@ -525,25 +511,110 @@ export default function Perfil({
       <div className="w-full max-w-4xl mx-auto h-[450px] bg-white rounded-2xl border border-slate-200 flex flex-col items-center justify-center text-slate-500 p-6 text-center pb-0">
         <p className="font-bold text-slate-700">Perfil no disponible</p>
         <button
-              onClick={() => {
-                if (profileUser) navigateTo(getProfilePath(profileUser));
-              }}
-              className={`py-1.5 px-3.5 sm:px-4 transition-all cursor-pointer flex flex-col items-center justify-center relative group ${
-                publicTab === "policies"
-                  ? "text-amber-500 font-bold scale-105"
-                  : "text-slate-400 hover:text-slate-600"
-              }`}
-              title="Política y Privacidad del Negocio"
-              id="public-tab-policies"
-            >
-              <FileText className="w-4.5 h-4.5 stroke-[2]" />
-              {publicTab === "policies" && (
-                <motion.div
-                  layoutId="activePublicTabIndicator"
-                  className="absolute bottom-0 w-6 h-0.5 bg-amber-500 rounded-full"
-                />
-              )}
+          onClick={onBackToSelf}
+          className="mt-4 px-4 py-2 bg-amber-500 text-slate-950 font-bold rounded-xl text-xs"
+        >
+          Regresar a mi perfil
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="w-full max-w-4xl mx-auto min-h-[600px] bg-white rounded-none sm:rounded-t-none sm:rounded-b-2xl border-0 sm:border sm:border-slate-200 shadow-none sm:shadow-xl overflow-hidden flex flex-col no-scrollbar pb-0"
+      id="profile-panel"
+      style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+    >
+      {/* Profile Info Details Overlay row */}
+      <div className="px-6 sm:px-8 pb-0 relative border-b border-slate-200/80 bg-slate-50 z-10">
+        <div
+          className="flex flex-col sm:flex-row items-start sm:items-end justify-between mt-0 mb-4 gap-4 z-10 relative"
+          style={{ marginTop: "0px", marginBottom: "0px" }}
+        >
+          <div className="flex items-end space-x-4">
+            <div className="flex flex-col items-center shrink-0">
+              <img
+                src={profileUser.avatar || getDefaultAvatar()}
+                alt={profileUser.name}
+                referrerPolicy="no-referrer"
+                className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover border-4 border-white shadow-md bg-white shrink-0"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = getDefaultAvatar();
+                }}
+              />
+              <span className="text-xs text-slate-500 font-bold font-mono mt-1 text-center">
+                @{profileUser.username}
+              </span>
+            </div>
+            <div className="pb-1">
+              <h2 className="font-display font-extrabold text-lg sm:text-xl text-slate-950 flex items-center space-x-2 flex-wrap">
+                <span className="inline-block" style={{ paddingLeft: "18px" }}>
+                  {profileUser.name}
+                </span>
+                {(isSuperAdmin(profileUser) || !isSelf) && (
+                  <BadgeCheck className="w-5 h-5 fill-sky-500 text-white shrink-0" title="Verificado" />
+                )}
+              </h2>
+            </div>
+          </div>
+
+          {/* Call-to-actions / Session indicator */}
+          <div className="sm:pb-1 flex items-center space-x-2">
+            {isSelf && onLogout && (
+              <button
+                type="button"
+                onClick={onLogout}
+                id="profile-logout-btn"
+                className="p-2 text-slate-600 hover:text-red-500 active:scale-95 transition-all cursor-pointer flex items-center justify-center"
+                title="Cerrar sesión"
+                aria-label="Cerrar sesión"
+              >
+                <LogOut className="w-5 h-5" />
+              </button>
+            )}
+            {!isSelf && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => onOpenDirectChat(profileUser)}
+                  className="px-3.5 py-2 bg-slate-950 hover:bg-slate-800 active:scale-95 text-white font-bold text-xs rounded-xl flex items-center space-x-1.5 shadow-sm transition-all cursor-pointer"
+                  id="message-creator-btn"
+                >
+                  <Mail className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                  <span>Mensaje</span>
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Biography summary (Max 50 chars) */}
+        {profileUser.bio && (
+          <div className="mt-2 mb-1">
+            <p className="text-xs text-slate-800 leading-relaxed font-medium max-w-sm break-words bg-transparent rounded-none px-0 py-0.5 shadow-none border-0">
+              {profileUser.bio.length > 50 ? profileUser.bio.slice(0, 50) + "..." : profileUser.bio}
+            </p>
+          </div>
+        )}
+
+        {/* Horizontal Menu with Icons Only */}
+        {isSelf ? (
+          <div className="mt-2 pt-0.5 border-t border-slate-200/80 flex items-center justify-around w-full max-w-sm sm:max-w-md mx-auto">
+            <button onClick={() => handleSelectSubTab("saved")} title="Guardados" className="py-1.5 px-2.5 text-slate-500">
+              <Bookmark className="w-4.5 h-4.5 stroke-[2]" />
             </button>
+            <button onClick={() => { handleSelectSubTab("orders"); fetchOrders(); }} title="Historial de Mis Compras" className="py-1.5 px-2.5 text-slate-500">
+              <ShoppingBag className="w-4.5 h-4.5 stroke-[2]" />
+              {userOrders.length > 0 && <span className="ml-1">{userOrders.length}</span>}
+            </button>
+            <button onClick={() => handleSelectSubTab("edit")} title="Editar Perfil" className="py-1.5 px-2.5 text-slate-500">
+              <Settings className="w-4.5 h-4.5 stroke-[2]" />
+            </button>
+          </div>
+        ) : (
+          <div className="mt-2 pt-0.5 border-t border-slate-200/80 flex items-center justify-center w-full max-w-sm sm:max-w-md mx-auto">
+            <FileText className="w-4.5 h-4.5 stroke-[2] text-amber-500" />
           </div>
         )}
       </div>
@@ -561,7 +632,7 @@ export default function Perfil({
               className="space-y-8"
             >
               <AnimatePresence mode="wait">
-                                {activeSubTab === "saved" && (
+                {activeSubTab === "saved" && (
                   <GuardadoPerfilView
                     savedProducts={savedProducts}
                     savedReels={savedReels}
@@ -584,7 +655,7 @@ export default function Perfil({
                   />
                 )}
 
-                                {activeSubTab === "edit" && (
+                {activeSubTab === "edit" && (
                   <ConfigPerfilView
                     currentUser={currentUser}
                     profileUser={profileUser || currentUser}
@@ -714,7 +785,7 @@ export default function Perfil({
                       </div>
                     </div>
                   </motion.div>
-                )}
+                  </motion.div>
               </AnimatePresence>
             </motion.div>
           )}
