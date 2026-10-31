@@ -77,7 +77,6 @@ export interface PerfilProps {
   onOpenDirectChat: (user: User) => void;
   onSelectProduct: (product: Product) => void;
   onSelectReel: (reelId: string) => void;
-  onToggleFollowUser?: (creatorId: string) => void;
   onProfileUpdate?: (updatedUser: User) => void;
   onRefreshUsers?: () => void;
   onPublishSuccess?: () => void;
@@ -100,7 +99,6 @@ export default function Perfil({
   onOpenDirectChat,
   onSelectProduct,
   onSelectReel,
-  onToggleFollowUser,
   onProfileUpdate,
   onRefreshUsers,
   onPublishSuccess,
@@ -738,28 +736,6 @@ export default function Perfil({
                   <BadgeCheck className="w-5 h-5 fill-sky-500 text-white shrink-0" title="Verificado" />
                 )}
               </h2>
-              {/* Followers and Following counters - Only for Sellers / Admins */}
-              {(profileUser.canSell === true || isSuperAdmin(profileUser)) &&
-                (() => {
-                  const matchedUserInList = users?.find(
-                    (u) =>
-                      u.id === profileUser.id ||
-                      (profileUser.username && u.username?.toLowerCase() === profileUser.username.toLowerCase()) ||
-                      (profileUser.originalId && u.originalId === profileUser.originalId)
-                  );
-                  const effectiveFollowers = matchedUserInList?.followers ?? (profileUser.followers || 0);
-
-                  return (
-                    <div className="flex items-center space-x-3 mt-1">
-                      <span className="text-xs font-bold text-slate-900">
-                        seguidores: {effectiveFollowers.toLocaleString()}
-                      </span>
-                      <span className="text-xs font-bold text-slate-900">
-                        seguidos: {profileUser.following.toLocaleString()}
-                      </span>
-                    </div>
-                  );
-                })()}
             </div>
           </div>
 
