@@ -56,7 +56,6 @@ export interface WebAppProps {
   handleToggleSaveReel: (reelId: string) => void;
   handleSendPrivateMessage: (text: string) => void;
   handleClearUnreads: (userId: string) => void;
-  refreshReels: () => void;
   refreshProducts?: () => void;
   refreshAllData: () => void;
   setCurrentUser: React.Dispatch<React.SetStateAction<User>>;
@@ -109,7 +108,6 @@ export default function WebApp({
   handleToggleSaveReel,
   handleSendPrivateMessage,
   handleClearUnreads,
-  refreshReels,
   refreshProducts,
   refreshAllData,
   setCurrentUser,
