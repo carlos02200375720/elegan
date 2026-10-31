@@ -15,7 +15,6 @@ interface AndroidUserPublicationsFeedProps {
   currentUser: User;
   onClose: () => void;
   onSelectProduct?: (product: Product) => void;
-  onToggleFollowUser?: (creatorId: string) => void;
   onDeleteReel?: (reelId: string) => void;
   onUpdateReels?: (reels: Reel[]) => void;
   savedReelIds?: string[];
