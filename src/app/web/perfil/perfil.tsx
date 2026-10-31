@@ -14,7 +14,6 @@ import {
   Play,
   Bookmark,
   Settings,
-  Plus,
   X,
   LogOut,
   BadgeCheck,
@@ -31,7 +30,6 @@ import {
 import { motion, AnimatePresence } from "motion/react";
 import LoginView from "../LoginView";
 import UserPublicationsFeed from "../components/UserPublicationsFeed";
-import PublishView from "./publicar";
 import GuardadoPerfilView, { PublicationCover } from "./guardado";
 import CompraPerfilView from "./compra";
 import ConfigPerfilView from "./config";
@@ -48,7 +46,6 @@ import {
   getProfileProductoPath,
   getProfileVentaPath,
   getProfilePublicacionesPath,
-  getProfilePublicarPath,
   getProfileRendimientoPath,
 } from "../../../router";
 import { apiFetch } from "../../../config";
@@ -80,7 +77,7 @@ export interface PerfilProps {
   onPublishSuccess?: () => void;
   onLogout?: () => void;
   socket?: WebSocket | null;
-  initialSubTab?: "publish" | "publications" | "products" | "saved" | "orders" | "performance" | "edit";
+  initialSubTab?: "publications" | "products" | "saved" | "orders" | "performance" | "edit";
   onClearInitialSubTab?: () => void;
 }
 
@@ -184,7 +181,7 @@ export default function Perfil({
   const [loading, setLoading] = useState(true);
   const isCurrentSuperAdmin = isSuperAdmin(currentUser);
   const [activeSubTab, setActiveSubTab] = useState<
-    "publish" | "publications" | "products" | "saved" | "orders" | "performance" | "edit"
+    "publications" | "products" | "saved" | "orders" | "performance" | "edit"
   >(() => {
     if (typeof window !== "undefined") {
       const parsed = parseRoute(window.location.pathname);
@@ -210,7 +207,7 @@ export default function Perfil({
         return "performance";
       }
     }
-    return initialSubTab || ((currentUser.canSell === true || isCurrentSuperAdmin) ? "publish" : "saved");
+    return initialSubTab || ((currentUser.canSell === true || isCurrentSuperAdmin) ? "publications" : "saved");
   });
 
   const canSell = isSelf && (currentUser.canSell === true || isCurrentSuperAdmin);
@@ -232,7 +229,7 @@ export default function Perfil({
   const [editPrivacyPolicy, setEditPrivacyPolicy] = useState(currentUser.privacyPolicy || "");
 
   const handleSelectSubTab = (
-    tab: "publish" | "publications" | "products" | "saved" | "orders" | "performance" | "edit"
+    tab: "publications" | "products" | "saved" | "orders" | "performance" | "edit"
   ) => {
     setActiveSubTab(tab);
     if (tab === "products") {
@@ -250,8 +247,6 @@ export default function Perfil({
         navigateTo(getProfileProductoPath(targetUser));
       } else if (tab === "publications") {
         navigateTo(getProfilePublicacionesPath(targetUser));
-      } else if (tab === "publish") {
-        navigateTo(getProfilePublicarPath(targetUser));
       } else if (tab === "performance") {
         navigateTo(getProfileRendimientoPath(targetUser));
       } else {
@@ -280,8 +275,6 @@ export default function Perfil({
       } else if (parsed.type === "profile" && parsed.profileTab === "publicaciones") {
         setActiveSubTab("publications");
         setPublicTab("publications");
-      } else if (parsed.type === "profile" && parsed.profileTab === "publicar") {
-        setActiveSubTab("publish");
       } else if (parsed.type === "profile" && parsed.profileTab === "rendimiento") {
         setActiveSubTab("performance");
       }
@@ -344,11 +337,6 @@ export default function Perfil({
       if (window.location.pathname !== expectedPubPath) {
         navigateTo(expectedPubPath, { replace: true });
       }
-    } else if (activeSubTab === "publish") {
-      const expectedPublicarPath = getProfilePublicarPath(targetUser);
-      if (window.location.pathname !== expectedPublicarPath) {
-        navigateTo(expectedPublicarPath, { replace: true });
-      }
     } else if (activeSubTab === "performance") {
       const expectedRendimientoPath = getProfileRendimientoPath(targetUser);
       if (window.location.pathname !== expectedRendimientoPath) {
@@ -368,8 +356,7 @@ export default function Perfil({
     if (
       isSelf &&
       !canSell &&
-      (activeSubTab === "publish" ||
-        activeSubTab === "publications" ||
+      (activeSubTab === "publications" ||
         activeSubTab === "products" ||
         activeSubTab === "performance")
     ) {
@@ -744,22 +731,6 @@ export default function Perfil({
           <div className="mt-2 pt-0.5 border-t border-slate-200/80 flex items-center justify-around w-full max-w-sm sm:max-w-md mx-auto">
             {canSell && (
               <button
-                onClick={() => handleSelectSubTab("publish")}
-                className={`py-1.5 px-2.5 transition-all cursor-pointer flex flex-col items-center justify-center relative group ${
-                  activeSubTab === "publish" ? "text-amber-500 font-bold scale-105" : "text-slate-400 hover:text-slate-600"
-                }`}
-                title="Publicar"
-                id="profile-subtab-publish"
-              >
-                <Plus className="w-4.5 h-4.5 stroke-[2]" />
-                {activeSubTab === "publish" && (
-                  <motion.div layoutId="activeSubTabIndicator" className="absolute bottom-0 w-6 h-0.5 bg-amber-500 rounded-full" />
-                )}
-              </button>
-            )}
-
-            {canSell && (
-              <button
                 onClick={() => handleSelectSubTab("publications")}
                 className={`py-1.5 px-2.5 transition-all cursor-pointer flex flex-col items-center justify-center relative group ${
                   activeSubTab === "publications"
@@ -945,31 +916,6 @@ export default function Perfil({
               className="space-y-8"
             >
               <AnimatePresence mode="wait">
-                {activeSubTab === "publish" && canSell && (
-                  <motion.div
-                    key="admin-publish"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                  >
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="font-display font-extrabold text-sm text-slate-900 flex items-center space-x-2">
-                        <Plus className="w-4 h-4 text-amber-500" />
-                        <span>Publicar</span>
-                      </h3>
-                    </div>
-                    <PublishView
-                      currentUser={currentUser}
-                      userProducts={userProducts}
-                      onBack={() => handleSelectSubTab("publications")}
-                      onSuccess={() => {
-                        handleSelectSubTab("publications");
-                        onPublishSuccess?.();
-                      }}
-                    />
-                  </motion.div>
-                )}
-
                 {activeSubTab === "publications" && canSell && (
                   <PublicacionesPerfilView
                     userReels={userReels}
