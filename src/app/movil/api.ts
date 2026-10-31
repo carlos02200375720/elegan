@@ -307,15 +307,6 @@ export const androidApi = {
     return readResponseBody(res);
   },
 
-  toggleFollowUser: async (targetUserId: string, currentUserId: string, currentUsername: string) => {
-    const res = await androidApiFetch(`/users/${targetUserId}/follow`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ currentUserId, currentUsername }),
-    });
-    return readResponseBody(res);
-  },
-
   getCart: async (userId: string): Promise<{ items: CartItem[] }> => {
     const res = await androidApiFetch(`/cart/${encodeURIComponent(userId)}`);
     return readResponseBody(res);
