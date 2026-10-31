@@ -26,7 +26,6 @@ export interface InicioProps {
   onAddComment: (reelId: string, text: string) => void;
   savedReelIds: string[];
   onToggleSaveReel: (reelId: string) => void;
-  onToggleFollowUser?: (creatorId: string) => void;
   onGuestInteraction: (action: string) => void;
   initialReelId?: string | null;
   onActiveReelChange?: (reelId: string) => void;
@@ -49,7 +48,6 @@ export default function Inicio({
   onAddComment,
   savedReelIds,
   onToggleSaveReel,
-  onToggleFollowUser,
   onGuestInteraction,
   initialReelId,
   onActiveReelChange,
