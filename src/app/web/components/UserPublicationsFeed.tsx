@@ -14,8 +14,6 @@ import {
   Pause,
   Trash2,
   Send,
-  UserPlus,
-  UserCheck,
   Check,
   AlertCircle,
   Loader2,
@@ -34,7 +32,6 @@ interface UserPublicationsFeedProps {
   currentUser: User;
   onClose: () => void;
   onSelectProduct?: (product: Product) => void;
-  onToggleFollowUser?: (creatorId: string) => void;
   onDeleteReel?: (reelId: string) => void;
   onUpdateReels?: (reels: Reel[]) => void;
   savedReelIds?: string[];
@@ -315,7 +312,6 @@ export default function UserPublicationsFeed({
   currentUser,
   onClose,
   onSelectProduct,
-  onToggleFollowUser,
   onDeleteReel,
   onUpdateReels,
   savedReelIds = [],
@@ -616,11 +612,6 @@ export default function UserPublicationsFeed({
       setDeletingReelId(null);
     }
   };
-
-  const isFollowing =
-    currentUser.followingUserIds?.includes(user.id) ||
-    currentUser.followingUserIds?.includes(user.username) ||
-    currentUser.followingUserIds?.includes(user.originalId || "");
 
   const activeReel = reels[activeIndex];
   const activeVideoEl = videoRefs.current[activeIndex] || null;
