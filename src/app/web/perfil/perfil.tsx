@@ -18,8 +18,6 @@ import {
   X,
   LogOut,
   BadgeCheck,
-  UserPlus,
-  UserCheck,
   Package,
   Check,
   Truck,
@@ -1585,7 +1583,6 @@ export default function Perfil({
             currentUser={currentUser}
             onClose={() => setActiveFeedReelId(null)}
             onSelectProduct={onSelectProduct}
-            onToggleFollowUser={onToggleFollowUser}
             onDeleteReel={(reelId) => {
               setUserReels((prev) => prev.filter((r) => r.id !== reelId));
               if (onPublishSuccess) onPublishSuccess();
