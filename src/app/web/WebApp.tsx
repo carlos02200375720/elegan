@@ -56,7 +56,6 @@ export interface WebAppProps {
   handleLikeReel: (reelId: string) => void;
   handleAddComment: (reelId: string, text: string) => void;
   handleToggleSaveReel: (reelId: string) => void;
-  handleToggleFollowUser: (creatorId: string) => void;
   handleSendPrivateMessage: (text: string) => void;
   handleClearUnreads: (userId: string) => void;
   refreshReels: () => void;
@@ -110,7 +109,6 @@ export default function WebApp({
   handleLikeReel,
   handleAddComment,
   handleToggleSaveReel,
-  handleToggleFollowUser,
   handleSendPrivateMessage,
   handleClearUnreads,
   refreshReels,
@@ -214,7 +212,6 @@ export default function WebApp({
                 onAddComment={handleAddComment}
                 savedReelIds={savedReelIds}
                 onToggleSaveReel={handleToggleSaveReel}
-                onToggleFollowUser={handleToggleFollowUser}
                 onGuestInteraction={(action) => {
                   setGuestInteractionAlert(`Para ${action} en esta publicación, por favor inicia sesión o crea una cuenta de creador.`);
                 }}
@@ -321,7 +318,6 @@ export default function WebApp({
                   onOpenDirectChat={openPrivateChatDirectly}
                   onSelectProduct={handleProductDetailsLink}
                   onSelectReel={handleReelLink}
-                  onToggleFollowUser={handleToggleFollowUser}
                   onProfileUpdate={(updatedUser) => {
                     const wasGuest = isGuestUser(currentUser);
                     setCurrentUser(updatedUser);
