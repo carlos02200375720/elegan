@@ -30,7 +30,7 @@ import {
 import { motion, AnimatePresence } from "motion/react";
 import LoginView from "../LoginView";
 import UserPublicationsFeed from "../components/UserPublicationsFeed";
-import GuardadoPerfilView, { PublicationCover } from "./guardado";
+import GuardadoPerfilView from "./guardado";
 import CompraPerfilView from "./compra";
 import ConfigPerfilView from "./config";
 import {
@@ -178,7 +178,6 @@ export default function Perfil({
     return initialSubTab || "saved";
   });
 
-  const publicTab = "policies";
 
   // Dedicated user publications feed state
   const [activeFeedReelId, setActiveFeedReelId] = useState<string | null>(null);
@@ -614,118 +613,7 @@ export default function Perfil({
               className="space-y-6"
             >
               <AnimatePresence mode="wait">
-                {publicTab === "publications" ? (
-                  <motion.div
-                    key="public-reels"
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -8 }}
-                    transition={{ duration: 0.15 }}
-                  >
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                      {userReels.map((reel, index) => (
-                        <div
-                          key={`${reel.id}-${index}`}
-                          onClick={() => setActiveFeedReelId(reel.id)}
-                          className="aspect-[3/4] rounded-xl overflow-hidden relative border border-slate-200 cursor-pointer group bg-slate-900 shadow-sm"
-                          id={`profile-reel-${reel.id}`}
-                        >
-                          <PublicationCover reel={reel} />
-                          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent opacity-60" />
-
-                          <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between text-white text-[10px] font-mono font-bold">
-                            <span className="flex items-center space-x-0.5">
-                              <Eye className="w-3 h-3 text-slate-200" />
-                              <span>{reel.views}</span>
-                            </span>
-                            <span className="flex items-center space-x-0.5">
-                              <Heart className="w-3 h-3 text-rose-400 fill-rose-400/20" />
-                              <span>{reel.likes}</span>
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-
-                      {userReels.length === 0 && (
-                        <div className="col-span-full py-12 text-center text-xs text-slate-400 border border-dashed border-slate-200 rounded-2xl">
-                          <Play className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                          <p className="font-bold text-slate-500">No hay publicaciones disponibles</p>
-                          <p className="text-[11px] text-slate-400 mt-0.5">
-                            Este creador no ha compartido videos todavía.
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </motion.div>
-                ) : publicTab === "products" ? (
-                  <motion.div
-                    key="public-products"
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -8 }}
-                    transition={{ duration: 0.15 }}
-                  >
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                      {userProducts.map((prod, index) => (
-                        <div
-                          key={`${prod.id}-${index}`}
-                          onClick={() => onSelectProduct(prod)}
-                          className="flex flex-row items-stretch rounded-2xl border border-slate-200 hover:border-amber-500/40 bg-white hover:bg-slate-50/80 shadow-xs hover:shadow-md cursor-pointer transition-all overflow-hidden group min-h-[115px] sm:min-h-[125px]"
-                          id={`profile-prod-${prod.id}`}
-                        >
-                          <div className="w-28 sm:w-32 self-stretch shrink-0 relative bg-slate-100 overflow-hidden">
-                            {prod.imageUrl ? (
-                              <img
-                                src={prod.imageUrl}
-                                alt={prod.name}
-                                referrerPolicy="no-referrer"
-                                className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300"
-                              />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center text-slate-400">
-                                <ShoppingBag className="w-6 h-6" />
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0 p-3 sm:p-3.5 flex flex-col justify-between">
-                            <div>
-                              <h4 className="text-xs sm:text-sm font-bold text-slate-900 truncate">{prod.name}</h4>
-                              <p className="text-[10px] sm:text-xs text-slate-500 line-clamp-2 mt-0.5 leading-relaxed">
-                                {prod.description}
-                              </p>
-                            </div>
-                            <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-100 gap-2 flex-wrap">
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs sm:text-sm font-black font-mono text-emerald-600">
-                                  ${prod.price.toFixed(2)}
-                                </span>
-                                {prod.freeShipping && (
-                                  <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded border bg-emerald-50 text-emerald-700 border-emerald-200">
-                                    <Truck className="w-2.5 h-2.5" />
-                                    <span>Envío Gratis</span>
-                                  </span>
-                                )}
-                              </div>
-                              <span className="text-[10px] text-amber-600 font-bold bg-amber-50 px-2 py-0.5 rounded-md">
-                                Ver detalles →
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-
-                      {userProducts.length === 0 && (
-                        <div className="col-span-full py-12 text-center text-xs text-slate-400 border border-dashed border-slate-200 rounded-2xl">
-                          <ShoppingBag className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-                          <p className="font-bold text-slate-500">Sin productos en venta</p>
-                          <p className="text-[11px] text-slate-400 mt-0.5">
-                            Este creador no tiene productos en su catálogo en este momento.
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </motion.div>
-                ) : (
+                {(
                   <motion.div
                     key="public-policies"
                     initial={{ opacity: 0, y: 8 }}
