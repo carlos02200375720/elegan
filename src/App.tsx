@@ -1492,81 +1492,6 @@ export default function App() {
       .catch((err) => console.error("Error toggling saved item:", err));
   };
 
-  const handleToggleFollowUser = (targetUserId: string) => {
-    if (!targetUserId) return;
-
-    // Optimistic local state update for instant UI feedback on single click
-    setCurrentUser((prev) => {
-      const prevIds = prev.followingUserIds || [];
-      const lowerTarget = targetUserId.toLowerCase();
-      const isAlreadyFollowing = prevIds.some(
-        (id) => id === targetUserId || id.toLowerCase() === lowerTarget
-      );
-      const nextIds = isAlreadyFollowing
-        ? prevIds.filter((id) => id !== targetUserId && id.toLowerCase() !== lowerTarget)
-        : [...prevIds, targetUserId];
-
-      return {
-        ...prev,
-        followingUserIds: nextIds,
-        following: isAlreadyFollowing ? Math.max(0, (prev.following || 1) - 1) : (prev.following || 0) + 1,
-      };
-    });
-
-    const userIdentifier =
-      currentUser.originalId ||
-      currentUser.guestToken ||
-      currentUser.id ||
-      getLocalGuestToken() ||
-      getOrCreateGuestToken();
-    const guestToken = currentUser.guestToken || getLocalGuestToken() || getOrCreateGuestToken();
-
-    apiFetch(`/api/users/${targetUserId}/follow`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        currentUserId: userIdentifier,
-        guestToken,
-        currentUsername: currentUser.username,
-      }),
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success) {
-          setCurrentUser((prev) => {
-            const serverIds: string[] = data.followingUserIds || [];
-            const targetsToRemove = new Set([
-              targetUserId.toLowerCase(),
-              (data.targetUserId || "").toLowerCase(),
-            ]);
-
-            let updatedIds: string[];
-            if (data.isFollowing) {
-              updatedIds = Array.from(new Set([...serverIds, targetUserId, data.targetUserId].filter(Boolean)));
-            } else {
-              updatedIds = serverIds.filter((id) => !targetsToRemove.has(id.toLowerCase()));
-            }
-
-            return {
-              ...prev,
-              followingUserIds: updatedIds,
-              following: data.currentUserFollowing !== undefined ? data.currentUserFollowing : prev.following,
-            };
-          });
-          setUsers((prev) =>
-            prev.map((u) =>
-              u.id === data.targetUserId || u.id === targetUserId || (u.username && u.username.toLowerCase() === targetUserId.toLowerCase())
-                ? { ...u, followers: data.targetFollowers }
-                : u
-            )
-          );
-        } else if (data.error) {
-          console.warn("Follow notification:", data.error);
-        }
-      })
-      .catch((err) => console.error("Error toggling follow:", err));
-  };
-
   // Cart persistence is anchored by registered userId or guest token
   const getCartUserId = (userObj?: User): string | null => {
     const target = userObj || currentUser;
@@ -2138,7 +2063,6 @@ export default function App() {
               handleLikeReel={handleLikeReel}
               handleAddComment={handleAddComment}
               handleToggleSaveReel={handleToggleSaveReel}
-              handleToggleFollowUser={handleToggleFollowUser}
               handleSendPrivateMessage={handleSendPrivateMessage}
               handleClearUnreads={handleClearUnreads}
               refreshReels={refreshReels}
@@ -2195,7 +2119,6 @@ export default function App() {
             handleLikeReel={handleLikeReel}
             handleAddComment={handleAddComment}
             handleToggleSaveReel={handleToggleSaveReel}
-            handleToggleFollowUser={handleToggleFollowUser}
             handleSendPrivateMessage={handleSendPrivateMessage}
             handleClearUnreads={handleClearUnreads}
             refreshReels={refreshReels}
