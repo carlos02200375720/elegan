@@ -785,7 +785,6 @@ export default function Perfil({
                       </div>
                     </div>
                   </motion.div>
-                  </motion.div>
               </AnimatePresence>
             </motion.div>
           )}
