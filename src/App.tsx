@@ -334,8 +334,16 @@ export default function App() {
           .catch(() => {});
       }
     } else if (currentRoute.type === 'inicio' || currentRoute.type === 'reels') {
-      setActiveTab('inicio');
-      if (currentRoute.reelId) {
+      if (activePlatform === 'web') {
+        setActiveTab('shop');
+        setShopInitialStep('catalog');
+        setDirectSelectedProduct(null);
+        setIsProductDetailOpen(false);
+        navigateTo('/tienda/catalogo', { replace: true });
+      } else {
+        setActiveTab('inicio');
+      }
+      if (activePlatform === 'android' && currentRoute.reelId) {
         const existingReel =
           findReelByInicioParam(reels, currentRoute.reelId) ||
           findReelByInicioParam(reels, currentRoute.reelSlug);
@@ -348,7 +356,7 @@ export default function App() {
         } else {
           setTargetReelId((prev) => (prev === currentRoute.reelId ? prev : currentRoute.reelId));
         }
-      } else if (reels.length > 0) {
+      } else if (activePlatform === 'android' && reels.length > 0) {
         const activeOrFirst =
           (targetReelId && findReelByInicioParam(reels, targetReelId)) || reels[0];
         if (activeOrFirst?.id) {
@@ -440,7 +448,7 @@ export default function App() {
         navigateTo('/admin/resumen', { replace: true });
       }
     }
-  }, [currentRoute, products, reels]);
+  }, [currentRoute, products, reels, activePlatform]);
 
   // Keep profile URL synchronized with /perfil/:userId (dominio/perfil/id)
   useEffect(() => {
@@ -2052,7 +2060,6 @@ export default function App() {
               savedReelIds={savedReelIds}
               isLiveViewerOpen={isLiveViewerOpen}
               totalUnreads={totalUnreads}
-              targetReelId={targetReelId}
               handleAddToCart={handleAddToCart}
               handleRemoveFromCart={handleRemoveFromCart}
               handleUpdateCartQuantity={handleUpdateCartQuantity}
@@ -2134,7 +2141,6 @@ export default function App() {
             socket={socketRef.current}
             activePlatform={activePlatform}
             onSwitchPlatform={handleSwitchPlatform}
-            targetReelId={targetReelId}
           />
         </div>
       )}
