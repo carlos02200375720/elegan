@@ -33,9 +33,6 @@ import UserPublicationsFeed from "../components/UserPublicationsFeed";
 import GuardadoPerfilView, { PublicationCover } from "./guardado";
 import CompraPerfilView from "./compra";
 import ConfigPerfilView from "./config";
-import ProductosPerfilView from "./productos";
-import PublicacionesPerfilView from "./publicaciones";
-import RendimientoPerfilView from "./rendimiento";
 import {
   navigateTo,
   parseRoute,
@@ -43,14 +40,9 @@ import {
   getProfileSavedPath,
   getProfileCompraPath,
   getProfileConfigPath,
-  getProfileProductoPath,
-  getProfileVentaPath,
-  getProfilePublicacionesPath,
-  getProfileRendimientoPath,
 } from "../../../router";
 import { apiFetch } from "../../../config";
 import { getDefaultAvatar } from "../../../utils/defaultAssets";
-import { isSuperAdmin } from "../../../superAdmin";
 
 const deduplicateById = <T extends { id: string }>(items: T[]): T[] => {
   const seen = new Set<string>();
@@ -77,7 +69,7 @@ export interface PerfilProps {
   onPublishSuccess?: () => void;
   onLogout?: () => void;
   socket?: WebSocket | null;
-  initialSubTab?: "publications" | "products" | "saved" | "orders" | "performance" | "edit";
+  initialSubTab?: "saved" | "orders" | "edit";
   onClearInitialSubTab?: () => void;
 }
 
@@ -143,17 +135,6 @@ export default function Perfil({
   const [userSales, setUserSales] = useState<Order[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
 
-  // Sub-section for product management panel: "catalog" (Mis Productos) or "sales" (Ventas Entrantes)
-  const [productManagementSection, setProductManagementSection] = useState<"catalog" | "sales">(() => {
-    if (typeof window !== "undefined") {
-      const parsed = parseRoute(window.location.pathname);
-      if (parsed.type === "profile" && parsed.profileTab === "venta") {
-        return "sales";
-      }
-    }
-    return "catalog";
-  });
-
   // Tracking inspection modal
   const [selectedTrackingOrder, setSelectedTrackingOrder] = useState<Order | null>(null);
   const [copiedTrackingId, setCopiedTrackingId] = useState<string | null>(null);
@@ -179,9 +160,8 @@ export default function Perfil({
   }, [savedProductsFromApi, products, effectiveSavedIds, savedReelIds]);
 
   const [loading, setLoading] = useState(true);
-  const isCurrentSuperAdmin = isSuperAdmin(currentUser);
   const [activeSubTab, setActiveSubTab] = useState<
-    "publications" | "products" | "saved" | "orders" | "performance" | "edit"
+    "saved" | "orders" | "edit"
   >(() => {
     if (typeof window !== "undefined") {
       const parsed = parseRoute(window.location.pathname);
@@ -194,47 +174,20 @@ export default function Perfil({
       if (parsed.type === "profile" && parsed.profileTab === "config") {
         return "edit";
       }
-      if (parsed.type === "profile" && (parsed.profileTab === "producto" || parsed.profileTab === "venta")) {
-        return "products";
-      }
-      if (parsed.type === "profile" && parsed.profileTab === "publicaciones") {
-        return "publications";
-      }
-      if (parsed.type === "profile" && parsed.profileTab === "publicar") {
-        return "publish";
-      }
-      if (parsed.type === "profile" && parsed.profileTab === "rendimiento") {
-        return "performance";
-      }
     }
-    return initialSubTab || ((currentUser.canSell === true || isCurrentSuperAdmin) ? "publications" : "saved");
+    return initialSubTab || "saved";
   });
 
-  const canSell = isSelf && (currentUser.canSell === true || isCurrentSuperAdmin);
-  const [publicTab, setPublicTab] = useState<"publications" | "products" | "policies">(() => {
-    if (typeof window !== "undefined") {
-      const parsed = parseRoute(window.location.pathname);
-      if (parsed.type === "profile" && parsed.profileTab === "producto") {
-        return "products";
-      }
-      if (parsed.type === "profile" && parsed.profileTab === "publicaciones") {
-        return "publications";
-      }
-    }
-    return "publications";
-  });
+  const publicTab = "policies";
 
   // Dedicated user publications feed state
   const [activeFeedReelId, setActiveFeedReelId] = useState<string | null>(null);
   const [editPrivacyPolicy, setEditPrivacyPolicy] = useState(currentUser.privacyPolicy || "");
 
   const handleSelectSubTab = (
-    tab: "publications" | "products" | "saved" | "orders" | "performance" | "edit"
+    tab: "saved" | "orders" | "edit"
   ) => {
     setActiveSubTab(tab);
-    if (tab === "products") {
-      setProductManagementSection("catalog");
-    }
     if (isSelf && typeof window !== "undefined") {
       const targetUser = profileUser || currentUser;
       if (tab === "saved") {
@@ -243,12 +196,6 @@ export default function Perfil({
         navigateTo(getProfileCompraPath(targetUser));
       } else if (tab === "edit") {
         navigateTo(getProfileConfigPath(targetUser));
-      } else if (tab === "products") {
-        navigateTo(getProfileProductoPath(targetUser));
-      } else if (tab === "publications") {
-        navigateTo(getProfilePublicacionesPath(targetUser));
-      } else if (tab === "performance") {
-        navigateTo(getProfileRendimientoPath(targetUser));
       } else {
         navigateTo(getProfilePath(targetUser));
       }
@@ -265,19 +212,7 @@ export default function Perfil({
         setActiveSubTab("orders");
       } else if (parsed.type === "profile" && parsed.profileTab === "config") {
         setActiveSubTab("edit");
-      } else if (parsed.type === "profile" && parsed.profileTab === "producto") {
-        setActiveSubTab("products");
-        setProductManagementSection("catalog");
-        setPublicTab("products");
-      } else if (parsed.type === "profile" && parsed.profileTab === "venta") {
-        setActiveSubTab("products");
-        setProductManagementSection("sales");
-      } else if (parsed.type === "profile" && parsed.profileTab === "publicaciones") {
-        setActiveSubTab("publications");
-        setPublicTab("publications");
-      } else if (parsed.type === "profile" && parsed.profileTab === "rendimiento") {
-        setActiveSubTab("performance");
-      }
+
     };
     window.addEventListener("popstate", syncFromUrl);
     window.addEventListener("app-route-change", syncFromUrl);
@@ -290,20 +225,6 @@ export default function Perfil({
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (!isSelf) {
-      if (profileUser && publicTab === "products") {
-        const expectedProdPath = getProfileProductoPath(profileUser);
-        if (window.location.pathname !== expectedProdPath) {
-          navigateTo(expectedProdPath, { replace: true });
-        }
-      } else if (profileUser && publicTab === "publications") {
-        const parsed = parseRoute(window.location.pathname);
-        if (parsed.type === "profile" && parsed.profileTab === "publicaciones") {
-          const expectedPubPath = getProfilePublicacionesPath(profileUser);
-          if (window.location.pathname !== expectedPubPath) {
-            navigateTo(expectedPubPath, { replace: true });
-          }
-        }
-      }
       return;
     }
     const isGuest = isGuestUser(currentUser);
@@ -324,26 +245,7 @@ export default function Perfil({
       if (window.location.pathname !== expectedConfigPath) {
         navigateTo(expectedConfigPath, { replace: true });
       }
-    } else if (activeSubTab === "products") {
-      const expectedPath =
-        productManagementSection === "sales"
-          ? getProfileVentaPath(targetUser)
-          : getProfileProductoPath(targetUser);
-      if (window.location.pathname !== expectedPath) {
-        navigateTo(expectedPath, { replace: true });
-      }
-    } else if (activeSubTab === "publications") {
-      const expectedPubPath = getProfilePublicacionesPath(targetUser);
-      if (window.location.pathname !== expectedPubPath) {
-        navigateTo(expectedPubPath, { replace: true });
-      }
-    } else if (activeSubTab === "performance") {
-      const expectedRendimientoPath = getProfileRendimientoPath(targetUser);
-      if (window.location.pathname !== expectedRendimientoPath) {
-        navigateTo(expectedRendimientoPath, { replace: true });
-      }
-    }
-  }, [isSelf, activeSubTab, productManagementSection, publicTab, profileUser, currentUser]);
+  }, [isSelf, activeSubTab, publicTab, profileUser, currentUser]);
 
   useEffect(() => {
     if (initialSubTab) {
@@ -353,16 +255,6 @@ export default function Perfil({
   }, [initialSubTab, onClearInitialSubTab]);
 
   useEffect(() => {
-    if (
-      isSelf &&
-      !canSell &&
-      (activeSubTab === "publications" ||
-        activeSubTab === "products" ||
-        activeSubTab === "performance")
-    ) {
-      setActiveSubTab("saved");
-    }
-  }, [isSelf, canSell, activeSubTab]);
 
   // Whenever the active subtab/tarjeta changes or ProfileView unmounts, dismiss any active reel feed and pause all videos
   useEffect(() => {
@@ -374,7 +266,7 @@ export default function Perfil({
         } catch {}
       });
     }
-  }, [activeSubTab, publicTab]);
+  }, [activeSubTab]);
 
   useEffect(() => {
     return () => {
@@ -526,7 +418,7 @@ export default function Perfil({
   useEffect(() => {
     if (
       isSelf &&
-      (activeSubTab === "orders" || activeSubTab === "products") &&
+      activeSubTab === "orders" &&
       currentUser &&
       !currentUser.isGuest &&
       currentUser.username !== "invitado"
@@ -639,248 +531,7 @@ export default function Perfil({
       <div className="w-full max-w-4xl mx-auto h-[450px] bg-white rounded-2xl border border-slate-200 flex flex-col items-center justify-center text-slate-500 p-6 text-center pb-0">
         <p className="font-bold text-slate-700">Perfil no disponible</p>
         <button
-          onClick={onBackToSelf}
-          className="mt-4 px-4 py-2 bg-amber-500 text-slate-950 font-bold rounded-xl text-xs"
-        >
-          Regresar a mi perfil
-        </button>
-      </div>
-    );
-  }
-
-  return (
-    <div
-      className="w-full max-w-4xl mx-auto min-h-[600px] bg-white rounded-none sm:rounded-t-none sm:rounded-b-2xl border-0 sm:border sm:border-slate-200 shadow-none sm:shadow-xl overflow-hidden flex flex-col no-scrollbar pb-0"
-      id="profile-panel"
-      style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-    >
-      {/* Profile Info Details Overlay row */}
-      <div className="px-6 sm:px-8 pb-0 relative border-b border-slate-200/80 bg-slate-50 z-10">
-        <div
-          className="flex flex-col sm:flex-row items-start sm:items-end justify-between mt-0 mb-4 gap-4 z-10 relative"
-          style={{ marginTop: "0px", marginBottom: "0px" }}
-        >
-          <div className="flex items-end space-x-4">
-            <div className="flex flex-col items-center shrink-0">
-              <img
-                src={profileUser.avatar || getDefaultAvatar()}
-                alt={profileUser.name}
-                referrerPolicy="no-referrer"
-                className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover border-4 border-white shadow-md bg-white shrink-0"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = getDefaultAvatar();
-                }}
-              />
-              <span className="text-xs text-slate-500 font-bold font-mono mt-1 text-center">
-                @{profileUser.username}
-              </span>
-            </div>
-            <div className="pb-1">
-              <h2 className="font-display font-extrabold text-lg sm:text-xl text-slate-950 flex items-center space-x-2 flex-wrap">
-                <span className="inline-block" style={{ paddingLeft: "18px" }}>
-                  {profileUser.name}
-                </span>
-                {(isSuperAdmin(profileUser) || !isSelf) && (
-                  <BadgeCheck className="w-5 h-5 fill-sky-500 text-white shrink-0" title="Verificado" />
-                )}
-              </h2>
-            </div>
-          </div>
-
-          {/* Call-to-actions / Session indicator */}
-          <div className="sm:pb-1 flex items-center space-x-2">
-            {isSelf && onLogout && (
-              <button
-                type="button"
-                onClick={onLogout}
-                id="profile-logout-btn"
-                className="p-2 text-slate-600 hover:text-red-500 active:scale-95 transition-all cursor-pointer flex items-center justify-center"
-                title="Cerrar sesión"
-                aria-label="Cerrar sesión"
-              >
-                <LogOut className="w-5 h-5" />
-              </button>
-            )}
-            {!isSelf && (
-              <>
-                <button
-                  type="button"
-                  onClick={() => onOpenDirectChat(profileUser)}
-                  className="px-3.5 py-2 bg-slate-950 hover:bg-slate-800 active:scale-95 text-white font-bold text-xs rounded-xl flex items-center space-x-1.5 shadow-sm transition-all cursor-pointer"
-                  id="message-creator-btn"
-                >
-                  <Mail className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                  <span>Mensaje</span>
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* Biography summary (Max 50 chars) */}
-        {profileUser.bio && (
-          <div className="mt-2 mb-1">
-            <p className="text-xs text-slate-800 leading-relaxed font-medium max-w-sm break-words bg-transparent rounded-none px-0 py-0.5 shadow-none border-0">
-              {profileUser.bio.length > 50 ? profileUser.bio.slice(0, 50) + "..." : profileUser.bio}
-            </p>
-          </div>
-        )}
-
-        {/* Horizontal Menu with Icons Only */}
-        {isSelf ? (
-          <div className="mt-2 pt-0.5 border-t border-slate-200/80 flex items-center justify-around w-full max-w-sm sm:max-w-md mx-auto">
-            {canSell && (
-              <button
-                onClick={() => handleSelectSubTab("publications")}
-                className={`py-1.5 px-2.5 transition-all cursor-pointer flex flex-col items-center justify-center relative group ${
-                  activeSubTab === "publications"
-                    ? "text-amber-500 font-bold scale-105"
-                    : "text-slate-400 hover:text-slate-600"
-                }`}
-                title="Mis Publicaciones"
-                id="profile-subtab-publications"
-              >
-                <Play className="w-4.5 h-4.5 fill-current stroke-[2]" />
-                {activeSubTab === "publications" && (
-                  <motion.div layoutId="activeSubTabIndicator" className="absolute bottom-0 w-6 h-0.5 bg-amber-500 rounded-full" />
-                )}
-              </button>
-            )}
-
-            {canSell && (
-              <button
-                onClick={() => {
-                  handleSelectSubTab("products");
-                  fetchOrders();
-                }}
-                className={`py-1.5 px-2.5 transition-all cursor-pointer flex flex-col items-center justify-center relative group ${
-                  activeSubTab === "products" ? "text-amber-500 font-bold scale-105" : "text-slate-400 hover:text-slate-600"
-                }`}
-                title={`Gestión de Productos y Ventas (${userProducts.length} productos, ${userSales.length} ventas)`}
-                id="profile-subtab-products"
-              >
-                <Package className="w-4.5 h-4.5 stroke-[2]" />
-                {activeSubTab === "products" && (
-                  <motion.div layoutId="activeSubTabIndicator" className="absolute bottom-0 w-6 h-0.5 bg-amber-500 rounded-full" />
-                )}
-              </button>
-            )}
-
-            <button
-              onClick={() => handleSelectSubTab("saved")}
-              className={`py-1.5 px-2.5 transition-all cursor-pointer flex flex-col items-center justify-center relative group ${
-                activeSubTab === "saved" ? "text-amber-500 font-bold scale-105" : "text-slate-400 hover:text-slate-600"
-              }`}
-              title="Publicaciones Guardadas"
-              id="profile-subtab-saved"
-            >
-              <Bookmark className="w-4.5 h-4.5 stroke-[2]" />
-              {activeSubTab === "saved" && (
-                <motion.div layoutId="activeSubTabIndicator" className="absolute bottom-0 w-6 h-0.5 bg-amber-500 rounded-full" />
-              )}
-            </button>
-
-            <button
               onClick={() => {
-                handleSelectSubTab("orders");
-                fetchOrders();
-              }}
-              className={`py-1.5 px-2.5 transition-all cursor-pointer flex flex-col items-center justify-center relative group ${
-                activeSubTab === "orders" ? "text-amber-500 font-bold scale-105" : "text-slate-400 hover:text-slate-600"
-              }`}
-              title="Historial de Mis Compras"
-              id="profile-subtab-orders"
-            >
-              <ShoppingBag className="w-4.5 h-4.5 stroke-[2]" />
-              {userOrders.length > 0 && (
-                <span className="absolute -top-1.5 -right-2 bg-amber-500 text-slate-950 text-[8px] font-black px-1 rounded-full min-w-3 h-3 flex items-center justify-center border border-white leading-none shadow-xs">
-                  {userOrders.length}
-                </span>
-              )}
-              {activeSubTab === "orders" && (
-                <motion.div layoutId="activeSubTabIndicator" className="absolute bottom-0 w-6 h-0.5 bg-amber-500 rounded-full" />
-              )}
-            </button>
-
-            {canSell && (
-              <button
-                onClick={() => handleSelectSubTab("performance")}
-                className={`py-1.5 px-2.5 transition-all cursor-pointer flex flex-col items-center justify-center relative group ${
-                  activeSubTab === "performance" ? "text-amber-500 font-bold scale-105" : "text-slate-400 hover:text-slate-600"
-                }`}
-                title="Rendimiento"
-                id="profile-subtab-performance"
-              >
-                <BarChart3 className="w-4.5 h-4.5 stroke-[2]" />
-                {activeSubTab === "performance" && (
-                  <motion.div layoutId="activeSubTabIndicator" className="absolute bottom-0 w-6 h-0.5 bg-amber-500 rounded-full" />
-                )}
-              </button>
-            )}
-
-            <button
-              onClick={() => handleSelectSubTab("edit")}
-              className={`py-1.5 px-2.5 transition-all cursor-pointer flex flex-col items-center justify-center relative group ${
-                activeSubTab === "edit" ? "text-amber-500 font-bold scale-105" : "text-slate-400 hover:text-slate-600"
-              }`}
-              title="Editar Perfil"
-              id="profile-subtab-edit"
-            >
-              <Settings className="w-4.5 h-4.5 stroke-[2]" />
-              {activeSubTab === "edit" && (
-                <motion.div layoutId="activeSubTabIndicator" className="absolute bottom-0 w-6 h-0.5 bg-amber-500 rounded-full" />
-              )}
-            </button>
-          </div>
-        ) : (
-          <div className="mt-2 pt-0.5 border-t border-slate-200/80 flex items-center justify-around w-full max-w-sm sm:max-w-md mx-auto">
-            <button
-              onClick={() => {
-                setPublicTab("publications");
-                if (profileUser) navigateTo(getProfilePublicacionesPath(profileUser));
-              }}
-              className={`py-1.5 px-3.5 sm:px-4 transition-all cursor-pointer flex flex-col items-center justify-center relative group ${
-                publicTab === "publications"
-                  ? "text-amber-500 font-bold scale-105"
-                  : "text-slate-400 hover:text-slate-600"
-              }`}
-              title={`Publicaciones (${userReels.length})`}
-              id="public-tab-publications"
-            >
-              <Play className="w-4.5 h-4.5 fill-current stroke-[2]" />
-              {publicTab === "publications" && (
-                <motion.div
-                  layoutId="activePublicTabIndicator"
-                  className="absolute bottom-0 w-6 h-0.5 bg-amber-500 rounded-full"
-                />
-              )}
-            </button>
-
-            <button
-              onClick={() => {
-                setPublicTab("products");
-                if (profileUser) navigateTo(getProfileProductoPath(profileUser));
-              }}
-              className={`py-1.5 px-3.5 sm:px-4 transition-all cursor-pointer flex flex-col items-center justify-center relative group ${
-                publicTab === "products"
-                  ? "text-amber-500 font-bold scale-105"
-                  : "text-slate-400 hover:text-slate-600"
-              }`}
-              title={`Catálogo (${userProducts.length})`}
-              id="public-tab-products"
-            >
-              <ShoppingBag className="w-4.5 h-4.5 stroke-[2]" />
-              {publicTab === "products" && (
-                <motion.div
-                  layoutId="activePublicTabIndicator"
-                  className="absolute bottom-0 w-6 h-0.5 bg-amber-500 rounded-full"
-                />
-              )}
-            </button>
-
-            <button
-              onClick={() => {
-                setPublicTab("policies");
                 if (profileUser) navigateTo(getProfilePath(profileUser));
               }}
               className={`py-1.5 px-3.5 sm:px-4 transition-all cursor-pointer flex flex-col items-center justify-center relative group ${
@@ -916,44 +567,7 @@ export default function Perfil({
               className="space-y-8"
             >
               <AnimatePresence mode="wait">
-                {activeSubTab === "publications" && canSell && (
-                  <PublicacionesPerfilView
-                    userReels={userReels}
-                    onSelectReel={(reelId) => setActiveFeedReelId(reelId)}
-                    onUpdateReels={setUserReels}
-                    onPublishSuccess={onPublishSuccess}
-                  />
-                )}
-
-                {activeSubTab === "products" && canSell && (
-                  <ProductosPerfilView
-                    currentUser={currentUser}
-                    userProducts={userProducts}
-                    userSales={userSales}
-                    ordersLoading={ordersLoading}
-                    section={productManagementSection}
-                    onSectionChange={(nextSection) => {
-                      setProductManagementSection(nextSection);
-                      if (isSelf) {
-                        const targetUser = profileUser || currentUser;
-                        navigateTo(
-                          nextSection === "sales"
-                            ? getProfileVentaPath(targetUser)
-                            : getProfileProductoPath(targetUser)
-                        );
-                      }
-                    }}
-                    onRefreshOrders={fetchOrders}
-                    onSelectProduct={onSelectProduct}
-                    onUpdateProducts={setUserProducts}
-                    onUpdateSales={setUserSales}
-                    onUpdateOrders={setUserOrders}
-                    onRefreshUsers={onRefreshUsers}
-                    onSelectTrackingOrder={(order) => setSelectedTrackingOrder(order)}
-                  />
-                )}
-
-                {activeSubTab === "saved" && (
+                                {activeSubTab === "saved" && (
                   <GuardadoPerfilView
                     savedProducts={savedProducts}
                     savedReels={savedReels}
@@ -972,23 +586,11 @@ export default function Perfil({
                     userSales={userSales}
                     ordersLoading={ordersLoading}
                     onRefreshOrders={fetchOrders}
-                    onNavigateToSales={() => {
-                      setActiveSubTab("products");
-                      setProductManagementSection("sales");
-                      if (isSelf) {
-                        navigateTo(getProfileVentaPath(profileUser || currentUser));
-                      }
-                      fetchOrders();
-                    }}
                     onSelectTrackingOrder={(order) => setSelectedTrackingOrder(order)}
                   />
                 )}
 
-                {activeSubTab === "performance" && canSell && (
-                  <RendimientoPerfilView userReels={userReels} userProducts={userProducts} />
-                )}
-
-                {activeSubTab === "edit" && (
+                                {activeSubTab === "edit" && (
                   <ConfigPerfilView
                     currentUser={currentUser}
                     profileUser={profileUser || currentUser}
@@ -1001,7 +603,7 @@ export default function Perfil({
                     }}
                     onRefreshUsers={onRefreshUsers}
                     onBackToSelf={onBackToSelf}
-                    onCancel={() => handleSelectSubTab(canSell ? "publications" : "saved")}
+                    onCancel={() => handleSelectSubTab("saved")}
                     onPrivacyPolicyChange={(policy) => setEditPrivacyPolicy(policy)}
                   />
                 )}
