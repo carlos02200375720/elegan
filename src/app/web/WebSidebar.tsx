@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Play, ShoppingBag, User as UserIcon, MessageSquare, Sparkles, ShieldCheck, Menu, X } from "lucide-react";
+import { ShoppingBag, User as UserIcon, MessageSquare, Sparkles, ShieldCheck, Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { User, NavigationTab, isGuestUser } from "../../types";
 import { navigateTo, getProfilePath } from "../../router";
@@ -12,7 +12,6 @@ export interface WebSidebarProps {
   totalUnreads: number;
   selectedCreatorProfileId: string | null;
   setSelectedCreatorProfileId: (creatorId: string | null) => void;
-  refreshReels: () => void;
   hideMobileHamburger?: boolean;
 }
 
@@ -23,20 +22,15 @@ export default function WebSidebar({
   totalUnreads,
   selectedCreatorProfileId,
   setSelectedCreatorProfileId,
-  refreshReels,
   hideMobileHamburger = false,
 }: WebSidebarProps) {
-  const isHomeActive = activeTab === 'inicio' || activeTab === 'reels';
-  const isDarkNavActive = isHomeActive;
+  const isHomeActive = activeTab === 'shop';
+  const isDarkNavActive = false;
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleMobileSelect = (tab: NavigationTab) => {
     setIsMobileMenuOpen(false);
-    if (tab === 'inicio' || tab === 'reels') {
-      refreshReels();
-      setActiveTab('inicio');
-      navigateTo('/inicio');
-    } else if (tab === 'shop') {
+    if (tab === 'inicio' || tab === 'reels' || tab === 'shop') {
       setActiveTab('shop');
       navigateTo('/tienda/catalogo');
     } else if (tab === 'messages') {
@@ -86,36 +80,18 @@ export default function WebSidebar({
 
         {/* Navigation items */}
         <nav className="space-y-1.5" id="web-sidebar-navigation">
-          {/* 1. Inicio */}
-          <button
-            onClick={() => { refreshReels(); setActiveTab('inicio'); navigateTo('/inicio'); }}
-            className={`w-full flex items-center space-x-3.5 px-4 py-3 rounded-2xl font-black text-xs transition-all cursor-pointer ${
-              isHomeActive
-                ? "bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20"
-                : isDarkNavActive
-                ? "text-slate-400 hover:text-white hover:bg-slate-900"
-                : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
-            }`}
-            id="web-nav-inicio"
-          >
-            <Play strokeWidth={2.6} className={`w-5 h-5 ${isHomeActive ? "fill-slate-950" : ""}`} />
-            <span className="font-black tracking-wide">Inicio</span>
-          </button>
-
-          {/* 2. Tienda */}
+          {/* Inicio: catálogo oficial */}
           <button
             onClick={() => { setActiveTab('shop'); navigateTo('/tienda/catalogo'); }}
             className={`w-full flex items-center space-x-3.5 px-4 py-3 rounded-2xl font-black text-xs transition-all cursor-pointer ${
               activeTab === 'shop'
                 ? "bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20"
-                : isDarkNavActive
-                ? "text-slate-400 hover:text-white hover:bg-slate-900"
                 : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
             }`}
-            id="web-nav-shop"
+            id="web-nav-inicio"
           >
             <ShoppingBag strokeWidth={2.6} className={`w-5 h-5 ${activeTab === 'shop' ? "fill-slate-950" : ""}`} />
-            <span className="font-black tracking-wide">Tienda Oficial</span>
+            <span className="font-black tracking-wide">Inicio</span>
           </button>
 
           {/* 3. Mensajes */}
@@ -284,30 +260,16 @@ export default function WebSidebar({
               <nav className="space-y-1.5" id="web-mobile-global-drawer-links">
                 <button
                   type="button"
-                  onClick={() => handleMobileSelect('inicio')}
-                  className={`w-full flex items-center space-x-3.5 px-4 py-3 rounded-2xl font-black text-xs transition-all cursor-pointer ${
-                    isHomeActive
-                      ? "bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20"
-                      : "text-slate-300 hover:text-white hover:bg-slate-900"
-                  }`}
-                  id="mobile-global-nav-inicio"
-                >
-                  <Play strokeWidth={2.6} className={`w-5 h-5 ${isHomeActive ? "fill-slate-950" : ""}`} />
-                  <span className="font-black tracking-wide">Inicio</span>
-                </button>
-
-                <button
-                  type="button"
                   onClick={() => handleMobileSelect('shop')}
                   className={`w-full flex items-center space-x-3.5 px-4 py-3 rounded-2xl font-black text-xs transition-all cursor-pointer ${
                     activeTab === 'shop'
                       ? "bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20"
                       : "text-slate-300 hover:text-white hover:bg-slate-900"
                   }`}
-                  id="mobile-global-nav-shop"
+                  id="mobile-global-nav-inicio"
                 >
                   <ShoppingBag strokeWidth={2.6} className={`w-5 h-5 ${activeTab === 'shop' ? "fill-slate-950" : ""}`} />
-                  <span className="font-black tracking-wide">Tienda</span>
+                  <span className="font-black tracking-wide">Inicio</span>
                 </button>
 
                 <button
