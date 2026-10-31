@@ -61,7 +61,6 @@ export interface AndroidAppProps {
   handleLikeReel: (reelId: string) => void;
   handleAddComment: (reelId: string, text: string) => void;
   handleToggleSaveReel: (reelId: string) => void;
-  handleToggleFollowUser: (creatorId: string) => void;
   handleSendPrivateMessage: (text: string) => void;
   handleClearUnreads: (userId: string) => void;
   refreshReels: () => void;
@@ -138,7 +137,6 @@ export default function AndroidApp({
   handleLikeReel,
   handleAddComment,
   handleToggleSaveReel,
-  handleToggleFollowUser,
   handleSendPrivateMessage,
   handleClearUnreads,
   refreshReels,
@@ -310,7 +308,6 @@ export default function AndroidApp({
                 onAddComment={handleAddComment}
                 savedReelIds={savedReelIds}
                 onToggleSaveReel={handleToggleSaveReel}
-                onToggleFollowUser={handleToggleFollowUser}
                 onAuthRequired={() => {
                   setSelectedCreatorProfileId(null);
                   setActiveTab('profile');
@@ -460,7 +457,6 @@ export default function AndroidApp({
                     onOpenDirectChat={openPrivateChatDirectly}
                     onSelectProduct={handleProductDetailsLink}
                     onSelectReel={handleReelLink}
-                    onToggleFollowUser={handleToggleFollowUser}
                     onProfileUpdate={(updatedUser) => {
                       setCurrentUser(updatedUser);
                       sessionState.setUser(updatedUser);
