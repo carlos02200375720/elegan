@@ -24,7 +24,7 @@ export default function WebSidebar({
   setSelectedCreatorProfileId,
   hideMobileHamburger = false,
 }: WebSidebarProps) {
-  const isHomeActive = activeTab === 'shop';
+  const isHomeActive = false;
   const isDarkNavActive = false;
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
