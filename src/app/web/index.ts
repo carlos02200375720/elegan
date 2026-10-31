@@ -22,7 +22,6 @@ export { default as Compra, default as CompraPerfilView } from "./perfil/compra"
 export { default as Config, default as ConfigPerfilView } from "./perfil/config";
 export { default as LoginView } from "./LoginView";
 export { default as SocialPanel } from "./SocialPanel";
-export { default as PublishView, default as Publicar, default as PublicarPerfilView } from "./perfil/publicar";
 export { default as SplashScreen } from "./SplashScreen";
 export { default as AdminView, default as Resumen } from "../admin/resumen";
 export * from "./api";
