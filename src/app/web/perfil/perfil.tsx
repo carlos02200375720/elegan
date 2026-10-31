@@ -52,7 +52,7 @@ import {
   getProfileRendimientoPath,
 } from "../../../router";
 import { apiFetch } from "../../../config";
-import { getDefaultAvatar, getDefaultCoverPhoto } from "../../../utils/defaultAssets";
+import { getDefaultAvatar } from "../../../utils/defaultAssets";
 import { isSuperAdmin } from "../../../superAdmin";
 
 const deduplicateById = <T extends { id: string }>(items: T[]): T[] => {
@@ -667,48 +667,11 @@ export default function Perfil({
       id="profile-panel"
       style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
     >
-      {/* Profile Header Image Backbanner */}
-      <div className="h-40 bg-slate-900 relative overflow-hidden rounded-t-none">
-        {profileUser.coverPhoto && profileUser.coverPhoto.trim().length > 0 ? (
-          <img
-            src={profileUser.coverPhoto}
-            alt="Profile cover banner"
-            referrerPolicy="no-referrer"
-            className="w-full h-full object-cover opacity-85 rounded-t-none"
-            onError={(e) => {
-              (e.target as HTMLImageElement).src = getDefaultCoverPhoto();
-            }}
-          />
-        ) : (
-          <img
-            src={getDefaultCoverPhoto()}
-            alt="Profile cover banner"
-            referrerPolicy="no-referrer"
-            className="w-full h-full object-cover opacity-85 rounded-t-none"
-          />
-        )}
-        <div className="absolute inset-0 bg-slate-950/20" />
-
-        {/* Top-Right Logout Button - Only visible on user's own profile */}
-        {isSelf && onLogout && (
-          <button
-            type="button"
-            onClick={onLogout}
-            id="profile-logout-btn"
-            className="absolute top-3 right-3 z-20 p-2 text-white hover:opacity-80 active:scale-95 transition-all cursor-pointer flex items-center justify-center group"
-            title="Cerrar sesión"
-            aria-label="Cerrar sesión"
-          >
-            <LogOut className="w-5 h-5 text-white group-hover:text-red-400 transition-colors drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]" />
-          </button>
-        )}
-      </div>
-
       {/* Profile Info Details Overlay row */}
-      <div className="px-6 sm:px-8 pb-0 relative border-b border-slate-200/80 bg-slate-50 rounded-t-3xl -mt-6 z-10">
+      <div className="px-6 sm:px-8 pb-0 relative border-b border-slate-200/80 bg-slate-50 z-10">
         <div
-          className="flex flex-col sm:flex-row items-start sm:items-end justify-between -mt-12 sm:-mt-16 mb-4 gap-4 z-10 relative"
-          style={{ marginTop: "-16px", marginBottom: "0px" }}
+          className="flex flex-col sm:flex-row items-start sm:items-end justify-between mt-0 mb-4 gap-4 z-10 relative"
+          style={{ marginTop: "0px", marginBottom: "0px" }}
         >
           <div className="flex items-end space-x-4">
             <div className="flex flex-col items-center shrink-0">
@@ -739,6 +702,18 @@ export default function Perfil({
 
           {/* Call-to-actions / Session indicator */}
           <div className="sm:pb-1 flex items-center space-x-2">
+            {isSelf && onLogout && (
+              <button
+                type="button"
+                onClick={onLogout}
+                id="profile-logout-btn"
+                className="p-2 text-slate-600 hover:text-red-500 active:scale-95 transition-all cursor-pointer flex items-center justify-center"
+                title="Cerrar sesión"
+                aria-label="Cerrar sesión"
+              >
+                <LogOut className="w-5 h-5" />
+              </button>
+            )}
             {!isSelf && (
               <>
                 <button
