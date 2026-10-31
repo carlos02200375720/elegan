@@ -20,10 +20,6 @@ export { default as Perfil, default as ProfileView } from "./perfil";
 export { default as Guardado, default as GuardadoPerfilView, PublicationCover } from "./perfil/guardado";
 export { default as Compra, default as CompraPerfilView } from "./perfil/compra";
 export { default as Config, default as ConfigPerfilView } from "./perfil/config";
-export { default as Productos, default as ProductosPerfilView } from "./perfil/productos";
-export { default as Venta, default as VentaPerfilView } from "./perfil/venta";
-export { default as Publicaciones, default as PublicacionesPerfilView } from "./perfil/publicaciones";
-export { default as Rendimiento, default as RendimientoPerfilView } from "./perfil/rendimiento";
 export { default as LoginView } from "./LoginView";
 export { default as SocialPanel } from "./SocialPanel";
 export { default as PublishView, default as Publicar, default as PublicarPerfilView } from "./perfil/publicar";
@@ -36,4 +32,3 @@ export * from "./components/ReelProgressBar";
 export { default as UserPublicationsFeed } from "./components/UserPublicationsFeed";
 export { default as VideoUploadPreview } from "./components/VideoUploadPreview";
 export * from "./components/VideoPlayer";
-
