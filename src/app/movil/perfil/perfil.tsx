@@ -32,7 +32,6 @@ export interface AndroidPerfilProps {
   onSelectReel?: (reel: Reel | string) => void;
   onUpdateUser?: (updatedUser: User) => void;
   onProfileUpdate?: (updatedUser: User) => void;
-  onToggleFollowUser?: (creatorId: string) => void;
   onOpenSocial?: () => void;
   unreadCount?: number;
   onOpenPublishModal?: () => void;
@@ -72,7 +71,6 @@ export default function Perfil({
   onSelectReel,
   onUpdateUser,
   onProfileUpdate,
-  onToggleFollowUser,
   onOpenPublishModal,
   onDeleteReel,
   savedReelIds = [],
@@ -296,8 +294,6 @@ export default function Perfil({
     const target = userReels.find((r) => r.id === reelId) || { id: reelId, description: "Publicación" } as Reel;
     setPublicationToDelete(target);
   };
-
-  const isFollowing = currentUser?.followingUserIds?.includes(activeUser.id) || false;
 
   const [extraPublications, setExtraPublications] = useState<Reel[]>([]);
 
@@ -654,21 +650,10 @@ export default function Perfil({
           </div>
         )}
 
-        {/* Stats Row - Only for Sellers / Admins */}
         {isSellerOrAdmin && (
-          <div className="flex items-center space-x-6 mt-4 py-3 border-y border-slate-100 bg-slate-50/70 rounded-2xl text-center">
-            <div className="flex-1">
-              <span className="block text-sm font-bold text-slate-900">{userReels.length}</span>
-              <span className="block text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Reels</span>
-            </div>
-            <div className="flex-1 border-x border-slate-200">
-              <span className="block text-sm font-bold text-slate-900">{typeof activeUser.followers === 'number' ? activeUser.followers : 0}</span>
-              <span className="block text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Seguidores</span>
-            </div>
-            <div className="flex-1">
-              <span className="block text-sm font-bold text-slate-900">{typeof activeUser.following === 'number' ? activeUser.following : 0}</span>
-              <span className="block text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Siguiendo</span>
-            </div>
+          <div className="mt-4 py-3 border-y border-slate-100 bg-slate-50/70 rounded-2xl text-center">
+            <span className="block text-sm font-bold text-slate-900">{userReels.length}</span>
+            <span className="block text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Reels</span>
           </div>
         )}
       </div>
