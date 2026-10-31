@@ -343,7 +343,8 @@ export default function WebApp({
                     if (tab === 'profile') {
                       navigateTo(getProfilePath(currentUser));
                     } else if (tab === 'inicio' || tab === 'reels') {
-                      navigateTo('/inicio');
+                      setActiveTab('shop');
+                      navigateTo('/tienda/catalogo');
                     } else if (tab === 'shop') {
                       navigateTo('/tienda/catalogo');
                     } else if (tab === 'messages') {
