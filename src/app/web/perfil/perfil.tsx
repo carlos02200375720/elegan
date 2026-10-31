@@ -1,23 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { User, Product, Reel, Order, isGuestUser } from "../../../types";
 import {
-  Eye,
-  Heart,
   MessageCircle,
-  BarChart3,
   ShoppingBag,
   ShieldCheck,
   Shield,
   Lock,
   FileText,
   Mail,
-  Play,
   Bookmark,
   Settings,
   X,
   LogOut,
   BadgeCheck,
-  Package,
   Check,
   Truck,
   Copy,
@@ -1054,7 +1049,7 @@ export default function Perfil({
                 ? savedReels
                 : [...userReels, ...savedReels.filter((sr) => !userReels.some((ur) => ur.id === sr.id))]
             }
-            products={userProducts}
+            products={products}
             initialReelId={activeFeedReelId}
             currentUser={currentUser}
             onClose={() => setActiveFeedReelId(null)}
