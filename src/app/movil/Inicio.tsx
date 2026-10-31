@@ -31,7 +31,6 @@ export interface AndroidInicioProps {
   onSelectUser?: (user: User) => void;
   onCreatorClick?: (creatorId: string) => void;
   users?: User[];
-  onToggleFollowUser?: (creatorId: string) => void;
   isFeedActive?: boolean;
   onOpenSocial?: () => void;
   unreadCount?: number;
@@ -97,7 +96,6 @@ export default function Inicio({
   onSelectUser,
   onCreatorClick,
   users = [],
-  onToggleFollowUser,
   isFeedActive = true,
   unreadCount = 0,
   totalUnreads = 0,
@@ -963,7 +961,6 @@ export default function Inicio({
             savedReelIds.includes(reelItem.id) ||
             (Boolean(taggedProduct?.id) && savedReelIds.includes(taggedProduct!.id)) ||
             (Boolean(reelItem.productId) && savedReelIds.includes(reelItem.productId!));
-          const isFollowing = currentUser?.followingUserIds?.includes(reelItem.creatorId) || false;
 
           const effectiveFormat = getEffectiveFormat(reelItem);
           const mediaMaxHeight = `calc(100dvh - ${actualNavHeight + 300}px)`;
