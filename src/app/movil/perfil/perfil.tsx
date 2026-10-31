@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { StatusBar, Style } from "@capacitor/status-bar";
 import { Capacitor } from "@capacitor/core";
 import { User, Reel, Product, Order, isGuestUser } from "../../../types";
-import { Play, ShoppingBag, Bookmark, Settings, LogOut, Edit3, Grid, Camera, Check, Sparkles, UserPlus, UserCheck, X, ExternalLink, Package, Plus, Trash2, ShieldCheck, Truck, Mail, BadgeCheck, ArrowLeft } from "lucide-react";
+import { Play, ShoppingBag, Bookmark, Settings, LogOut, Edit3, Grid, Camera, Check, Sparkles, UserPlus, X, ExternalLink, Package, Plus, Trash2, ShieldCheck, Truck, Mail, BadgeCheck, ArrowLeft } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { androidApiFetch } from "../api";
 import AndroidUserPublicationsFeed from "../componente/Feedperfil";
