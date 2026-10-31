@@ -46,7 +46,9 @@ export interface WebAppProps {
     shippingCost: number,
     onComplete: (newOrder: Order) => void,
     itemsToCheckout?: CartItem[],
-    buyerInfo?: { buyerName?: string; buyerEmail?: string; buyerPhone?: string }
+    buyerInfo?: { buyerName?: string; buyerEmail?: string; buyerPhone?: string },
+    paypalOrderId?: string,
+    extraPaymentDetails?: any
   ) => void;
   handleCreatorProfileLink: (creatorId: string) => void;
   handleProductDetailsLink: (product: Product) => void;

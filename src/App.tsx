@@ -1219,13 +1219,57 @@ export default function App() {
       .then((res) => res.json())
       .then((data) => {
         if (!data.error) {
-          setReels((prev) =>
-            prev.map((r) =>
-              r.id === reelId
-                ? { ...r, likes: data.likes, likedBy: data.likedBy || [] }
-                : r
-            )
-          );
+          setReels((prev) => {
+            const exists = prev.some((r) => r.id === reelId);
+            if (exists) {
+              return prev.map((r) =>
+                r.id === reelId
+                  ? { ...r, likes: data.likes, likedBy: data.likedBy || [] }
+                  : r
+              );
+            }
+            if (reelId.startsWith("reel_prod_")) {
+              const pId = reelId.replace("reel_prod_", "");
+              const p = products.find((prod) => prod.id === pId);
+              if (p) {
+                const productImages = (p.images || []).filter(
+                  (img): img is string => typeof img === "string" && img.trim().length > 0
+                );
+                if (productImages.length === 0 && p.imageUrl) productImages.push(p.imageUrl);
+                const productVideos = (p.videos || []).filter(
+                  (vid): vid is string => typeof vid === "string" && vid.trim().length > 0
+                );
+                const companion: Reel = {
+                  id: reelId,
+                  type: "product",
+                  title: p.name,
+                  description: p.description || "",
+                  caption: p.description || "",
+                  creatorId: p.sellerId || "seller",
+                  creatorName: p.sellerName || "Vendedor",
+                  creatorUsername: p.sellerUsername,
+                  creatorAvatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80",
+                  videoUrl: productVideos[0] || "",
+                  thumbnailUrl: p.imageUrl || productImages[0] || "",
+                  images: productImages,
+                  media: [
+                    ...productVideos.map((url) => ({ type: "video" as const, url })),
+                    ...productImages.map((url) => ({ type: "image" as const, url })),
+                  ],
+                  likes: data.likes ?? 1,
+                  likedBy: data.likedBy || [userIdentifier],
+                  comments: [],
+                  shares: 0,
+                  saves: 0,
+                  views: 0,
+                  productId: p.id,
+                  aspectRatio: "square",
+                };
+                return [companion, ...prev];
+              }
+            }
+            return prev;
+          });
         }
       })
       .catch((err) => console.error("Error liking reel:", err));
@@ -1260,26 +1304,73 @@ export default function App() {
       .then((res) => res.json())
       .then((data) => {
         if (!data.error && data.id) {
-          setReels((prev) =>
-            prev.map((r) => {
-              if (r.id === reelId) {
-                const exists = r.comments.some((c) => c.id === data.id);
-                if (exists) return r;
-                return { ...r, comments: [...r.comments, data] };
+          setReels((prev) => {
+            const exists = prev.some((r) => r.id === reelId);
+            if (exists) {
+              return prev.map((r) => {
+                if (r.id === reelId) {
+                  const hasComment = r.comments.some((c) => c.id === data.id);
+                  if (hasComment) return r;
+                  return { ...r, comments: [...r.comments, data] };
+                }
+                return r;
+              });
+            }
+            if (reelId.startsWith("reel_prod_")) {
+              const pId = reelId.replace("reel_prod_", "");
+              const p = products.find((prod) => prod.id === pId);
+              if (p) {
+                const productImages = (p.images || []).filter(
+                  (img): img is string => typeof img === "string" && img.trim().length > 0
+                );
+                if (productImages.length === 0 && p.imageUrl) productImages.push(p.imageUrl);
+                const productVideos = (p.videos || []).filter(
+                  (vid): vid is string => typeof vid === "string" && vid.trim().length > 0
+                );
+                const companion: Reel = {
+                  id: reelId,
+                  type: "product",
+                  title: p.name,
+                  description: p.description || "",
+                  caption: p.description || "",
+                  creatorId: p.sellerId || "seller",
+                  creatorName: p.sellerName || "Vendedor",
+                  creatorUsername: p.sellerUsername,
+                  creatorAvatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80",
+                  videoUrl: productVideos[0] || "",
+                  thumbnailUrl: p.imageUrl || productImages[0] || "",
+                  images: productImages,
+                  media: [
+                    ...productVideos.map((url) => ({ type: "video" as const, url })),
+                    ...productImages.map((url) => ({ type: "image" as const, url })),
+                  ],
+                  likes: 0,
+                  likedBy: [],
+                  comments: [data],
+                  shares: 0,
+                  saves: 0,
+                  views: 0,
+                  productId: p.id,
+                  aspectRatio: "square",
+                };
+                return [companion, ...prev];
               }
-              return r;
-            })
-          );
+            }
+            return prev;
+          });
         }
       })
       .catch((err) => console.error("Error commenting reel:", err));
   };
 
   const handleToggleSaveReel = (reelId: string) => {
-    const isSaved = savedReelIds.includes(reelId);
+    const isProductReel = reelId.startsWith("reel_prod_");
+    const targetProdId = isProductReel ? reelId.replace("reel_prod_", "") : undefined;
+    const isSaved = savedReelIds.includes(reelId) || (Boolean(targetProdId) && savedReelIds.includes(targetProdId!));
+
     const newSavedIds = isSaved
-      ? savedReelIds.filter((id) => id !== reelId)
-      : [...savedReelIds, reelId];
+      ? savedReelIds.filter((id) => id !== reelId && id !== targetProdId)
+      : Array.from(new Set([...savedReelIds, reelId, ...(targetProdId ? [targetProdId] : [])]));
 
     // Optimistic update for UI state
     setSavedReelIds(newSavedIds);
@@ -1304,18 +1395,61 @@ export default function App() {
     } catch {}
 
     // Optimistic update for reel saves count if it's a reel
-    setReels((prev) =>
-      prev.map((r) => {
-        if (r.id === reelId) {
-          const currentSaves = r.saves ?? 0;
-          return {
-            ...r,
-            saves: isSaved ? Math.max(0, currentSaves - 1) : currentSaves + 1,
+    setReels((prev) => {
+      const exists = prev.some((r) => r.id === reelId);
+      if (exists) {
+        return prev.map((r) => {
+          if (r.id === reelId) {
+            const currentSaves = r.saves ?? 0;
+            return {
+              ...r,
+              saves: isSaved ? Math.max(0, currentSaves - 1) : currentSaves + 1,
+            };
+          }
+          return r;
+        });
+      }
+      if (isProductReel && targetProdId) {
+        const p = products.find((prod) => prod.id === targetProdId);
+        if (p) {
+          const productImages = (p.images || []).filter(
+            (img): img is string => typeof img === "string" && img.trim().length > 0
+          );
+          if (productImages.length === 0 && p.imageUrl) productImages.push(p.imageUrl);
+          const productVideos = (p.videos || []).filter(
+            (vid): vid is string => typeof vid === "string" && vid.trim().length > 0
+          );
+          const companion: Reel = {
+            id: reelId,
+            type: "product",
+            title: p.name,
+            description: p.description || "",
+            caption: p.description || "",
+            creatorId: p.sellerId || "seller",
+            creatorName: p.sellerName || "Vendedor",
+            creatorUsername: p.sellerUsername,
+            creatorAvatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80",
+            videoUrl: productVideos[0] || "",
+            thumbnailUrl: p.imageUrl || productImages[0] || "",
+            images: productImages,
+            media: [
+              ...productVideos.map((url) => ({ type: "video" as const, url })),
+              ...productImages.map((url) => ({ type: "image" as const, url })),
+            ],
+            likes: 0,
+            likedBy: [],
+            comments: [],
+            shares: 0,
+            saves: isSaved ? 0 : 1,
+            views: 0,
+            productId: p.id,
+            aspectRatio: "square",
           };
+          return [companion, ...prev];
         }
-        return r;
-      })
-    );
+      }
+      return prev;
+    });
 
     // Sync to backend for either registered user or token-identified guest
     apiFetch("/api/users/current/save", {
@@ -1323,7 +1457,7 @@ export default function App() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         reelId,
-        productId: reelId,
+        productId: targetProdId || reelId,
         id: reelId,
         userId: userIdentifier,
         guestToken,
@@ -1585,10 +1719,24 @@ export default function App() {
     onComplete: (newOrder: Order) => void,
     itemsToCheckout?: CartItem[],
     buyerInfo?: { buyerName?: string; buyerEmail?: string; buyerPhone?: string },
-    paypalOrderId?: string
+    paypalOrderId?: string,
+    extraPaymentDetails?: {
+      paymentMethod?: string;
+      paymentReceiptUrl?: string | null;
+      receiptFileName?: string;
+      bankName?: string;
+    }
   ): Promise<boolean> => {
     const userId = getCartUserId(currentUser);
     const checkoutItems = itemsToCheckout && itemsToCheckout.length > 0 ? itemsToCheckout : cart;
+    const resolvedMethod =
+      extraPaymentDetails?.paymentMethod ||
+      (paypalOrderId?.startsWith("transferencia")
+        ? "transferencia"
+        : paypalOrderId?.startsWith("contra_entrega")
+        ? "contra_entrega"
+        : "tarjeta");
+
     return apiFetch("/api/orders", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -1603,6 +1751,10 @@ export default function App() {
         buyerEmail: buyerInfo?.buyerEmail || currentUser.email,
         buyerPhone: buyerInfo?.buyerPhone,
         paypalOrderId,
+        paymentMethod: resolvedMethod,
+        paymentReceiptUrl: extraPaymentDetails?.paymentReceiptUrl || undefined,
+        receiptFileName: extraPaymentDetails?.receiptFileName || undefined,
+        bankName: extraPaymentDetails?.bankName || undefined,
       }),
     })
       .then((res) => res.json())

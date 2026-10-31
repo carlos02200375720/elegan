@@ -587,21 +587,10 @@ export default function Perfil({
                 </>
               ) : (
                 <div className="flex items-center space-x-2">
-                  <button
-                    onClick={() => onToggleFollowUser?.(activeUser.id)}
-                    className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center space-x-1.5 active:scale-95 transition-all cursor-pointer ${
-                      isFollowing
-                        ? "bg-slate-100 text-slate-700 border border-slate-300"
-                        : "bg-amber-500 text-slate-950 shadow-sm"
-                    }`}
-                  >
-                    {isFollowing ? <UserCheck className="w-3.5 h-3.5" /> : <UserPlus className="w-3.5 h-3.5" />}
-                    <span>{isFollowing ? "Siguiendo" : "Seguir"}</span>
-                  </button>
                   {onOpenDirectChat && (
                     <button
                       onClick={() => onOpenDirectChat(activeUser)}
-                      className="px-3 py-2 bg-slate-100 text-slate-800 rounded-xl text-xs font-bold border border-slate-200 active:scale-95 cursor-pointer"
+                      className="px-3.5 py-2 bg-slate-100 text-slate-800 rounded-xl text-xs font-bold border border-slate-200 active:scale-95 cursor-pointer"
                     >
                       Mensaje
                     </button>

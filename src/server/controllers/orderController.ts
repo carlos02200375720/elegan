@@ -21,14 +21,33 @@ import {
  * Create purchase order (checkout)
  */
 export async function createOrder(req: Request, res: Response): Promise<void> {
-  const { items, shippingAddress, shippingCost, userId, buyerName, buyerUsername, buyerAvatar, buyerEmail } = req.body;
+  const {
+    items,
+    shippingAddress,
+    shippingCost,
+    userId,
+    buyerName,
+    buyerUsername,
+    buyerAvatar,
+    buyerEmail,
+    buyerPhone,
+    paymentMethod,
+    paymentReceiptUrl,
+    receiptFileName,
+    bankName,
+    receiptVerified,
+  } = req.body;
   const paypalOrderId = typeof req.body.paypalOrderId === "string" ? req.body.paypalOrderId.trim() : "";
   if (!items || !items.length) {
     res.status(400).json({ error: "Cart is empty" });
     return;
   }
 
-  if (paypalOrderId) {
+  const isTransfer = paymentMethod === "transferencia" || paypalOrderId.startsWith("transferencia");
+  const isCashOnDelivery = paymentMethod === "contra_entrega" || paypalOrderId.startsWith("contra_entrega");
+  const isTruePaypal = Boolean(paypalOrderId && !isTransfer && !isCashOnDelivery);
+
+  if (isTruePaypal) {
     const existingMemoryOrder = orders.find((order) => order.paypalOrderId === paypalOrderId);
     if (existingMemoryOrder) {
       res.json(existingMemoryOrder);
@@ -42,7 +61,6 @@ export async function createOrder(req: Request, res: Response): Promise<void> {
         return;
       }
     }
-
   }
 
   let total = 0;
@@ -51,7 +69,7 @@ export async function createOrder(req: Request, res: Response): Promise<void> {
   const userMap = new Map<string, any>();
   dbUsers.forEach((u: any) => userMap.set(u.id, u));
 
-  if (paypalOrderId) {
+  if (isTruePaypal) {
     try {
       await capturePaypalOrder(paypalOrderId, items, Number(shippingCost) || 0);
     } catch (paymentError) {
@@ -337,32 +355,66 @@ export async function createOrder(req: Request, res: Response): Promise<void> {
     }
   }
 
+  const resolvedPaymentMethod =
+    paymentMethod ||
+    (paypalOrderId?.startsWith("transferencia")
+      ? "transferencia"
+      : paypalOrderId?.startsWith("contra_entrega")
+      ? "contra_entrega"
+      : "tarjeta");
+
+  const resolvedPaymentStatus =
+    resolvedPaymentMethod === "transferencia"
+      ? (receiptVerified ? "paid" : "pending")
+      : resolvedPaymentMethod === "contra_entrega"
+      ? "pending"
+      : "paid";
+
   const newOrder: Order = {
     id: "ord_" + generateId(),
     paypalOrderId: paypalOrderId || undefined,
+    paymentMethod: resolvedPaymentMethod,
+    paymentReceiptUrl: paymentReceiptUrl || undefined,
+    receiptFileName: receiptFileName || undefined,
+    bankName: bankName || undefined,
+    receiptVerified: Boolean(receiptVerified),
     buyerId: assignedBuyerId,
     buyerName: assignedBuyerName,
     buyerUsername: assignedBuyerUsername,
     buyerAvatar: assignedBuyerAvatar,
     buyerEmail: assignedBuyerEmail,
+    buyerPhone: buyerPhone || undefined,
     items: orderItems,
     total: Math.round((total + Number.EPSILON) * 100) / 100,
     shippingCost: Number(shippingCost) || 0,
     shippingAddress: shippingAddress || "Dirección de Entrega Principal",
-    paymentStatus: "paid",
+    paymentStatus: resolvedPaymentStatus,
     status: "processing",
     trackingNumber: "",
     carrier: assignedCarrier,
     trackingUrl: "",
     estimatedDelivery: estimatedDate,
-    sellerNotes: "Pedido recibido. El vendedor preparará el paquete y registrará el número de guía de paquetería.",
+    sellerNotes:
+      resolvedPaymentMethod === "transferencia"
+        ? "Transferencia bancaria. Comprobante adjuntado por el cliente, pendiente de verificación."
+        : resolvedPaymentMethod === "contra_entrega"
+        ? "Pago contra entrega en Santo Domingo. Cobro en efectivo al entregar."
+        : "Pedido pagado con tarjeta/PayPal. Preparar despacho.",
     autoCreatedUser: autoCreatedUserSummary,
     statusHistory: [
       {
         status: "pending",
-        label: "Pago aprobado y orden confirmada",
+        label:
+          resolvedPaymentMethod === "transferencia"
+            ? "Comprobante de transferencia cargado"
+            : resolvedPaymentMethod === "contra_entrega"
+            ? "Orden confirmada para cobro contra entrega"
+            : "Pago aprobado y orden confirmada",
         timestamp: nowIso,
-        note: "Transacción aprobada de manera segura.",
+        note:
+          resolvedPaymentMethod === "transferencia"
+            ? "El comprobante fue cargado por el comprador para verificación."
+            : "Transacción aprobada de manera segura.",
       },
       {
         status: "processing",
@@ -561,6 +613,15 @@ export async function updateTracking(req: Request, res: Response): Promise<void>
 
   const updatedHistory = [...(currentOrder.statusHistory || []), historyEntry];
 
+  const newReceiptVerified =
+    req.body.receiptVerified !== undefined ? Boolean(req.body.receiptVerified) : currentOrder.receiptVerified;
+  const newPaymentStatus =
+    req.body.paymentStatus !== undefined
+      ? req.body.paymentStatus
+      : newReceiptVerified
+      ? "paid"
+      : currentOrder.paymentStatus;
+
   const updatedOrder: Order = {
     ...currentOrder,
     status: newStatus as any,
@@ -569,6 +630,8 @@ export async function updateTracking(req: Request, res: Response): Promise<void>
     trackingUrl: newTrackingUrl,
     estimatedDelivery: newEstimated,
     sellerNotes: newNotes,
+    receiptVerified: newReceiptVerified,
+    paymentStatus: newPaymentStatus,
     statusHistory: updatedHistory,
     updatedAt: nowIso,
   };
@@ -587,13 +650,15 @@ export async function updateTracking(req: Request, res: Response): Promise<void>
             trackingUrl: newTrackingUrl,
             estimatedDelivery: newEstimated,
             sellerNotes: newNotes,
+            receiptVerified: newReceiptVerified,
+            paymentStatus: newPaymentStatus,
             statusHistory: updatedHistory,
             updatedAt: nowIso,
           },
         },
         { returnDocument: "after", upsert: true }
       );
-      console.log(`💾 Order ${id} tracking updated in MongoDB Atlas (Tracking: ${newTracking}, Status: ${newStatus})`);
+      console.log(`💾 Order ${id} tracking updated in MongoDB Atlas (Tracking: ${newTracking}, Status: ${newStatus}, Verified: ${newReceiptVerified})`);
     } catch (dbErr) {
       console.error("❌ Failed to update order tracking in MongoDB Atlas:", dbErr);
     }

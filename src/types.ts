@@ -201,6 +201,11 @@ export interface Order {
   shippingCost?: number;
   shippingAddress: string;
   paymentStatus: 'paid' | 'pending';
+  paymentMethod?: 'transferencia' | 'tarjeta' | 'contra_entrega' | string;
+  paymentReceiptUrl?: string;
+  receiptFileName?: string;
+  bankName?: string;
+  receiptVerified?: boolean;
   status?: OrderStatus;
   trackingNumber?: string;
   carrier?: string;

@@ -1297,7 +1297,25 @@ export function createAndroidRouter(deps: AndroidRouterDependencies): Router {
       let likedBy: string[] = [];
 
       if (mongoose.connection.readyState === 1) {
-        const reel = await MongoReel.findOne({ id: reelId });
+        let reel = await MongoReel.findOne({ id: reelId });
+
+        // If not in Mongo and is a companion reel for a product, find product and generate companion reel
+        if (!reel && reelId.startsWith("reel_prod_")) {
+          const prodId = reelId.replace("reel_prod_", "");
+          const product = await MongoProduct.findOne({ id: prodId });
+          if (product) {
+            const seller = await MongoUser.findOne({
+              $or: [
+                ...(product.sellerId ? [{ id: product.sellerId }, { _id: mongoose.isValidObjectId(product.sellerId) ? product.sellerId : undefined }] : []),
+                ...(product.sellerUsername ? [{ username: product.sellerUsername }] : []),
+              ],
+            });
+            const companion = createCompanionReelForProduct(product, seller);
+            companion.id = reelId;
+            reel = await saveCanonicalReelToMongo(companion);
+          }
+        }
+
         if (reel) {
           const set = new Set<string>(reel.likedBy || []);
           if (set.has(targetUserId)) {
@@ -1308,6 +1326,16 @@ export function createAndroidRouter(deps: AndroidRouterDependencies): Router {
           likedBy = Array.from(set);
           likes = likedBy.length;
           await MongoReel.updateOne({ id: reelId }, { $set: { likes, likedBy } });
+
+          // Keep in-memory reels updated and broadcast
+          const current = getReels();
+          setReels(current.map((r) => (r.id === reelId ? { ...r, likes, likedBy } : r)));
+          broadcastToAll({
+            type: "reel_updated",
+            reelId,
+            likes,
+            likedBy,
+          });
         }
       }
 
@@ -1337,7 +1365,38 @@ export function createAndroidRouter(deps: AndroidRouterDependencies): Router {
       };
 
       if (mongoose.connection.readyState === 1) {
+        let reel = await MongoReel.findOne({ id: reelId });
+
+        if (!reel && reelId.startsWith("reel_prod_")) {
+          const prodId = reelId.replace("reel_prod_", "");
+          const product = await MongoProduct.findOne({ id: prodId });
+          if (product) {
+            const seller = await MongoUser.findOne({
+              $or: [
+                ...(product.sellerId ? [{ id: product.sellerId }, { _id: mongoose.isValidObjectId(product.sellerId) ? product.sellerId : undefined }] : []),
+                ...(product.sellerUsername ? [{ username: product.sellerUsername }] : []),
+              ],
+            });
+            const companion = createCompanionReelForProduct(product, seller);
+            companion.id = reelId;
+            reel = await saveCanonicalReelToMongo(companion);
+          }
+        }
+
         await MongoReel.updateOne({ id: reelId }, { $push: { comments: newComment } });
+
+        // Update in-memory state and broadcast
+        const current = getReels();
+        setReels(
+          current.map((r) =>
+            r.id === reelId ? { ...r, comments: [...(r.comments || []), newComment] } : r
+          )
+        );
+        broadcastToAll({
+          type: "reel_updated",
+          reelId,
+          newComment,
+        });
       }
 
       res.json(newComment);

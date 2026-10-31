@@ -776,54 +776,6 @@ export default function Perfil({
                   <Mail className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                   <span>Mensaje</span>
                 </button>
-
-                {onToggleFollowUser &&
-                  (() => {
-                    const isFollowingCreator = Boolean(
-                      currentUser.followingUserIds?.some(
-                        (id) =>
-                          id === profileUser.id ||
-                          id === profileUser.username ||
-                          (profileUser.originalId && id === profileUser.originalId) ||
-                          (profileUser.username && id.toLowerCase() === profileUser.username.toLowerCase()) ||
-                          (profileUser.id && id.toLowerCase() === profileUser.id.toLowerCase())
-                      )
-                    );
-
-                    return (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (isSelf) return;
-                          const targetId =
-                            profileUser.username && profileUser.username !== "invitado"
-                              ? profileUser.username
-                              : profileUser.id && profileUser.id !== "current_user"
-                              ? profileUser.id
-                              : profileUser.name || "current_user";
-                          onToggleFollowUser(targetId);
-                        }}
-                        id="follow-creator-profile-btn"
-                        className={`px-3.5 py-2 text-xs font-bold rounded-xl flex items-center space-x-1.5 shadow-sm transition-all cursor-pointer active:scale-95 border ${
-                          isFollowingCreator
-                            ? "bg-slate-200/90 hover:bg-rose-50 text-slate-700 hover:text-rose-600 border-slate-300 hover:border-rose-200"
-                            : "bg-amber-500 hover:bg-amber-400 text-slate-950 border-amber-500 font-extrabold"
-                        } ${isSelf ? "opacity-75 cursor-default" : ""}`}
-                      >
-                        {isFollowingCreator ? (
-                          <>
-                            <UserCheck className="w-3.5 h-3.5 shrink-0" />
-                            <span>Siguiendo</span>
-                          </>
-                        ) : (
-                          <>
-                            <UserPlus className="w-3.5 h-3.5 shrink-0" />
-                            <span>{isSelf ? "Tu Perfil" : "Seguir"}</span>
-                          </>
-                        )}
-                      </button>
-                    );
-                  })()}
               </>
             )}
           </div>

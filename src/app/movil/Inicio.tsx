@@ -118,6 +118,10 @@ export default function Inicio({
   initialReelId,
   onActiveReelChange,
 }: AndroidInicioProps) {
+  const [localReelOverrides, setLocalReelOverrides] = useState<
+    Record<string, { likes?: number; likedBy?: string[]; comments?: Comment[]; saves?: number; shares?: number }>
+  >({});
+
   const allReels = useMemo(() => {
     const productPublications = products
       .filter((product) => {
@@ -129,6 +133,12 @@ export default function Inicio({
         );
       })
       .map((product): Reel => {
+        const canonicalId = `reel_prod_${product.id}`;
+        const override = localReelOverrides[canonicalId] || localReelOverrides[product.id];
+        const existingReel = publishedReels.find(
+          (r) => r.id === canonicalId || (r.type === "product" && r.productId === product.id)
+        );
+
         const productImages = (product.images || []).filter(
           (image): image is string => typeof image === "string" && image.trim().length > 0
         );
@@ -151,7 +161,7 @@ export default function Inicio({
         const description = product.description?.trim() || "";
 
         return {
-          id: `reel_prod_${product.id}`,
+          id: canonicalId,
           type: "product",
           title: product.name,
           description,
@@ -166,19 +176,32 @@ export default function Inicio({
           thumbnailUrl: product.imageUrl || productImages[0] || "",
           images: productImages,
           media,
-          likes: 0,
-          likedBy: [],
-          comments: [],
-          shares: 0,
-          saves: 0,
-          views: 0,
+          likes: override?.likes ?? existingReel?.likes ?? 0,
+          likedBy: override?.likedBy ?? existingReel?.likedBy ?? [],
+          comments: override?.comments ?? existingReel?.comments ?? [],
+          shares: override?.shares ?? existingReel?.shares ?? 0,
+          saves: override?.saves ?? existingReel?.saves ?? 0,
+          views: existingReel?.views ?? 0,
           productId: product.id,
           aspectRatio: "square",
         };
       });
 
-    return [...publishedReels, ...productPublications];
-  }, [publishedReels, products, users]);
+    return [...publishedReels, ...productPublications].map((reel) => {
+      const override =
+        localReelOverrides[reel.id] ||
+        (reel.productId ? localReelOverrides[reel.productId] : undefined);
+      if (!override) return reel;
+      return {
+        ...reel,
+        likes: override.likes !== undefined ? override.likes : reel.likes,
+        likedBy: override.likedBy !== undefined ? override.likedBy : reel.likedBy,
+        comments: override.comments !== undefined ? override.comments : reel.comments,
+        saves: override.saves !== undefined ? override.saves : reel.saves,
+        shares: override.shares !== undefined ? override.shares : reel.shares,
+      };
+    });
+  }, [publishedReels, products, users, localReelOverrides]);
   const menuCategories = useMemo(() => {
     const seen = new Set<string>();
     const categories: string[] = [];
@@ -602,6 +625,91 @@ export default function Inicio({
     return true;
   };
 
+  const handleLikeClick = (reelItem: Reel) => {
+    if (requireLoginForInteraction("dar me gusta")) return;
+
+    const userIdentifier =
+      currentUser?.originalId ||
+      currentUser?.guestToken ||
+      currentUser?.id ||
+      currentGuestToken ||
+      "current_user";
+
+    const currentlyLiked = Boolean(
+      reelItem.likedBy?.some(
+        (id) =>
+          id === currentUser?.originalId ||
+          id === currentUser?.id ||
+          id === currentUser?.username ||
+          (currentGuestToken && id === currentGuestToken) ||
+          id === userIdentifier
+      )
+    );
+
+    const nextLikedBy = currentlyLiked
+      ? (reelItem.likedBy || []).filter(
+          (id) =>
+            id !== currentUser?.originalId &&
+            id !== currentUser?.id &&
+            id !== currentUser?.username &&
+            id !== currentGuestToken &&
+            id !== userIdentifier
+        )
+      : [...(reelItem.likedBy || []), userIdentifier];
+
+    const nextLikes = nextLikedBy.length;
+
+    setLocalReelOverrides((prev) => ({
+      ...prev,
+      [reelItem.id]: {
+        ...prev[reelItem.id],
+        likes: nextLikes,
+        likedBy: nextLikedBy,
+      },
+      ...(reelItem.productId
+        ? {
+            [reelItem.productId]: {
+              ...prev[reelItem.productId],
+              likes: nextLikes,
+              likedBy: nextLikedBy,
+            },
+          }
+        : {}),
+    }));
+
+    onLikeReel(reelItem.id);
+  };
+
+  const handleSaveClick = (reelItem: Reel) => {
+    if (requireLoginForInteraction("guardar una publicación")) return;
+
+    const currentlySaved =
+      savedReelIds.includes(reelItem.id) ||
+      (Boolean(reelItem.productId) && savedReelIds.includes(reelItem.productId!));
+
+    const nextSaves = currentlySaved
+      ? Math.max(0, (reelItem.saves ?? 0) - 1)
+      : (reelItem.saves ?? 0) + 1;
+
+    setLocalReelOverrides((prev) => ({
+      ...prev,
+      [reelItem.id]: {
+        ...prev[reelItem.id],
+        saves: nextSaves,
+      },
+      ...(reelItem.productId
+        ? {
+            [reelItem.productId]: {
+              ...prev[reelItem.productId],
+              saves: nextSaves,
+            },
+          }
+        : {}),
+    }));
+
+    onToggleSaveReel(reelItem.id);
+  };
+
   const handleDoubleTap = (reelItem: Reel) => {
     const isLiked = Boolean(
       reelItem.likedBy?.some(
@@ -613,7 +721,7 @@ export default function Inicio({
       )
     );
     if (!isLiked) {
-      onLikeReel(reelItem.id);
+      handleLikeClick(reelItem);
     }
     setHeartAnimReelId(reelItem.id);
     setTimeout(() => setHeartAnimReelId(null), 800);
@@ -653,7 +761,43 @@ export default function Inicio({
     e.preventDefault();
     if (!commentInput.trim() || !activeCommentsReel) return;
     const commentFn = onAddComment || onCommentReel;
-    if (commentFn) commentFn(activeCommentsReel.id, commentInput.trim());
+    const text = commentInput.trim();
+
+    const optimisticComment: Comment = {
+      id: "com_local_" + Date.now(),
+      userId: currentUser?.originalId || currentUser?.id || currentGuestToken || "current_user",
+      username:
+        currentUser?.name && currentUser?.name !== "Invitado"
+          ? currentUser.name
+          : currentUser?.username || "Tú",
+      avatar:
+        currentUser?.avatar ||
+        "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80",
+      text,
+      createdAt: new Date().toISOString(),
+    };
+
+    setLocalReelOverrides((prev) => {
+      const existingComments =
+        prev[activeCommentsReel.id]?.comments || activeCommentsReel.comments || [];
+      return {
+        ...prev,
+        [activeCommentsReel.id]: {
+          ...prev[activeCommentsReel.id],
+          comments: [...existingComments, optimisticComment],
+        },
+        ...(activeCommentsReel.productId
+          ? {
+              [activeCommentsReel.productId]: {
+                ...prev[activeCommentsReel.productId],
+                comments: [...existingComments, optimisticComment],
+              },
+            }
+          : {}),
+      };
+    });
+
+    if (commentFn) commentFn(activeCommentsReel.id, text);
     setCommentInput("");
   };
 
@@ -815,7 +959,10 @@ export default function Inicio({
                 (currentGuestToken && id === currentGuestToken)
             )
           );
-          const isSaved = savedReelIds.includes(reelItem.id);
+          const isSaved =
+            savedReelIds.includes(reelItem.id) ||
+            (Boolean(taggedProduct?.id) && savedReelIds.includes(taggedProduct!.id)) ||
+            (Boolean(reelItem.productId) && savedReelIds.includes(reelItem.productId!));
           const isFollowing = currentUser?.followingUserIds?.includes(reelItem.creatorId) || false;
 
           const effectiveFormat = getEffectiveFormat(reelItem);
@@ -856,17 +1003,6 @@ export default function Inicio({
                     {displayName}
                   </button>
                 </div>
-                {currentUser?.id !== reelItem.creatorId && onToggleFollowUser && (
-                  <button
-                    type="button"
-                    onClick={() => onToggleFollowUser(reelItem.creatorId)}
-                    className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-bold ${
-                      isFollowing ? "bg-slate-100 text-slate-600" : "bg-blue-50 text-blue-700"
-                    }`}
-                  >
-                    {isFollowing ? "Siguiendo" : "Seguir"}
-                  </button>
-                )}
               </div>
               {reelItem.description && (
                 <div className="mx-auto w-full max-w-xl shrink-0 px-2">
@@ -1078,7 +1214,7 @@ export default function Inicio({
                     likes={reelItem.likes || 0}
                     isLiked={isLiked}
                     onClick={() => {
-                      if (!requireLoginForInteraction("dar me gusta")) onLikeReel(reelItem.id);
+                      handleLikeClick(reelItem);
                     }}
                   />
                   <ComentarioButton
@@ -1095,9 +1231,7 @@ export default function Inicio({
                     savesCount={reelItem.saves ?? 0}
                     isSaved={isSaved}
                     onClick={() => {
-                      if (!requireLoginForInteraction("guardar una publicación")) {
-                        onToggleSaveReel(reelItem.id);
-                      }
+                      handleSaveClick(reelItem);
                     }}
                   />
                   <ConpartilButton
@@ -1214,23 +1348,6 @@ export default function Inicio({
                       >
                         {displayName}
                       </span>
-                      {currentUser?.id !== reelItem.creatorId && onToggleFollowUser && (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            e.preventDefault();
-                            onToggleFollowUser(reelItem.creatorId);
-                          }}
-                          className={`text-xs font-bold px-3 py-1 rounded-full transition-all cursor-pointer border bg-transparent backdrop-blur-sm pointer-events-auto ${
-                            isFollowing
-                              ? "text-white/80 border-white/60"
-                              : "text-white border-white"
-                          }`}
-                        >
-                          {isFollowing ? "Siguiendo" : "+ Seguir"}
-                        </button>
-                      )}
                     </h3>
                     {reelItem.description && (
                       <p

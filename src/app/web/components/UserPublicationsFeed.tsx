@@ -888,35 +888,11 @@ export default function UserPublicationsFeed({
 
               {/* Bottom Caption and Creator Section */}
               <div className="absolute bottom-4 left-3 right-16 sm:right-20 z-30 flex flex-col space-y-2 pointer-events-auto">
-                {/* Creator tag and Follow button */}
+                {/* Creator tag */}
                 <div className="flex items-center space-x-2.5">
                   <span className="font-extrabold text-sm text-white drop-shadow-md">
                     @{reel.creatorUsername || user.username}
                   </span>
-
-                  {currentUser.id !== user.id && onToggleFollowUser && (
-                    <button
-                      type="button"
-                      onClick={() => onToggleFollowUser(user.id)}
-                      className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold transition-all flex items-center space-x-1 backdrop-blur-md shadow cursor-pointer ${
-                        isFollowing
-                          ? "bg-white/20 text-white hover:bg-white/30 border border-white/30"
-                          : "bg-rose-600 text-white hover:bg-rose-500"
-                      }`}
-                    >
-                      {isFollowing ? (
-                        <>
-                          <UserCheck className="w-3 h-3" />
-                          <span>Siguiendo</span>
-                        </>
-                      ) : (
-                        <>
-                          <UserPlus className="w-3 h-3" />
-                          <span>Seguir</span>
-                        </>
-                      )}
-                    </button>
-                  )}
                 </div>
 
                 {/* Caption / Description */}

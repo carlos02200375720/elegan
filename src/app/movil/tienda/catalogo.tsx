@@ -50,7 +50,13 @@ export interface AndroidShopProps {
     onComplete: (newOrder: Order) => void,
     itemsToCheckout?: CartItem[],
     buyerInfo?: { buyerName?: string; buyerEmail?: string; buyerPhone?: string },
-    paypalOrderId?: string
+    paypalOrderId?: string,
+    extraPaymentDetails?: {
+      paymentMethod?: string;
+      paymentReceiptUrl?: string | null;
+      receiptFileName?: string;
+      bankName?: string;
+    }
   ) => Promise<boolean>;
   requiresLoginForCheckout?: boolean;
   onLoginRequiredForCheckout?: (itemsToCheckout: CartItem[]) => void;
@@ -894,7 +900,10 @@ export default function Catalogo({
     }, 1500);
   };
 
-  const handleCheckout = async (paypalOrderId: string): Promise<boolean> => {
+  const handleCheckout = async (
+    paypalOrderId: string,
+    extraDetails?: { paymentMethod?: any; paymentReceiptUrl?: string | null; receiptFileName?: string; bankName?: string }
+  ): Promise<boolean> => {
     if (effectiveCheckoutItems.length === 0 || isCheckingOut) return false;
     setIsCheckingOut(true);
 
@@ -931,7 +940,8 @@ export default function Catalogo({
             buyerEmail: checkoutForm.email.trim().toLowerCase(),
             buyerPhone: checkoutForm.phone.trim(),
           },
-          paypalOrderId
+          paypalOrderId,
+          extraDetails
         );
         if (!succeeded) setIsCheckingOut(false);
         return succeeded;

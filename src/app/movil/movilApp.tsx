@@ -47,7 +47,13 @@ export interface AndroidAppProps {
     onComplete: (newOrder: Order) => void,
     itemsToCheckout?: CartItem[],
     buyerInfo?: { buyerName?: string; buyerEmail?: string; buyerPhone?: string },
-    paypalOrderId?: string
+    paypalOrderId?: string,
+    extraPaymentDetails?: {
+      paymentMethod?: string;
+      paymentReceiptUrl?: string | null;
+      receiptFileName?: string;
+      bankName?: string;
+    }
   ) => Promise<boolean>;
   handleCreatorProfileLink: (creatorId: string) => void;
   handleProductDetailsLink: (product: Product) => void;
