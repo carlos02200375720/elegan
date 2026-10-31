@@ -212,7 +212,7 @@ export default function Perfil({
         setActiveSubTab("orders");
       } else if (parsed.type === "profile" && parsed.profileTab === "config") {
         setActiveSubTab("edit");
-
+      }
     };
     window.addEventListener("popstate", syncFromUrl);
     window.addEventListener("app-route-change", syncFromUrl);
@@ -223,29 +223,26 @@ export default function Perfil({
   }, []);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (!isSelf) {
-      return;
-    }
-    const isGuest = isGuestUser(currentUser);
-    if (isGuest) return;
+    if (typeof window === "undefined" || !isSelf) return;
+    if (isGuestUser(currentUser)) return;
     const targetUser = profileUser || currentUser;
     if (activeSubTab === "saved") {
-      const expectedSavedPath = getProfileSavedPath(targetUser);
-      if (window.location.pathname !== expectedSavedPath) {
-        navigateTo(expectedSavedPath, { replace: true });
+      const expectedPath = getProfileSavedPath(targetUser);
+      if (window.location.pathname !== expectedPath) {
+        navigateTo(expectedPath, { replace: true });
       }
     } else if (activeSubTab === "orders") {
-      const expectedCompraPath = getProfileCompraPath(targetUser);
-      if (window.location.pathname !== expectedCompraPath) {
-        navigateTo(expectedCompraPath, { replace: true });
+      const expectedPath = getProfileCompraPath(targetUser);
+      if (window.location.pathname !== expectedPath) {
+        navigateTo(expectedPath, { replace: true });
       }
     } else if (activeSubTab === "edit") {
-      const expectedConfigPath = getProfileConfigPath(targetUser);
-      if (window.location.pathname !== expectedConfigPath) {
-        navigateTo(expectedConfigPath, { replace: true });
+      const expectedPath = getProfileConfigPath(targetUser);
+      if (window.location.pathname !== expectedPath) {
+        navigateTo(expectedPath, { replace: true });
       }
-  }, [isSelf, activeSubTab, publicTab, profileUser, currentUser]);
+    }
+  }, [isSelf, activeSubTab, profileUser, currentUser]);
 
   useEffect(() => {
     if (initialSubTab) {
@@ -253,8 +250,6 @@ export default function Perfil({
       onClearInitialSubTab?.();
     }
   }, [initialSubTab, onClearInitialSubTab]);
-
-  useEffect(() => {
 
   // Whenever the active subtab/tarjeta changes or ProfileView unmounts, dismiss any active reel feed and pause all videos
   useEffect(() => {
