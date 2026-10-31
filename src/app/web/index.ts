@@ -1,6 +1,5 @@
 export { default as WebApp } from "./WebApp";
 export { default as WebSidebar } from "./WebSidebar";
-export { default as Inicio, default as ReelsView } from "./Inicio";
 export {
   default as Tienda,
   default as Shop,
