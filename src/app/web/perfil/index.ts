@@ -6,5 +6,3 @@ export { default as Compra, default as CompraPerfilView } from "./compra";
 export * from "./compra";
 export { default as Config, default as ConfigPerfilView } from "./config";
 export * from "./config";
-export { default as Publicar, default as PublishView, default as PublicarPerfilView } from "./publicar";
-export * from "./publicar";
