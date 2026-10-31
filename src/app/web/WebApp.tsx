@@ -1,14 +1,13 @@
 import React from "react";
 import { User, Reel, Product, CartItem, Order, ChatMessage, NavigationTab, isGuestUser } from "../../types";
 import WebSidebar from "./WebSidebar";
-import Inicio from "./Inicio";
 import Tienda from "./tienda";
 import SocialPanel from "./SocialPanel";
 import Perfil from "./perfil";
 import AdminView from "../admin/resumen";
 import { motion, AnimatePresence } from "motion/react";
 import { sessionState } from "../../utils/sessionState";
-import { navigateTo, parseRoute, getProfilePath, getProfileSavedPath, getProfileCompraPath, getProfileConfigPath, getProfileProductoPath, getProfileVentaPath, getProfilePublicacionesPath, getProfilePublicarPath, getProfileRendimientoPath, getProductPath, getInicioPath, getThankYouPath } from "../../router";
+import { navigateTo, parseRoute, getProfilePath, getProfileSavedPath, getProfileCompraPath, getProfileConfigPath, getProfileProductoPath, getProfileVentaPath, getProfilePublicacionesPath, getProfilePublicarPath, getProfileRendimientoPath, getProductPath, getThankYouPath } from "../../router";
 import { isSuperAdmin } from "../../superAdmin";
 import { trackFunnelStep } from "../../utils/analyticsTracker";
 
@@ -37,7 +36,6 @@ export interface WebAppProps {
   savedReelIds: string[];
   isLiveViewerOpen: boolean;
   totalUnreads: number;
-  targetReelId?: string | null;
   handleAddToCart: (product: Product, quantity?: number, selectedOptions?: Record<string, string>, selectedVariantVid?: string) => void;
   handleRemoveFromCart: (productId: string, idx?: number) => void;
   handleUpdateCartQuantity: (productId: string, qty: number, idx?: number) => void;
@@ -125,10 +123,7 @@ export default function WebApp({
   socket,
   activePlatform,
   onSwitchPlatform,
-  targetReelId,
 }: WebAppProps) {
-  const isHomeActive = activeTab === 'inicio' || activeTab === 'reels';
-  const isDarkNavActive = isHomeActive;
   const [profileInitialSubTab, setProfileInitialSubTab] = React.useState<"publish" | "publications" | "products" | "saved" | "orders" | "performance" | "edit" | undefined>(undefined);
 
   React.useEffect(() => {
@@ -147,7 +142,6 @@ export default function WebApp({
         totalUnreads={totalUnreads}
         selectedCreatorProfileId={selectedCreatorProfileId}
         setSelectedCreatorProfileId={setSelectedCreatorProfileId}
-        refreshReels={refreshReels}
         hideMobileHamburger={
           activeTab === 'shop' &&
           (isProductDetailOpen ||
@@ -160,69 +154,17 @@ export default function WebApp({
 
       {/* Main Web Views Canvas */}
       <main
-        className={`flex-1 w-full md:pl-60 lg:pl-64 ${isHomeActive ? 'h-screen overflow-hidden' : 'min-h-screen pb-0'} ${isDarkNavActive ? "bg-slate-950" : "bg-white"}`}
+        className="flex-1 w-full md:pl-60 lg:pl-64 min-h-screen pb-0 bg-white"
       >
         <AnimatePresence mode="wait">
           <motion.div
-            key={isHomeActive ? 'inicio' : activeTab}
+            key={activeTab}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.15 }}
-            className={`w-full ${isHomeActive ? 'h-full flex flex-col' : ''}`}
+            className="w-full"
           >
-            {isHomeActive && (
-              <Inicio
-                reels={reels}
-                currentUser={currentUser}
-                cart={cart}
-                totalUnreads={totalUnreads}
-                onRefreshReels={refreshReels}
-                onNavigateToTab={(tab) => {
-                  setSelectedCreatorProfileId(null);
-                  setActiveTab(tab);
-                  if (tab === 'profile') {
-                    navigateTo(getProfilePath(currentUser));
-                  } else if (tab === 'inicio' || tab === 'reels') {
-                    refreshReels();
-                    navigateTo('/inicio');
-                  } else if (tab === 'shop') {
-                    navigateTo('/tienda/catalogo');
-                  } else if (tab === 'messages') {
-                    navigateTo('/messages');
-                  } else if (tab === 'admin') {
-                    navigateTo('/admin/resumen');
-                  }
-                }}
-                onRemoveFromCart={handleRemoveFromCart}
-                onUpdateCartQuantity={handleUpdateCartQuantity}
-                onNavigateToShop={() => {
-                  setActiveTab('shop');
-                  navigateTo('/tienda/catalogo');
-                }}
-                onNavigateToCheckout={(selectedIndices) => {
-                  setShopInitialStep('checkout');
-                  setShopInitialSelectedIndices(selectedIndices || []);
-                  setActiveTab('shop');
-                  navigateTo('/tienda/verificacion');
-                }}
-                onProductClick={handleProductDetailsLink}
-                onCreatorClick={handleCreatorProfileLink}
-                onLikeReel={handleLikeReel}
-                onAddComment={handleAddComment}
-                savedReelIds={savedReelIds}
-                onToggleSaveReel={handleToggleSaveReel}
-                onGuestInteraction={(action) => {
-                  setGuestInteractionAlert(`Para ${action} en esta publicación, por favor inicia sesión o crea una cuenta de creador.`);
-                }}
-                initialReelId={targetReelId}
-                onActiveReelChange={(reelId) => {
-                  const activeReel = reels.find((r) => r.id === reelId);
-                  navigateTo(getInicioPath(activeReel || reelId), { replace: true });
-                }}
-              />
-            )}
-
             {activeTab === 'shop' && (
               <Tienda
                 products={products}
@@ -378,8 +320,8 @@ export default function WebApp({
                 unreadCounts={unreadCounts}
                 clearUnreads={handleClearUnreads}
                 onClose={() => {
-                  setActiveTab('inicio');
-                  navigateTo('/inicio');
+                  setActiveTab('shop');
+                  navigateTo('/tienda/catalogo');
                 }}
               />
             )}
