@@ -826,7 +826,7 @@ export default function App() {
         apiFetch("/api/users/current/switch", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ targetUsername: savedUsername, password: savedPassword, isSessionRestore: true }),
+          body: JSON.stringify({ email: savedUsername, password: savedPassword, isSessionRestore: true }),
         })
           .then((res) => res.json())
           .then((data) => {
@@ -834,7 +834,7 @@ export default function App() {
               setCurrentUser(data.user);
               setIsLoggedIn(true);
               sessionState.setAuthenticated(true);
-              sessionState.setUsername(data.user.username);
+              sessionState.setUsername(data.user.email || "");
               sessionState.setUser(data.user);
               setSavedReelIds(data.user.savedReelIds || []);
             }
@@ -1703,7 +1703,7 @@ export default function App() {
             setCurrentUser(registeredUser);
             setIsLoggedIn(true);
             sessionState.setAuthenticated(true);
-            sessionState.setUsername(registeredUser.username);
+            sessionState.setUsername(registeredUser.email || "");
             sessionState.setUser(registeredUser);
             setUsers((prev) => {
               const listUser = {
@@ -2155,7 +2155,7 @@ export default function App() {
           setCurrentUser(loggedUser);
           setIsLoggedIn(true);
           sessionState.setAuthenticated(true);
-          sessionState.setUsername(loggedUser.username);
+          sessionState.setUsername(loggedUser.email || "");
           sessionState.setUser(loggedUser);
           if (cart.length > 0) {
             saveCartToMongo(cart, loggedUser);
