@@ -1668,6 +1668,8 @@ export default function App() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         userId,
+        platform: activePlatform,
+        guestToken: currentUser.isGuest ? (currentUser.guestToken || getLocalGuestToken() || getOrCreateGuestToken()) : undefined,
         items: checkoutItems,
         shippingAddress: address,
         shippingCost: shippingCost,
