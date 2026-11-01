@@ -415,7 +415,6 @@ export default function AdminView({
       (u) =>
         u.name.toLowerCase().includes(q) ||
         (u.email && u.email.toLowerCase().includes(q)) ||
-        (u.email && u.email.toLowerCase().includes(q)) ||
         u.id.toLowerCase().includes(q)
     );
   }, [users, userSearch]);
