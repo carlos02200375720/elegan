@@ -44,14 +44,14 @@ export default function PerfilLogin({
   ) => {
     sessionState.setUser(user);
     sessionState.setAuthenticated(true);
-    sessionState.setUsername(user.name || user.email || "");
+    sessionState.setUsername(user.email || "");
     removeLocalGuestToken();
 
     const savedIds = restoredSavedReels || user.savedReelIds || [];
     try {
       localStorage.setItem("mall_user", JSON.stringify(user));
       localStorage.setItem("mall_authenticated", "true");
-      localStorage.setItem("mall_username", user.name || user.email || "");
+      localStorage.setItem("mall_username", user.email || "");
       const userId = user.originalId || user.id;
       localStorage.setItem(`mall_user_orders_${userId}`, JSON.stringify(orders));
       localStorage.setItem(`mall_user_orders_${user.id}`, JSON.stringify(orders));
