@@ -39,7 +39,8 @@ export async function getUsers(): Promise<User[]> {
     if (mongoose.connection.readyState === 1) {
       const dbUsers = await MongoUser.find({
         id: { $nin: ["current_user", "user_guest", "creator", "creador"] },
-        username: { $nin: ["invitado", "creador", "creator"] }
+        username: { $nin: ["invitado", "creador", "creator"] },
+        isGuest: { $ne: true }
       });
       const mapped = dbUsers.map((u: any) => ({
         id: u.id,
