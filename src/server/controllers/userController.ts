@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import mongoose from "mongoose";
 import crypto from "crypto";
 import { User, Reel } from "../../types";
-import { MongoUser, MongoReel, MongoProduct, MongoOrder, MongoCart, MongoChatMessage } from "../models";
+import { MongoUser, MongoGuestSession, MongoReel, MongoProduct, MongoOrder, MongoCart, MongoChatMessage } from "../models";
 import { generateId } from "../utils/helpers";
 import { uploadBase64ToGCS } from "../services/mediaStorage";
 import { bucketName } from "../config/storage";
@@ -208,6 +208,84 @@ export async function handleGuestSession(req: Request, res: Response): Promise<v
 
     const platform = (req.body?.platform || req.headers["x-platform"] || "web").toString();
     const deviceInfo = (req.body?.deviceInfo || req.headers["user-agent"] || "").toString();
+
+    // Web visitors use anonymous sessions, never User documents.
+    // Android keeps its existing guest-profile flow for backwards compatibility.
+    if (platform.toLowerCase() === "web") {
+      if (!token) {
+        const randomHex = crypto.randomBytes ? crypto.randomBytes(24).toString("hex") : generateId() + generateId();
+        token = `guest_web_${randomHex}`;
+      }
+
+      let session: any = null;
+      if (mongoose.connection.readyState === 1) {
+        const now = new Date();
+        try {
+          session = await MongoGuestSession.findOneAndUpdate(
+            { token },
+            {
+              $set: { lastSeenAt: now, ...(deviceInfo ? { deviceInfo } : {}) },
+              $setOnInsert: { token, platform: "web", firstVisitAt: now, visitCount: 0 },
+              $inc: { visitCount: 1 },
+            },
+            { upsert: true, new: true, setDefaultsOnInsert: true }
+          );
+
+          // One-time compatibility bridge: preserve an old guest cart under its
+          // existing token, without creating or updating a User profile.
+          const legacyGuest = await MongoUser.findOne({ guestToken: token, isGuest: true }).select("id").lean();
+          if (legacyGuest?.id && legacyGuest.id !== token) {
+            const legacyCart = await MongoCart.findOne({ userId: legacyGuest.id }).lean();
+            if (legacyCart && Array.isArray(legacyCart.items)) {
+              await MongoCart.findOneAndUpdate(
+                { userId: token },
+                { $set: { items: legacyCart.items, updatedAt: now } },
+                { upsert: true, new: true }
+              );
+              await MongoCart.deleteOne({ userId: legacyGuest.id });
+            }
+          }
+        } catch (sessionErr: any) {
+          // A simultaneous first request can race on the unique token index.
+          if (sessionErr?.code === 11000) {
+            session = await MongoGuestSession.findOneAndUpdate(
+              { token },
+              { $set: { lastSeenAt: new Date(), ...(deviceInfo ? { deviceInfo } : {}) }, $inc: { visitCount: 1 } },
+              { new: true }
+            );
+          } else {
+            throw sessionErr;
+          }
+        }
+      }
+
+      const now = session?.lastSeenAt || new Date();
+      res.json({
+        success: true,
+        isNew: Boolean(session && session.visitCount <= 1),
+        guestToken: token,
+        user: {
+          id: "current_user",
+          originalId: token,
+          guestToken: token,
+          username: "invitado",
+          name: "Invitado",
+          avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80",
+          bio: "Explorando la plataforma",
+          isOnline: true,
+          followers: 0,
+          following: 0,
+          followingUserIds: [],
+          savedReelIds: [],
+          coverPhoto: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80",
+          isGuest: true,
+          lastSeenAt: now,
+          canSell: false,
+          isAdmin: false,
+        }
+      });
+      return;
+    }
 
     const SIXTY_DAYS_MS = 60 * 24 * 60 * 60 * 1000;
 
