@@ -26,6 +26,8 @@ export async function createOrder(req: Request, res: Response): Promise<void> {
     shippingAddress,
     shippingCost,
     userId,
+    guestToken,
+    platform,
     buyerName,
     buyerUsername,
     buyerAvatar,
@@ -117,8 +119,9 @@ export async function createOrder(req: Request, res: Response): Promise<void> {
   const estimatedDate = new Date(Date.now() + 4 * 86400000).toISOString().split("T")[0];
 
   const buyerUser = userMap.get(userId || activeOriginalUserId);
+  const isAnonymousWebCheckout = String(platform || "").toLowerCase() === "web" && Boolean(guestToken);
 
-  let assignedBuyerId = userId || (activeOriginalUserId !== "user_guest" ? activeOriginalUserId : "current_user");
+  let assignedBuyerId = isAnonymousWebCheckout ? String(guestToken) : (userId || (activeOriginalUserId !== "user_guest" ? activeOriginalUserId : "current_user"));
   let assignedBuyerName = buyerName || (buyerUser ? buyerUser.name : "Cliente");
   let assignedBuyerUsername = buyerUsername || (buyerUser ? buyerUser.username : undefined);
   let assignedBuyerAvatar = buyerAvatar || (buyerUser ? buyerUser.avatar : undefined);
@@ -172,7 +175,7 @@ export async function createOrder(req: Request, res: Response): Promise<void> {
       assignedBuyerAvatar = loggedInUser.avatar || assignedBuyerAvatar;
     }
     autoCreatedUserSummary = null;
-  } else if ((cleanBuyerEmail && cleanBuyerEmail.includes("@")) || (buyerName && String(buyerName).trim())) {
+  } else if (!isAnonymousWebCheckout && ((cleanBuyerEmail && cleanBuyerEmail.includes("@")) || (buyerName && String(buyerName).trim()))) {
     let existingUser: any = null;
     if (mongoose.connection.readyState === 1) {
       await MongoUser.deleteMany({ id: "current_user" }).catch(() => {});
