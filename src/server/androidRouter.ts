@@ -14,11 +14,6 @@ import {
 import { isConfiguredSuperadmin, handleGuestSession, registerUser, switchUser, loginWithEmail } from "./controllers/userController";
 import { createPaypalOrder, getPaypalConfig } from "./controllers/paypalController";
 import { MongoCart, MongoChatMessage } from "./models";
-import {
-  mergeGuestCartItems,
-  migrateGuestChatHistory,
-  migrateGuestReelInteractions,
-} from "./utils/guestDataMigration";
 
 export interface AndroidRouterDependencies {
   MongoUser: any;
