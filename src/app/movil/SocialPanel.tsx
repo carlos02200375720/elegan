@@ -136,7 +136,7 @@ export default function AndroidSocialPanel({
     let clients = Array.from(clientMap.values());
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
-      clients = clients.filter((c) => c.user.name.toLowerCase().includes(q) || c.user.username.toLowerCase().includes(q));
+      clients = clients.filter((c) => c.user.name.toLowerCase().includes(q) || (c.user.email && c.user.email.toLowerCase().includes(q)));
     }
     return clients;
   }, [isAdmin, messages, users, currentUser, unreadCounts, searchQuery]);
@@ -183,7 +183,7 @@ export default function AndroidSocialPanel({
                   {!isAdmin && <ShieldCheck className="w-3.5 h-3.5 text-amber-600 shrink-0" />}
                 </p>
                 <p className="text-[10px] text-amber-600 font-mono font-medium truncate">
-                  {isAdmin ? `@${activeChatUser.username}` : SUPPORT_EMAIL}
+                  {isAdmin ? activeChatUser.name : SUPPORT_EMAIL}
                 </p>
               </div>
             </div>
@@ -396,7 +396,7 @@ export default function AndroidSocialPanel({
                           </div>
                           <div className="min-w-0">
                             <p className="text-xs font-bold text-slate-900 truncate">{user.name}</p>
-                            <p className="text-[11px] text-amber-600 truncate font-mono font-medium">@{user.username}</p>
+                            <p className="text-[11px] text-amber-600 truncate font-mono font-medium">{user.name}</p>
                             <p className="text-[10px] text-slate-500 mt-0.5 truncate">
                               {lastMsg ? lastMsg.text : "Sin mensajes aún"}
                             </p>
