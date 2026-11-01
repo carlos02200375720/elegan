@@ -168,7 +168,7 @@ export function ConfigPerfilView({
 
       if (data.user) {
         sessionState.setAuthenticated(true);
-        sessionState.setUsername(data.user.username);
+        sessionState.setUsername(data.user.name || data.user.email || "");
         sessionState.setUser(data.user);
         onProfileSaved?.(data.user);
         onRefreshUsers?.();
@@ -1173,13 +1173,13 @@ export function ConfigPerfilView({
                             autoFocus
                             onKeyDown={(e) => {
                               if (e.key === "Enter") {
-                                handleSwitchUser(u.username, switchPassword);
+                                handleSwitchUser(u.email || "", switchPassword);
                               }
                             }}
                           />
                           <button
                             type="button"
-                            onClick={() => handleSwitchUser(u.username, switchPassword)}
+                            onClick={() => handleSwitchUser(u.email || "", switchPassword)}
                             className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-[10px] rounded-lg transition-all cursor-pointer shrink-0"
                           >
                             Confirmar
