@@ -1354,7 +1354,7 @@ export async function updateCurrentUser(req: Request, res: Response): Promise<vo
  * POST /api/users/register
  */
 export async function registerUser(req: Request, res: Response): Promise<void> {
-  const { name, username, bio, avatar, coverPhoto, password, email } = req.body;
+  const { name, bio, avatar, coverPhoto, password, email } = req.body;
   if (!name || !String(name).trim()) {
     res.status(400).json({ error: "El nombre completo es obligatorio." });
     return;
@@ -1369,39 +1369,13 @@ export async function registerUser(req: Request, res: Response): Promise<void> {
   }
 
   const headerGuestToken = (req.headers["x-guest-token"] as string)?.trim();
-  let cleanUsername = String(username || "").replace(/\s+/g, "").toLowerCase().replace(/@/g, "");
-
-  // If no username provided, look up prior guest record or auto-generate
-  if (!cleanUsername || cleanUsername === "invitado" || cleanUsername === "current_user") {
-    if (headerGuestToken && mongoose.connection.readyState === 1) {
-      try {
-        const priorGuest = await MongoUser.findOne({ guestToken: headerGuestToken });
-        if (priorGuest?.username && priorGuest.username !== "invitado") {
-          cleanUsername = priorGuest.username.toLowerCase();
-        }
-      } catch (e) {}
-    }
-  }
-
-  if (!cleanUsername || cleanUsername === "invitado" || cleanUsername === "current_user") {
-    const baseSlug = String(name)
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .toLowerCase()
-      .replace(/[^a-z0-9]/g, "");
-    cleanUsername = `${baseSlug || "cliente"}_${Math.random().toString(36).substring(2, 6)}`;
-  }
-
   const cleanEmail = String(email).trim().toLowerCase();
-
-  const lockKey = `${cleanUsername}:${cleanEmail}`;
-  if (pendingRegistrations.has(lockKey) || pendingRegistrations.has(cleanEmail) || pendingRegistrations.has(cleanUsername)) {
-    res.status(409).json({ error: "⚠️ Ya hay una solicitud de registro en proceso con este correo o usuario. Por favor espera." });
+  const lockKey = cleanEmail;
+  if (pendingRegistrations.has(lockKey)) {
+    res.status(409).json({ error: "Ya hay una solicitud de registro en proceso con este correo. Por favor espera." });
     return;
   }
   pendingRegistrations.add(lockKey);
-  pendingRegistrations.add(cleanEmail);
-  pendingRegistrations.add(cleanUsername);
 
   try {
     if (mongoose.connection.readyState === 1) {
@@ -1414,15 +1388,51 @@ export async function registerUser(req: Request, res: Response): Promise<void> {
         ]
       });
 
-      const existing = await MongoUser.findOne({
+      const escapedEmail = cleanEmail.replace(/[.*+?^${}()|[\]\\]/g, "\\      const existing = await MongoUser.findOne({
         $or: [
           { username: cleanUsername },
           { email: cleanEmail }
         ]
+      });");
+      const existing = await MongoUser.findOne({ email: { $regex: new RegExp(`^${escapedEmail}export async function registerUser(req: Request, res: Response): Promise<void> {
+  const { name, bio, avatar, coverPhoto, password, email } = req.body;
+  if (!name || !String(name).trim()) {
+    res.status(400).json({ error: "El nombre completo es obligatorio." });
+    return;
+  }
+  if (!email || !String(email).trim()) {
+    res.status(400).json({ error: "El correo electrónico es un requisito obligatorio." });
+    return;
+  }
+  if (!password || !String(password).trim()) {
+    res.status(400).json({ error: "La contraseña es obligatoria." });
+    return;
+  }
+
+  const headerGuestToken = (req.headers["x-guest-token"] as string)?.trim();
+  const cleanEmail = String(email).trim().toLowerCase();
+  const lockKey = cleanEmail;
+  if (pendingRegistrations.has(lockKey)) {
+    res.status(409).json({ error: "Ya hay una solicitud de registro en proceso con este correo. Por favor espera." });
+    return;
+  }
+  pendingRegistrations.add(lockKey);
+
+  try {
+    if (mongoose.connection.readyState === 1) {
+      await MongoUser.deleteMany({
+        $or: [
+          { id: "current_user" },
+          { id: "usuario_actual" },
+          { id: "user_guest" },
+          { id: "usuario_invitado" }
+        ]
       });
 
+, "i") } });
+
       if (existing) {
-        const isSelfGuest = (headerGuestToken && existing.guestToken === headerGuestToken) || (existing.isGuest && existing.username === cleanUsername);
+        const isSelfGuest = Boolean(headerGuestToken && existing.guestToken === headerGuestToken && existing.isGuest);
         if (isSelfGuest) {
           // Current guest transitioning to registered account: remove prior guest placeholder
           await MongoUser.deleteOne({ _id: existing._id }).catch(() => {});
@@ -1431,7 +1441,7 @@ export async function registerUser(req: Request, res: Response): Promise<void> {
             res.status(409).json({ error: "⚠️ Este correo electrónico ya está registrado con otra cuenta." });
             return;
           }
-          res.status(409).json({ error: "⚠️ El nombre de usuario ya está registrado." });
+          res.status(409).json({ error: "Este correo electrónico ya está registrado." });
           return;
         }
       }
@@ -1446,11 +1456,11 @@ export async function registerUser(req: Request, res: Response): Promise<void> {
         const uploadedAvatar = await uploadBase64ToGCS(avatar, "avatars");
         resolvedAvatar = (uploadedAvatar && !uploadedAvatar.startsWith("data:"))
           ? uploadedAvatar
-          : `https://storage.googleapis.com/${bucketName || "elegan-bucket"}/avatars/${Date.now()}-${String(username).trim().toLowerCase()}.png`;
+          : `https://storage.googleapis.com/${bucketName || "elegan-bucket"}/avatars/${Date.now()}-${cleanEmail.replace(/[^a-z0-9]/g, "_")}.png`;
         console.log(`✅ Base64 avatar uploaded to GCS: ${resolvedAvatar}`);
       } catch (uploadErr) {
         console.error("❌ Failed to upload base64 avatar during registration:", uploadErr);
-        resolvedAvatar = `https://storage.googleapis.com/${bucketName || "elegan-bucket"}/avatars/${Date.now()}-${String(username).trim().toLowerCase()}.png`;
+        resolvedAvatar = `https://storage.googleapis.com/${bucketName || "elegan-bucket"}/avatars/${Date.now()}-${cleanEmail.replace(/[^a-z0-9]/g, "_")}.png`;
       }
     }
 
@@ -1460,11 +1470,11 @@ export async function registerUser(req: Request, res: Response): Promise<void> {
         const uploadedCover = await uploadBase64ToGCS(coverPhoto, "covers");
         resolvedCoverPhoto = (uploadedCover && !uploadedCover.startsWith("data:"))
           ? uploadedCover
-          : `https://storage.googleapis.com/${bucketName || "elegan-bucket"}/covers/${Date.now()}-${String(username).trim().toLowerCase()}.jpg`;
+          : `https://storage.googleapis.com/${bucketName || "elegan-bucket"}/covers/${Date.now()}-${cleanEmail.replace(/[^a-z0-9]/g, "_")}.jpg`;
         console.log(`✅ Base64 cover photo uploaded to GCS: ${resolvedCoverPhoto}`);
       } catch (uploadErr) {
         console.error("❌ Failed to upload base64 cover photo during registration:", uploadErr);
-        resolvedCoverPhoto = `https://storage.googleapis.com/${bucketName || "elegan-bucket"}/covers/${Date.now()}-${String(username).trim().toLowerCase()}.jpg`;
+        resolvedCoverPhoto = `https://storage.googleapis.com/${bucketName || "elegan-bucket"}/covers/${Date.now()}-${cleanEmail.replace(/[^a-z0-9]/g, "_")}.jpg`;
       }
     }
 
@@ -1521,8 +1531,7 @@ export async function registerUser(req: Request, res: Response): Promise<void> {
       id: newUserId,
       originalId: newUserId,
       name: String(name).trim(),
-      username: cleanUsername,
-      email: cleanEmail,
+            email: cleanEmail,
       bio: bio || priorGuest?.bio || "Nuevo creador de contenido en la plataforma",
       avatar: resolvedAvatar,
       coverPhoto: resolvedCoverPhoto,
@@ -1533,7 +1542,7 @@ export async function registerUser(req: Request, res: Response): Promise<void> {
       isOnline: true,
       password: password || "",
       isGuest: false,
-      canSell: false,
+      canSell: isConfiguredSuperadmin({ email: cleanEmail }),
       address: req.body?.address || priorGuest?.address || "",
       shippingAddress: req.body?.shippingAddress || req.body?.address || priorGuest?.shippingAddress || priorGuest?.address || "",
       city: req.body?.city || priorGuest?.city || "",
@@ -1552,7 +1561,7 @@ export async function registerUser(req: Request, res: Response): Promise<void> {
 
     const mongoUser = new MongoUser(newUser);
     await mongoUser.save();
-    console.log(`💾 Successfully registered exactly 1 user @${newUser.username} (${newUser.email}) with id=${newUser.id} in MongoDB Atlas!`);
+    console.log(`Cuenta registrada para ${newUser.email} con id=${newUser.id} en MongoDB Atlas.`);
     setActiveOriginalUserId(newUser.id);
 
     // Migración de pedidos del invitado
@@ -1580,7 +1589,6 @@ export async function registerUser(req: Request, res: Response): Promise<void> {
             $set: {
               buyerId: newUser.id,
               buyerName: newUser.name,
-              buyerUsername: newUser.username,
               buyerEmail: newUser.email || cleanEmail
             }
           }
@@ -1589,11 +1597,10 @@ export async function registerUser(req: Request, res: Response): Promise<void> {
         migratedOrders = await MongoOrder.find({
           $or: [
             { buyerId: newUser.id },
-            { buyerUsername: newUser.username },
             ...(cleanEmail ? [{ buyerEmail: cleanEmail }] : [])
           ]
         }).sort({ createdAt: -1 }).lean();
-        console.log(`📦 [Server Register] Migrados ${migratedOrders.length} pedidos a @${newUser.username}`);
+        console.log(`📦 [Server Register] Migrados ${migratedOrders.length} pedidos a @${newUser.name}`);
       } catch (ordErr) {
         console.error("Error migrando pedidos en registerUser:", ordErr);
         throw ordErr;
@@ -1661,7 +1668,6 @@ export async function registerUser(req: Request, res: Response): Promise<void> {
   } finally {
     pendingRegistrations.delete(lockKey);
     pendingRegistrations.delete(cleanEmail);
-    pendingRegistrations.delete(cleanUsername);
   }
 }
 
@@ -1670,278 +1676,64 @@ export async function registerUser(req: Request, res: Response): Promise<void> {
  */
 export async function switchUser(req: Request, res: Response): Promise<void> {
   try {
-    const { targetUsername, password, isSessionRestore } = req.body;
-    if (!targetUsername) {
-      res.status(400).json({ error: "Target username is required" });
+    const cleanEmail = String(req.body?.email || req.body?.targetEmail || "").trim().toLowerCase();
+    const password = req.body?.password;
+    const isSessionRestore = req.body?.isSessionRestore === true;
+    if (!cleanEmail || !cleanEmail.includes("@")) {
+      res.status(400).json({ error: "Debe ingresar un correo electrónico válido." });
       return;
     }
-
-    const cleanUsername = String(targetUsername).trim().toLowerCase().replace(/^@/, "");
-    const normalizedInputSlug = cleanUsername
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/\s+/g, "")
-      .replace(/[^a-z0-9._@-]/g, "");
-    const strippedAtUsername = cleanUsername.replace(/@/g, "");
-
-    const sanitizeUsernameFromUser = (u: any): string => {
-      const rawUn = String(u?.username || "").trim().replace(/^@/, "");
-      if (rawUn && !rawUn.includes("@")) return rawUn.toLowerCase();
-      const fromName = String(u?.name || "")
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .toLowerCase()
-        .replace(/\s+/g, "")
-        .replace(/[^a-z0-9._-]/g, "");
-      if (fromName && fromName !== "invitado" && fromName !== "cliente") return fromName;
-      if (rawUn.includes("@")) return rawUn.split("@")[0].toLowerCase();
-      const emailPart = String(u?.email || "").split("@")[0].toLowerCase();
-      return emailPart || "cliente";
-    };
-
-    const rawTarget = String(targetUsername || "").trim();
-    const explicitEmail = typeof req.body.email === "string" ? req.body.email.trim() : "";
-    const isEmailLogin = rawTarget.includes("@") || explicitEmail.includes("@");
-    const emailToSearch = (explicitEmail || (rawTarget.includes("@") ? rawTarget : "")).toLowerCase();
-
-    let targetUser: any = null;
-
-    if (isEmailLogin && emailToSearch) {
-      if (mongoose.connection.readyState === 1) {
-        const escapedEmail = emailToSearch.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-        targetUser = await MongoUser.findOne({
-          email: { $regex: new RegExp(`^${escapedEmail}$`, "i") },
-          id: { $ne: "current_user" }
-        });
-      }
-
-      if (!targetUser) {
-        targetUser = memoryUsers.find((u) => u.email?.toLowerCase() === emailToSearch && u.id !== "current_user");
-      }
-
-      if (!targetUser) {
-        res.status(404).json({
-          error: "No existe ninguna cuenta registrada con este correo electrónico.",
-          code: "USER_NOT_FOUND"
-        });
-        return;
-      }
-    } else {
-      if (mongoose.connection.readyState === 1) {
-        const escapedClean = cleanUsername.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-        targetUser = await MongoUser.findOne({
-          $or: [
-            { username: cleanUsername },
-            { username: normalizedInputSlug },
-            { username: targetUsername },
-            { username: { $regex: new RegExp(`^${escapedClean}$`, "i") } },
-            { email: cleanUsername },
-            { email: String(targetUsername).trim().toLowerCase() },
-            { email: { $regex: new RegExp(`^${escapedClean}(?:@|$)`, "i") } },
-            { name: { $regex: new RegExp(`^${escapedClean}$`, "i") } },
-            { id: targetUsername },
-            { id: cleanUsername }
-          ],
-          id: { $ne: "current_user" }
-        });
-
-        if (!targetUser) {
-          const allDbUsers = await MongoUser.find({ id: { $ne: "current_user" } });
-          targetUser = allDbUsers.find((u: any) => {
-            const uName = (u.username || "").toLowerCase().replace(/^@/, "");
-            const uEmail = (u.email || "").toLowerCase();
-            const uFullSlug = (u.name || "")
-              .normalize("NFD")
-              .replace(/[\u0300-\u036f]/g, "")
-              .toLowerCase()
-              .replace(/\s+/g, "")
-              .replace(/[^a-z0-9._-]/g, "");
-            return (
-              uName === cleanUsername ||
-              uName === normalizedInputSlug ||
-              uFullSlug === normalizedInputSlug ||
-              uEmail === cleanUsername ||
-              (strippedAtUsername && uName.replace(/@/g, "") === strippedAtUsername) ||
-              (strippedAtUsername && uEmail.replace(/@/g, "") === strippedAtUsername) ||
-              (uEmail && uEmail.split("@")[0] === cleanUsername) ||
-              (uName && uName.split("@")[0] === cleanUsername)
-            );
-          });
-        }
-      }
-
-      if (!targetUser) {
-        targetUser = memoryUsers.find((u) => {
-          const uName = (u.username || "").toLowerCase().replace(/^@/, "");
-          const uEmail = (u.email || "").toLowerCase();
-          const uFullSlug = (u.name || "")
-            .normalize("NFD")
-            .replace(/[\u0300-\u036f]/g, "")
-            .toLowerCase()
-            .replace(/\s+/g, "")
-            .replace(/[^a-z0-9._-]/g, "");
-          return (
-            u.id === targetUsername ||
-            u.id === cleanUsername ||
-            uName === cleanUsername ||
-            uName === normalizedInputSlug ||
-            uFullSlug === normalizedInputSlug ||
-            uEmail === cleanUsername ||
-            (strippedAtUsername && uName.replace(/@/g, "") === strippedAtUsername) ||
-            (strippedAtUsername && uEmail.replace(/@/g, "") === strippedAtUsername) ||
-            (uEmail && uEmail.split("@")[0] === cleanUsername) ||
-            (uName && uName.split("@")[0] === cleanUsername)
-          );
-        });
-      }
-    }
-
-    // Fallback: if buyer placed an order with this name/email/username, auto-recover and persist their profile
-    if (!targetUser) {
-      const matchOrderFn = (o: any) => {
-        const bEmail = (o.buyerEmail || "").toLowerCase();
-        const bUser = (o.buyerUsername || "").toLowerCase().replace(/^@/, "");
-        const bNameSlug = (o.buyerName || "")
-          .normalize("NFD")
-          .replace(/[\u0300-\u036f]/g, "")
-          .toLowerCase()
-          .replace(/\s+/g, "")
-          .replace(/[^a-z0-9._-]/g, "");
-        return (
-          (bNameSlug && bNameSlug === normalizedInputSlug) ||
-          (bEmail && (bEmail === cleanUsername || bEmail.replace(/@/g, "") === strippedAtUsername || bEmail.split("@")[0] === cleanUsername)) ||
-          (bUser && bUser !== "invitado" && (bUser === cleanUsername || bUser === normalizedInputSlug || bUser.replace(/@/g, "") === strippedAtUsername))
-        );
-      };
-
-      let matchedOrder: any = orders.find(matchOrderFn);
-
-      if (!matchedOrder && mongoose.connection.readyState === 1) {
-        const allOrders = await MongoOrder.find({}).sort({ createdAt: -1 }).limit(100).catch(() => []);
-        matchedOrder = allOrders.find(matchOrderFn);
-      }
-
-      if (matchedOrder) {
-        const recoveredEmail = (matchedOrder.buyerEmail || (cleanUsername.includes("@") ? cleanUsername : "")).toLowerCase();
-        const recoveredUsername = sanitizeUsernameFromUser({
-          username: matchedOrder.buyerUsername,
-          name: matchedOrder.buyerName,
-          email: recoveredEmail,
-        });
-        const recoveredId =
-          matchedOrder.buyerId && matchedOrder.buyerId !== "current_user" && matchedOrder.buyerId !== "user_guest"
-            ? matchedOrder.buyerId
-            : "user_" + generateId();
-
-        const recoveredUser: User = {
-          id: recoveredId,
-          originalId: recoveredId,
-          username: recoveredUsername,
-          name: matchedOrder.buyerName && matchedOrder.buyerName.toLowerCase() !== "invitado" ? matchedOrder.buyerName : recoveredUsername,
-          email: recoveredEmail || `${recoveredUsername}@mallsocial.app`,
-          password: "123",
-          bio: "Cliente en la plataforma",
-          avatar: matchedOrder.buyerAvatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80",
-          coverPhoto: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80",
-          isOnline: true,
-          followers: 0,
-          following: 0,
-          followingUserIds: [],
-          savedReelIds: [],
-          isGuest: false,
-          privacyPolicy: ""
-        };
-
-        memoryUsers.push(recoveredUser);
-        if (mongoose.connection.readyState === 1) {
-          await MongoUser.findOneAndUpdate(
-            { $or: [{ email: recoveredUser.email }, { username: recoveredUser.username }] },
-            { $set: recoveredUser },
-            { upsert: true, new: true }
-          ).catch(() => {});
-        }
-        targetUser = recoveredUser;
-      }
-    }
-
-    if (!targetUser) {
-      res.status(404).json({
-        error: "Usuario no encontrado en la base de datos.",
-        code: "USER_NOT_FOUND"
-      });
+    if (mongoose.connection.readyState !== 1) {
+      res.status(503).json({ error: "La base de datos no está disponible." });
       return;
     }
-
+    const escapedEmail = cleanEmail.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const targetUser = await MongoUser.findOne({
+      email: { $regex: new RegExp(`^${escapedEmail}$`, "i") },
+      id: { $ne: "current_user" }
+    });
+    if (!targetUser) {
+      res.status(404).json({ error: "No existe ninguna cuenta registrada con este correo electrónico.", code: "USER_NOT_FOUND" });
+      return;
+    }
     const expectedPassword = String(targetUser.password || "").trim();
-    if (!isSessionRestore) {
-      if (!password || !expectedPassword || expectedPassword !== String(password).trim()) {
-        res.status(401).json({ error: "La contraseña ingresada es incorrecta. Por favor verifícala." });
-        return;
-      }
+    if (!isSessionRestore && (!password || !expectedPassword || expectedPassword !== String(password).trim())) {
+      res.status(401).json({ error: "La contraseña ingresada es incorrecta. Por favor verifícala." });
+      return;
     }
-
-    const resolvedUsername = sanitizeUsernameFromUser(targetUser);
-    if (targetUser.username !== resolvedUsername) {
-      targetUser.username = resolvedUsername;
-      if (mongoose.connection.readyState === 1) {
-        await MongoUser.updateOne({ id: targetUser.id }, { $set: { username: resolvedUsername } }).catch(() => {});
-      }
-    }
-
     const headerGuestToken = (req.headers["x-guest-token"] as string)?.trim();
-    if (headerGuestToken && mongoose.connection.readyState === 1) {
+    if (headerGuestToken) {
       try {
         const priorGuest = await MongoUser.findOne({ guestToken: headerGuestToken });
         if (priorGuest && Array.isArray(priorGuest.savedReelIds) && priorGuest.savedReelIds.length > 0) {
-          const currentSaved = Array.isArray(targetUser.savedReelIds) ? targetUser.savedReelIds : [];
-          const merged = Array.from(new Set([...currentSaved, ...priorGuest.savedReelIds]));
+          const merged = Array.from(new Set([...(targetUser.savedReelIds || []), ...priorGuest.savedReelIds]));
+          await MongoUser.updateOne({ id: targetUser.id }, { $set: { savedReelIds: merged } });
           targetUser.savedReelIds = merged;
-          await MongoUser.updateOne({ id: targetUser.id }, { $set: { savedReelIds: merged } }).catch(() => {});
         }
-        if (!targetUser.guestToken) {
-          targetUser.guestToken = headerGuestToken;
-          await MongoUser.updateOne({ id: targetUser.id }, { $set: { guestToken: headerGuestToken } }).catch(() => {});
-        }
-      } catch (e) {}
+      } catch (guestErr) { console.warn("No se pudieron migrar los guardados de la sesión invitada:", guestErr); }
     }
-
     setActiveOriginalUserId(targetUser.id);
-
+    const isSuperadmin = isConfiguredSuperadmin(targetUser);
     const returnedUser = {
-      id: "current_user",
-      originalId: targetUser.id,
-      username: resolvedUsername,
-      name: targetUser.name,
+      id: "current_user", originalId: targetUser.id, username: targetUser.name || "", name: targetUser.name,
       bio: targetUser.bio || "",
       avatar: targetUser.avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80",
       coverPhoto: targetUser.coverPhoto || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80",
-      followers: targetUser.followers || 0,
-      following: targetUser.following || 0,
-      followingUserIds: targetUser.followingUserIds || [],
-      savedReelIds: targetUser.savedReelIds || [],
-      guestToken: targetUser.guestToken || headerGuestToken || undefined,
-      isGuest: false,
-      password: targetUser.password || "",
-      email: targetUser.email || "",
-      address: targetUser.address || "",
-      shippingAddress: targetUser.shippingAddress || targetUser.address || "",
-      city: targetUser.city || "",
-      country: targetUser.country || "",
-      phone: targetUser.phone || "",
-      privacyPolicy: targetUser.privacyPolicy || "",
-      canSell: targetUser.canSell === true || isConfiguredSuperadmin(targetUser),
-      isAdmin: isConfiguredSuperadmin(targetUser),
-      role: isConfiguredSuperadmin(targetUser) ? "superadmin" : (targetUser.canSell ? "seller" : "user")
+      followers: targetUser.followers || 0, following: targetUser.following || 0,
+      followingUserIds: targetUser.followingUserIds || [], savedReelIds: targetUser.savedReelIds || [],
+      guestToken: targetUser.guestToken || headerGuestToken || undefined, isGuest: false, password: targetUser.password || "",
+      email: targetUser.email || cleanEmail, address: targetUser.address || "",
+      shippingAddress: targetUser.shippingAddress || targetUser.address || "", city: targetUser.city || "",
+      country: targetUser.country || "", phone: targetUser.phone || "", privacyPolicy: targetUser.privacyPolicy || "",
+      canSell: targetUser.canSell === true || isSuperadmin, isAdmin: isSuperadmin,
+      role: isSuperadmin ? "superadmin" : (targetUser.canSell ? "seller" : "user")
     };
-
-    console.log(`🔄 Switched session user to @${returnedUser.username} (original id: ${activeOriginalUserId})`);
     res.json({ success: true, user: returnedUser });
   } catch (routeErr: any) {
-    console.error("❌ Exception caught in user/switch endpoint:", routeErr);
-    res.status(500).json({ error: "Internal server error switching user profile", details: routeErr.message });
+    console.error("Error al iniciar sesión con correo:", routeErr);
+    res.status(500).json({ error: "No se pudo iniciar sesión.", details: routeErr.message });
   }
 }
-
 /**
  * POST /api/users/:id/permission
  * Superadmin-only toggle for seller capabilities.
