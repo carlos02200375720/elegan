@@ -37,7 +37,7 @@ export default function LoginView({
 }: LoginViewProps) {
   const [activeTab, setActiveTab] = useState<"login" | "register">(() => {
     if (initialTab) return initialTab;
-    if (currentUser?.isGuest || currentUser?.username === "invitado") return "register";
+    if (currentUser?.isGuest) return "register";
     return "login";
   });
   
@@ -404,12 +404,6 @@ export default function LoginView({
                     />
                   </div>
 
-                  {assignedUsername ? (
-                    <div className="bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 flex items-center justify-between">
-                      <span className="text-[11px] text-slate-600 font-medium">Nombre de usuario asignado:</span>
-                      <span className="font-mono font-bold text-amber-600 text-xs">@{assignedUsername}</span>
-                    </div>
-                  ) : null}
                   <p className="text-[10px] text-slate-400 leading-tight">
                     Podrás personalizar tu nombre de usuario, biografía y foto de perfil en la página de Configuración cuando quieras.
                   </p>
