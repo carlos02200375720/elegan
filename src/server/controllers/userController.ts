@@ -1168,8 +1168,26 @@ export async function toggleFollow(req: Request, res: Response): Promise<void> {
   const currentUsernameReq = req.body?.currentUsername;
   let currentUserObj: any = null;
   let targetUserObj: any = null;
+  const anonymousGuestToken =
+    (req.headers["x-guest-token"] as string)?.trim() ||
+    String(req.body?.guestToken || "").trim();
 
-  if (mongoose.connection.readyState === 1) {
+  if (mongoose.connection.readyState === 1 && anonymousGuestToken) {
+    const anonymousSession = await MongoGuestSession.findOne({ token: anonymousGuestToken }).lean();
+    if (anonymousSession) {
+      currentUserObj = {
+        id: anonymousGuestToken,
+        guestToken: anonymousGuestToken,
+        username: "invitado",
+        followingUserIds: anonymousSession.followingUserIds || [],
+        following: anonymousSession.following || 0,
+        isGuest: true,
+        _anonymousSession: true,
+      };
+    }
+  }
+
+  if (!currentUserObj && mongoose.connection.readyState === 1) {
     const candidates = [currentUserIdReq, currentUsernameReq, activeOriginalUserId].filter(
       (id) => id && id !== "user_guest" && id !== "current_user" && id !== "invitado"
     );
@@ -1278,7 +1296,12 @@ export async function toggleFollow(req: Request, res: Response): Promise<void> {
   }
 
   if (mongoose.connection.readyState === 1) {
-    if (currentUserObj._id) {
+    if (currentUserObj._anonymousSession) {
+      await MongoGuestSession.updateOne(
+        { token: currentUserObj.guestToken },
+        { $set: { followingUserIds: currentUserObj.followingUserIds, following: currentUserObj.following } }
+      );
+    } else if (currentUserObj._id) {
       await MongoUser.updateOne(
         { _id: currentUserObj._id },
         { $set: { followingUserIds: currentUserObj.followingUserIds, following: currentUserObj.following } }
