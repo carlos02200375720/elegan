@@ -1507,7 +1507,7 @@ export async function registerUser(req: Request, res: Response): Promise<void> {
       city: req.body?.city || priorGuest?.city || "",
       country: req.body?.country || priorGuest?.country || "República Dominicana",
       phone: req.body?.phone || priorGuest?.phone || "",
-    };
+    } as User;
 
     if (mongoose.connection.readyState !== 1) {
       console.error("❌ MongoDB Atlas is not connected (readyState !== 1). Registration blocked.");
