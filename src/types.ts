@@ -3,7 +3,7 @@ export type NavigationTab = 'inicio' | 'reels' | 'shop' | 'messages' | 'profile'
 export interface User {
   id: string;
   originalId?: string;
-  username?: string;
+  username: string;
   name: string;
   avatar: string;
   bio: string;
