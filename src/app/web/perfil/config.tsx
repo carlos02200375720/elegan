@@ -120,7 +120,7 @@ export function ConfigPerfilView({
 
       if (data.user) {
         sessionState.setAuthenticated(true);
-        sessionState.setUsername(data.user.name || data.user.email || "");
+        sessionState.setUsername(data.user.email || "");
         sessionState.setUser(data.user);
         onProfileSaved?.(data.user);
         onRefreshUsers?.();
@@ -252,7 +252,7 @@ export function ConfigPerfilView({
       }
       if (response.ok && data.success) {
         sessionState.setAuthenticated(true);
-        sessionState.setUsername(data.user?.name || targetEmail);
+        sessionState.setUsername(data.user?.email || targetEmail);
         sessionState.setUser(data.user);
 
         onProfileSaved?.(data.user);
