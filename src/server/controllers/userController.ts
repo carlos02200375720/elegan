@@ -1061,24 +1061,36 @@ export async function toggleSaveReel(req: Request, res: Response): Promise<void>
     const guestToken = headerGuestToken || bodyGuestToken;
 
     if (!currentUserObj && guestToken) {
-      currentUserObj = await MongoUser.findOne({ guestToken });
-      if (!currentUserObj) {
+      const anonymousSession = await MongoGuestSession.findOne({ token: guestToken }).lean();
+      if (anonymousSession) {
         currentUserObj = {
-          id: userId || `guest_${Date.now()}`,
-          username: username || "invitado",
-          name: "Invitado",
-          guestToken: guestToken,
-          savedReelIds: [],
-          followingUserIds: [],
+          id: guestToken,
+          guestToken,
+          username: "invitado",
+          savedReelIds: anonymousSession.savedReelIds || [],
           isGuest: true,
+          _anonymousSession: true,
         };
-        try {
-          await MongoUser.updateOne(
-            { guestToken },
-            { $setOnInsert: currentUserObj },
-            { upsert: true }
-          );
-        } catch (e) {}
+      } else {
+        currentUserObj = await MongoUser.findOne({ guestToken });
+        if (!currentUserObj) {
+          currentUserObj = {
+            id: userId || `guest_${Date.now()}`,
+            username: username || "invitado",
+            name: "Invitado",
+            guestToken,
+            savedReelIds: [],
+            followingUserIds: [],
+            isGuest: true,
+          };
+          try {
+            await MongoUser.updateOne(
+              { guestToken },
+              { $setOnInsert: currentUserObj },
+              { upsert: true }
+            );
+          } catch (e) {}
+        }
       }
     }
   }
@@ -1102,11 +1114,18 @@ export async function toggleSaveReel(req: Request, res: Response): Promise<void>
   }
 
   if (mongoose.connection.readyState === 1) {
-    await MongoUser.findOneAndUpdate(
-      { $or: [{ id: currentUserObj.id }, { guestToken: currentUserObj.guestToken }] },
-      { $set: { savedReelIds: currentUserObj.savedReelIds } },
-      { upsert: true }
-    );
+    if (currentUserObj._anonymousSession) {
+      await MongoGuestSession.updateOne(
+        { token: currentUserObj.guestToken },
+        { $set: { savedReelIds: currentUserObj.savedReelIds } }
+      );
+    } else {
+      await MongoUser.findOneAndUpdate(
+        { $or: [{ id: currentUserObj.id }, { guestToken: currentUserObj.guestToken }] },
+        { $set: { savedReelIds: currentUserObj.savedReelIds } },
+        { upsert: true }
+      );
+    }
   }
 
   // Update saves count on target reel if it's a reel
