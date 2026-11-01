@@ -168,7 +168,7 @@ export function ConfigPerfilView({
 
       if (data.user) {
         sessionState.setAuthenticated(true);
-        sessionState.setUsername(data.user.name || data.user.email || "");
+        sessionState.setUsername(data.user.email || "");
         sessionState.setUser(data.user);
         onProfileSaved?.(data.user);
         onRefreshUsers?.();
