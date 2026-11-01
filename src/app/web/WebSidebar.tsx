@@ -39,7 +39,7 @@ export default function WebSidebar({
     } else if (tab === 'profile') {
       setSelectedCreatorProfileId(null);
       setActiveTab('profile');
-      navigateTo(getProfilePath(currentUser));
+      navigateTo(isGuestUser(currentUser) ? '/perfil/login' : getProfilePath(currentUser));
     }
   };
 
@@ -117,7 +117,7 @@ export default function WebSidebar({
 
           {/* 4. Perfil */}
           <button
-            onClick={() => { setSelectedCreatorProfileId(null); setActiveTab('profile'); navigateTo(getProfilePath(currentUser)); }}
+            onClick={() => { setSelectedCreatorProfileId(null); setActiveTab('profile'); navigateTo(isGuestUser(currentUser) ? '/perfil/login' : getProfilePath(currentUser)); }}
             className={`w-full flex items-center space-x-3.5 px-4 py-3 rounded-2xl font-black text-xs transition-all cursor-pointer ${
               activeTab === 'profile' && selectedCreatorProfileId === null
                 ? "bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20"
@@ -140,7 +140,7 @@ export default function WebSidebar({
       {/* Desktop Web Footer Profile Card */}
       <div className={`pt-4 border-t ${isDarkNavActive ? "border-slate-800/80" : "border-slate-200"}`}>
         <div
-          onClick={() => { setSelectedCreatorProfileId(null); setActiveTab('profile'); navigateTo(getProfilePath(currentUser)); }}
+          onClick={() => { setSelectedCreatorProfileId(null); setActiveTab('profile'); navigateTo(isGuestUser(currentUser) ? '/perfil/login' : getProfilePath(currentUser)); }}
           className={`flex items-center space-x-3 p-2.5 rounded-2xl border transition-all cursor-pointer group ${
             isDarkNavActive
               ? "bg-slate-900/80 hover:bg-slate-900 border-slate-800/80"
