@@ -188,7 +188,6 @@ export function ConfigPerfilView({
       !checkIsGuest(currentUser)
     ) {
       setEditName(currentUser.name || "");
-      setEditUsername(currentUser.username || "");
       setEditBio(currentUser.bio || "");
       setEditAvatar(currentUser.avatar || "");
       setEditCoverPhoto(currentUser.coverPhoto || "");
@@ -1116,7 +1115,7 @@ export function ConfigPerfilView({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {users
-              .filter((u) => u.id !== "current_user" && u.username !== "invitado")
+              .filter((u) => u.id !== "current_user" && !checkIsGuest(u))
               .map((u, index) => {
                 const isTargetSelected = switchingUser?.id === u.id;
                 return (
@@ -1138,7 +1137,7 @@ export function ConfigPerfilView({
                         <div>
                           <h4 className="text-xs font-bold text-slate-800">{u.name}</h4>
                           <p className="text-[10px] text-slate-500 font-semibold">
-                            @{u.username}
+                            {u.name}
                           </p>
                         </div>
                       </div>
@@ -1161,7 +1160,7 @@ export function ConfigPerfilView({
                     {isTargetSelected && (
                       <div className="mt-3 pt-3 border-t border-slate-100 w-full">
                         <label className="text-[9px] font-bold text-slate-500 block uppercase mb-1">
-                          Contraseña de @{u.username}:
+                          Contraseña de {u.name}:
                         </label>
                         <div className="flex items-center space-x-2">
                           <input
