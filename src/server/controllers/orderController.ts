@@ -155,7 +155,7 @@ export async function createOrder(req: Request, res: Response): Promise<void> {
     (!userId || userId === "current_user" || userId === "user_guest" || userId === "invitado") &&
     (!buyerUsername || buyerUsername === "invitado" || buyerUsername === "guest");
 
-  if (!isRequesterGuest) {
+  if (!isAnonymousWebCheckout && !isRequesterGuest) {
     // Buyer is already logged into a registered account — never show auto-created account message
     let loggedInUser: any = buyerUser;
     if (!loggedInUser && mongoose.connection.readyState === 1) {
