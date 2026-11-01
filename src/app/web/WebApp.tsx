@@ -57,6 +57,7 @@ export interface WebAppProps {
   handleSendPrivateMessage: (text: string) => void;
   handleClearUnreads: (userId: string) => void;
   refreshProducts?: () => void;
+  refreshReels?: () => void;
   refreshAllData: () => void;
   setCurrentUser: React.Dispatch<React.SetStateAction<User>>;
   setUsers: React.Dispatch<React.SetStateAction<User[]>>;

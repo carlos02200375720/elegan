@@ -1,4 +1,4 @@
-name: Compilar y desplegar Servidor en Cloud Run
+name: Compilar Servidor en la Nube
 
 on:
   push:
@@ -41,38 +41,3 @@ jobs:
         with:
           name: app-server-dist
           path: dist/server.cjs
-
-  deploy-cloud-run:
-    name: Desplegar en Cloud Run
-    needs: build-server
-    runs-on: ubuntu-latest
-    env:
-      GCP_SA_KEY: ${{ secrets.GCP_SA_KEY }}
-      GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-    steps:
-      - name: Avisar que faltan credenciales de Google Cloud
-        if: env.GCP_SA_KEY == '' || env.GCP_PROJECT_ID == ''
-        run: echo "::warning::Falta configurar GCP_SA_KEY y/o GCP_PROJECT_ID en GitHub Secrets. El servidor se compiló, pero no se desplegó."
-
-      - name: Descargar código actual
-        if: env.GCP_SA_KEY != '' && env.GCP_PROJECT_ID != ''
-        uses: actions/checkout@v4
-
-      - name: Autenticar en Google Cloud
-        if: env.GCP_SA_KEY != '' && env.GCP_PROJECT_ID != ''
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: ${{ secrets.GCP_SA_KEY }}
-
-      - name: Configurar Google Cloud SDK
-        if: env.GCP_SA_KEY != '' && env.GCP_PROJECT_ID != ''
-        uses: google-github-actions/setup-gcloud@v2
-
-      - name: Desplegar servidor en Cloud Run
-        if: env.GCP_SA_KEY != '' && env.GCP_PROJECT_ID != ''
-        run: |
-          gcloud run deploy elegan-backend \
-            --source . \
-            --project "${{ secrets.GCP_PROJECT_ID }}" \
-            --region us-east1 \
-            --quiet
