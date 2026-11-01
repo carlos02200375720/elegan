@@ -100,12 +100,11 @@ export default function Perfil({
     decodedCreatorId === null ||
     decodedCreatorId === currentUser.id ||
     (!!currentUser.originalId && decodedCreatorId === currentUser.originalId) ||
-    (!!currentUser.username && decodedCreatorId?.toLowerCase() === currentUser.username?.toLowerCase().replace(/^@/, "")) ||
     (!!currentUser.email && decodedCreatorId?.toLowerCase() === currentUser.email?.toLowerCase()) ||
     (decodedCreatorId === "current_user" && !isGuestUser(currentUser)) ||
     (isGuestUser(currentUser) && (decodedCreatorId?.toLowerCase().startsWith("invitado") || decodedCreatorId === "usuario" || decodedCreatorId === "guest"));
   const activeUserId = isSelf
-    ? (currentUser.originalId || currentUser.username || currentUser.id)
+    ? (currentUser.originalId || currentUser.id)
     : selectedCreatorId;
 
   // Profiles data states
@@ -116,7 +115,6 @@ export default function Perfil({
         users.find(
           (u) =>
             u.id === selectedCreatorId ||
-            u.username?.toLowerCase() === selectedCreatorId.toLowerCase() ||
             (u.originalId && u.originalId === selectedCreatorId) ||
             u.name?.toLowerCase() === selectedCreatorId.toLowerCase()
         ) || null
@@ -269,7 +267,6 @@ export default function Perfil({
       const matched = users?.find(
         (u) =>
           u.id === activeUserId ||
-          u.username?.toLowerCase() === activeUserId.toLowerCase() ||
           (u.originalId && u.originalId === activeUserId) ||
           u.name?.toLowerCase() === activeUserId.toLowerCase()
       );
@@ -293,7 +290,7 @@ export default function Perfil({
 
     const targetEndpoint =
       isSelf && !isGuestUser(currentUser)
-        ? `/api/users/${encodeURIComponent(currentUser.originalId || currentUser.username || currentUser.id)}`
+        ? `/api/users/${encodeURIComponent(currentUser.originalId || currentUser.id)}`
         : `/api/users/${encodeURIComponent(activeUserId)}`;
 
     apiFetch(targetEndpoint)
@@ -308,7 +305,7 @@ export default function Perfil({
               ...data.user,
               id: currentUser.id,
               originalId: currentUser.originalId || data.user.originalId || data.user.id,
-              username: currentUser.username || data.user.username,
+              username: currentUser.name || data.user.name,
               name: currentUser.name || data.user.name,
               avatar: currentUser.avatar || data.user.avatar,
               coverPhoto: currentUser.coverPhoto || data.user.coverPhoto,
@@ -539,7 +536,7 @@ export default function Perfil({
                 }}
               />
               <span className="text-xs text-slate-500 font-bold font-mono mt-1 text-center">
-                @{profileUser.username}
+                {profileUser.email || ""}
               </span>
             </div>
             <div className="pb-1">
@@ -696,7 +693,7 @@ export default function Perfil({
                           </h3>
                           <p className="text-[11px] text-slate-300 font-medium mt-0.5">
                             Términos comerciales, garantías y resguardo de datos de{" "}
-                            <span className="text-amber-400 font-bold">{profileUser.name}</span> (@{profileUser.username}).
+                            <span className="text-amber-400 font-bold">{profileUser.name}</span> .
                           </p>
                         </div>
                       </div>
