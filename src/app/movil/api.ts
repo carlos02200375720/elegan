@@ -253,7 +253,6 @@ export const androidApi = {
     name: string;
     email: string;
     password?: string;
-    username?: string;
     avatar?: string;
     coverPhoto?: string;
     bio?: string;
