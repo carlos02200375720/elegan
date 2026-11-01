@@ -99,17 +99,9 @@ export const androidApiFetch = async (
 
   if (typeof window !== "undefined") {
     try {
-      const loggedInUsername = sessionState.getUsername();
-      const currentUserData = JSON.stringify(sessionState.getUser());
-      if (loggedInUsername && loggedInUsername !== "invitado" && loggedInUsername !== "guest") {
-        headers.set("x-user-username", loggedInUsername);
-      }
-      if (currentUserData) {
-        const parsed = JSON.parse(currentUserData);
-        if (parsed?.username && parsed.username !== "invitado") {
-          if (!headers.has("x-user-username")) headers.set("x-user-username", parsed.username);
-          if (parsed.originalId || parsed.id) headers.set("x-user-id", parsed.originalId || parsed.id);
-        }
+      const currentUser = sessionState.getUser();
+      if (currentUser?.originalId || currentUser?.id) {
+        headers.set("x-user-id", currentUser.originalId || currentUser.id);
       }
 
       const storedGuestToken = localStorage.getItem("mall_guest_access_token");
