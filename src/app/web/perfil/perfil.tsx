@@ -50,7 +50,7 @@ const deduplicateById = <T extends { id: string }>(items: T[]): T[] => {
 
 export interface PerfilProps {
   currentUser: User;
-  selectedCreatorId: string | null; // Null means we view our own private admin profile
+  selectedCreatorId: string | null; // Null means we view our own profile
   users: User[];
   products?: Product[];
   savedReelIds?: string[];
@@ -547,9 +547,7 @@ export default function Perfil({
                 <span className="inline-block" style={{ paddingLeft: "18px" }}>
                   {profileUser.name}
                 </span>
-                {(isSuperAdmin(profileUser) || !isSelf) && (
-                  <BadgeCheck className="w-5 h-5 fill-sky-500 text-white shrink-0" title="Verificado" />
-                )}
+
               </h2>
             </div>
           </div>
@@ -618,7 +616,7 @@ export default function Perfil({
       <div className="flex-1 p-4 sm:p-6 pt-3 sm:pt-4 pb-0">
         <AnimatePresence mode="wait">
           {isSelf ? (
-            /* --- 1. ADMINISTRATIVE DASHBOARD VIEWS --- */
+            /* --- 1. PERSONAL PROFILE VIEWS --- */
             <motion.div
               key="admin"
               initial={{ opacity: 0 }}
