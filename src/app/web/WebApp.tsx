@@ -199,7 +199,7 @@ export default function WebApp({
                   setCurrentUser(normalizedUser);
                   setIsLoggedIn(true);
                   sessionState.setAuthenticated(true);
-                  sessionState.setUsername(normalizedUser.username);
+                  sessionState.setUsername(normalizedUser.email || "");
                   sessionState.setUser(normalizedUser);
                   setSelectedCreatorProfileId(null);
                   setActiveTab('shop');
@@ -266,7 +266,7 @@ export default function WebApp({
                     if (!isGuestUser(updatedUser)) {
                       setIsLoggedIn(true);
                       sessionState.setAuthenticated(true);
-                      sessionState.setUsername(updatedUser.username);
+                      sessionState.setUsername(updatedUser.email || "");
                       const parsed = typeof window !== 'undefined' ? parseRoute(window.location.pathname) : null;
                       if (parsed?.type === 'profile' && parsed.profileTab === 'config') {
                         setActiveTab('profile');
