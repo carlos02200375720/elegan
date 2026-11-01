@@ -405,7 +405,7 @@ export default function LoginView({
                   </div>
 
                   <p className="text-[10px] text-slate-400 leading-tight">
-                    Podrás personalizar tu nombre de usuario, biografía y foto de perfil en la página de Configuración cuando quieras.
+                    Podrás actualizar tus datos de envío, teléfono y foto de perfil en la página de Configuración cuando quieras.
                   </p>
 
                   {registerError && (

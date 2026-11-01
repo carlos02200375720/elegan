@@ -176,24 +176,6 @@ export function createAndroidRouter(deps: AndroidRouterDependencies): Router {
             $or: [{ id: headerUserId }, { _id: mongoose.isValidObjectId(headerUserId) ? headerUserId : undefined }],
           });
         }
-
-        // Check if guest token was sent
-        if (!targetUser && headerGuestToken) {
-          const foundGuest = await MongoUser.findOne({ guestToken: headerGuestToken });
-          if (foundGuest) {
-            const SIXTY_DAYS_MS = 60 * 24 * 60 * 60 * 1000;
-            const lastSeenTime = foundGuest.lastSeenAt ? new Date(foundGuest.lastSeenAt).getTime() : 0;
-            if (lastSeenTime > 0 && (Date.now() - lastSeenTime > SIXTY_DAYS_MS)) {
-              await MongoUser.deleteOne({ _id: foundGuest._id }).catch(() => {});
-              console.log(`⏱️ Purged guest token inactive for > 60 days in Android current_user: @${foundGuest.username}`);
-            } else {
-              const now = new Date();
-              await MongoUser.updateOne({ _id: foundGuest._id }, { $set: { lastSeenAt: now, isOnline: true } }).catch(() => {});
-              foundGuest.lastSeenAt = now;
-              targetUser = foundGuest;
-            }
-          }
-        }
       }
 
       if (targetUser) {
@@ -1249,25 +1231,15 @@ export function createAndroidRouter(deps: AndroidRouterDependencies): Router {
         const guestToken = headerGuestToken || bodyGuestToken;
 
         if (!currentUserObj && guestToken) {
-          currentUserObj = await MongoUser.findOne({ guestToken });
-          if (!currentUserObj) {
-            currentUserObj = {
-              id: userId || `guest_${Date.now()}`,
-              username: username || "invitado",
-              name: "Invitado",
-              guestToken: guestToken,
-              savedReelIds: [],
-              followingUserIds: [],
-              isGuest: true,
-            };
-            try {
-              await MongoUser.updateOne(
-                { guestToken },
-                { $setOnInsert: currentUserObj },
-                { upsert: true }
-              );
-            } catch (e) {}
-          }
+          currentUserObj = {
+            id: userId || guestToken || "guest",
+            username: username || "invitado",
+            name: "Invitado",
+            guestToken: guestToken,
+            savedReelIds: [],
+            followingUserIds: [],
+            isGuest: true,
+          };
         }
       }
 
@@ -1289,11 +1261,10 @@ export function createAndroidRouter(deps: AndroidRouterDependencies): Router {
         saved = true;
       }
 
-      if (mongoose.connection.readyState === 1) {
+      if (mongoose.connection.readyState === 1 && !currentUserObj.isGuest && currentUserObj._id) {
         await MongoUser.updateOne(
-          { $or: [{ id: currentUserObj.id }, { guestToken: currentUserObj.guestToken }] },
-          { $set: { savedReelIds: currentUserObj.savedReelIds } },
-          { upsert: true }
+          { _id: currentUserObj._id },
+          { $set: { savedReelIds: currentUserObj.savedReelIds } }
         );
       }
 

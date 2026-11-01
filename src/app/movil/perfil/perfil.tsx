@@ -605,7 +605,6 @@ export default function Perfil({
                 </span>
               )}
             </div>
-            <p className="text-xs text-amber-600 font-semibold">@{activeUser.username}</p>
             {activeUser.email && (
               <div className="flex items-center gap-1.5 mt-1 text-[11px] text-slate-600 font-medium">
                 <Mail className="w-3.5 h-3.5 text-amber-500 shrink-0" />

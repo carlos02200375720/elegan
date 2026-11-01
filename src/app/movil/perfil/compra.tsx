@@ -393,7 +393,7 @@ export function CompraPerfilView({
           <p className="font-black text-slate-800 text-sm">
             {isSelf
               ? "No has realizado ningún pedido todavía"
-              : `Sin compras registradas para @${effectiveUser?.username || "usuario"}`}
+              : `Sin compras registradas para ${effectiveUser?.name || "este cliente"}`}
           </p>
           <p className="text-[11px] text-slate-500 mt-1 max-w-xs text-center leading-relaxed">
             Todas las compras realizadas en la tienda por este usuario aparecerán aquí con su estado de entrega y comprobante.

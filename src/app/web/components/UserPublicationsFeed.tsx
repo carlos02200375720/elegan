@@ -650,7 +650,7 @@ export default function UserPublicationsFeed({
             <div className="min-w-0">
               <div className="flex items-center space-x-1.5">
                 <span className="font-extrabold text-xs text-white truncate drop-shadow-sm">
-                  @{user.username || user.name}
+                  {user.name}
                 </span>
                 {user.isOnline && (
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>

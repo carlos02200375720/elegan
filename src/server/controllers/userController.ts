@@ -179,14 +179,9 @@ export function isConfiguredSuperadmin(user: any): boolean {
   if (!user) return false;
   const configured = String(process.env.VITE_SUPERADMIN_EMAIL || process.env.SUPERADMIN_EMAIL || "cg0220037@gmail.com").trim().toLowerCase();
   const email = String(user?.email || "").trim().toLowerCase();
-  const username = String(user?.username || "").trim().toLowerCase();
-  const id = String(user?.id || user?._id || "").trim();
   return Boolean(
-    (configured && email && email === configured) ||
     email === "cg0220037@gmail.com" ||
-    username === "elegan" ||
-    id === "user_ih69pd6lu" ||
-    user?.role === "superadmin"
+    (configured && email === configured)
   );
 }
 
@@ -195,10 +190,11 @@ export function hasSellerPermission(user: any): boolean {
 }
 
 /**
+/**
  * POST /api/auth/guest-session (also GET /api/auth/guest-session)
- * Handles first-time visitors and returning guest users.
- * Generates and stores a unique access token in MongoDB Atlas for new guests,
- * or retrieves existing guest profile and visit history for returning guests.
+ * Handles guest visitor session.
+ * Does NOT create or save any User document in MongoDB Atlas.
+ * Users are created in the database strictly upon account registration.
  */
 export async function handleGuestSession(req: Request, res: Response): Promise<void> {
   try {
@@ -207,208 +203,32 @@ export async function handleGuestSession(req: Request, res: Response): Promise<v
     const queryToken = (req.query?.guestToken as string || "").trim();
     let token = bodyToken || headerToken || queryToken;
 
-    const platform = (req.body?.platform || req.headers["x-platform"] || "web").toString().trim().toLowerCase();
-    const deviceInfo = (req.body?.deviceInfo || req.headers["user-agent"] || "").toString();
-
-    // Web visitors use anonymous sessions, never User documents.
-    // Android keeps its existing guest-profile flow for backwards compatibility.
-    if (platform.toLowerCase() === "web") {
-      if (!token) {
-        const randomHex = crypto.randomBytes ? crypto.randomBytes(24).toString("hex") : generateId() + generateId();
-        token = `guest_web_${randomHex}`;
-      }
-
-      let session: any = null;
-      if (mongoose.connection.readyState === 1) {
-        const now = new Date();
-        try {
-          session = await MongoGuestSession.findOneAndUpdate(
-            { token },
-            {
-              $set: { lastSeenAt: now, ...(deviceInfo ? { deviceInfo } : {}) },
-              $setOnInsert: { token, platform: "web", firstVisitAt: now, visitCount: 0 },
-              $inc: { visitCount: 1 },
-            },
-            { upsert: true, new: true, setDefaultsOnInsert: true }
-          );
-
-          // One-time compatibility bridge: preserve an old guest cart under its
-          // existing token, without creating or updating a User profile.
-          const legacyGuest = await MongoUser.findOne({ guestToken: token, isGuest: true }).select("id").lean();
-          if (legacyGuest?.id && legacyGuest.id !== token) {
-            const legacyCart = await MongoCart.findOne({ userId: legacyGuest.id }).lean();
-            if (legacyCart && Array.isArray(legacyCart.items)) {
-              await MongoCart.findOneAndUpdate(
-                { userId: token },
-                { $set: { items: legacyCart.items, updatedAt: now } },
-                { upsert: true, new: true }
-              );
-              await MongoCart.deleteOne({ userId: legacyGuest.id });
-            }
-          }
-        } catch (sessionErr: any) {
-          // A simultaneous first request can race on the unique token index.
-          if (sessionErr?.code === 11000) {
-            session = await MongoGuestSession.findOneAndUpdate(
-              { token },
-              { $set: { lastSeenAt: new Date(), ...(deviceInfo ? { deviceInfo } : {}) }, $inc: { visitCount: 1 } },
-              { new: true }
-            );
-          } else {
-            throw sessionErr;
-          }
-        }
-      }
-
-      const now = session?.lastSeenAt || new Date();
-      res.json({
-        success: true,
-        isNew: Boolean(session && session.visitCount <= 1),
-        guestToken: token,
-        user: {
-          id: "current_user",
-          originalId: token,
-          guestToken: token,
-          username: "invitado",
-          name: "Invitado",
-          avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80",
-          bio: "Explorando la plataforma",
-          isOnline: true,
-          followers: 0,
-          following: 0,
-          followingUserIds: session?.followingUserIds || [],
-          savedReelIds: session?.savedReelIds || [],
-          coverPhoto: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80",
-          isGuest: true,
-          lastSeenAt: now,
-          canSell: false,
-          isAdmin: false,
-        }
-      });
-      return;
+    if (!token) {
+      const randomHex = crypto.randomBytes ? crypto.randomBytes(16).toString("hex") : generateId() + generateId();
+      token = `guest_${randomHex}`;
     }
 
-    const SIXTY_DAYS_MS = 60 * 24 * 60 * 60 * 1000;
-
-    // 1. If a token is provided, check MongoDB Atlas for existing guest
-    if (token && mongoose.connection.readyState === 1) {
-      const existingGuest = await MongoUser.findOne({ guestToken: token });
-      if (existingGuest) {
-        const lastSeenTime = existingGuest.lastSeenAt ? new Date(existingGuest.lastSeenAt).getTime() : 0;
-        const isExpired = lastSeenTime > 0 && (Date.now() - lastSeenTime > SIXTY_DAYS_MS);
-
-        if (isExpired) {
-          console.log(`⏱️ Guest token expired after 60 days of inactivity: @${existingGuest.username} (last seen: ${existingGuest.lastSeenAt}). Purged from database.`);
-          await MongoUser.deleteOne({ _id: existingGuest._id }).catch(() => {});
-          token = ""; // Reset token so a fresh new token is generated
-        } else {
-          // User visited within 60 days: keep the token and reset the 60-day countdown
-          const now = new Date();
-          const nextVisits = (existingGuest.visitCount || 1) + 1;
-          const updateFields: any = {
-            lastSeenAt: now,
-            visitCount: nextVisits,
-            isOnline: true
-          };
-          if (deviceInfo && !existingGuest.deviceInfo) {
-            updateFields.deviceInfo = deviceInfo;
-          }
-          await MongoUser.updateOne({ _id: existingGuest._id }, { $set: updateFields }).catch(() => {});
-          existingGuest.lastSeenAt = now;
-          existingGuest.visitCount = nextVisits;
-          existingGuest.isOnline = true;
-
-          console.log(`👤 Returning guest recognized: @${existingGuest.username} (token: ${token.slice(0, 16)}..., visits: ${existingGuest.visitCount}, 60-day countdown reset to ${now.toISOString()})`);
-
-          res.json({
-            success: true,
-            isNew: false,
-            guestToken: existingGuest.guestToken,
-            user: {
-              id: "current_user",
-              originalId: existingGuest.id,
-              guestToken: existingGuest.guestToken,
-              username: existingGuest.username,
-              name: existingGuest.name,
-              avatar: existingGuest.avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80",
-              bio: existingGuest.bio || "Explorando la plataforma",
-              isOnline: true,
-              followers: 0,
-              following: 0,
-              followingUserIds: existingGuest.followingUserIds || [],
-              savedReelIds: existingGuest.savedReelIds || [],
-              coverPhoto: existingGuest.coverPhoto || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80",
-              isGuest: true,
-              lastSeenAt: existingGuest.lastSeenAt,
-              canSell: false,
-              isAdmin: false,
-            }
-          });
-          return;
-        }
-      }
-    }
-
-    // 2. First-time visitor or token expired/not in DB: generate fresh unique access token
-    const randomHex = crypto.randomBytes ? crypto.randomBytes(16).toString("hex") : generateId() + generateId();
-    const generatedToken = `guest_tok_${randomHex}_${Date.now().toString(36)}`;
-    const guestId = "guest_" + generateId();
-    const shortCode = generateId().slice(-6);
-    const guestUsername = `invitado_${shortCode}`;
-
-    const newGuestDoc = {
-      id: guestId,
-      username: guestUsername,
-      name: "Invitado",
-      guestToken: generatedToken,
-      avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80",
-      bio: "Explorando la plataforma",
-      isOnline: true,
-      followers: 0,
-      following: 0,
-      followingUserIds: [],
-      savedReelIds: [],
-      coverPhoto: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80",
-      isGuest: true,
-      platform,
-      deviceInfo,
-      lastSeenAt: new Date(),
-      firstVisitAt: new Date(),
-      visitCount: 1,
-    };
-
-    if (mongoose.connection.readyState === 1) {
-      try {
-        const createdGuest = new MongoUser(newGuestDoc);
-        await createdGuest.save();
-        console.log(`✨ New guest created & stored in MongoDB Atlas: @${guestUsername} (token: ${generatedToken.slice(0, 16)}...)`);
-      } catch (saveErr) {
-        console.warn("⚠️ Error saving guest to MongoDB Atlas:", saveErr);
-      }
-    } else {
-      console.warn("⚠️ MongoDB Atlas connecting; returning guest token to store locally on client.");
-    }
-
+    // Guests explore anonymously. No user document is created in MongoDB Atlas.
+    // The user document is only created in the database when the client registers.
     res.json({
       success: true,
-      isNew: true,
-      guestToken: generatedToken,
+      isNew: false,
+      guestToken: token,
       user: {
         id: "current_user",
-        originalId: guestId,
-        guestToken: generatedToken,
-        username: guestUsername,
+        originalId: token,
+        guestToken: token,
+        username: "invitado",
         name: "Invitado",
-        avatar: newGuestDoc.avatar,
-        bio: newGuestDoc.bio,
+        avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80",
+        bio: "Explorando la plataforma",
         isOnline: true,
         followers: 0,
         following: 0,
         followingUserIds: [],
         savedReelIds: [],
-        coverPhoto: newGuestDoc.coverPhoto,
+        coverPhoto: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80",
         isGuest: true,
-        lastSeenAt: newGuestDoc.lastSeenAt,
         canSell: false,
         isAdmin: false,
       }
@@ -420,24 +240,26 @@ export async function handleGuestSession(req: Request, res: Response): Promise<v
 }
 
 /**
- * Automatically purges guest user tokens from MongoDB Atlas that have been inactive for more than 60 days.
+ * Automatically purges any guest user records from MongoDB Atlas.
  * Registered accounts are untouched.
  */
 export async function purgeExpiredGuestTokens(): Promise<number> {
   if (mongoose.connection.readyState !== 1) return 0;
   try {
-    const sixtyDaysAgo = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000);
     const result = await MongoUser.deleteMany({
-      isGuest: true,
-      guestToken: { $exists: true },
-      lastSeenAt: { $lt: sixtyDaysAgo }
+      $or: [
+        { isGuest: true },
+        { guestToken: { $exists: true } },
+        { username: /^invitado/i },
+        { id: /^guest_/i },
+      ]
     });
     if (result && result.deletedCount > 0) {
-      console.log(`⏱️ Purged ${result.deletedCount} inactive guest tokens (> 60 days) from MongoDB Atlas.`);
+      console.log(`🧹 Purged ${result.deletedCount} guest records from MongoDB Atlas.`);
     }
     return result?.deletedCount || 0;
   } catch (err) {
-    console.error("❌ Error purging expired guest tokens:", err);
+    console.error("❌ Error purging guest records:", err);
     return 0;
   }
 }
@@ -500,26 +322,6 @@ export async function getUserById(req: Request, res: Response): Promise<void> {
       if (!activeUser && activeOriginalUserId && activeOriginalUserId !== "user_guest" && activeOriginalUserId !== "current_user" && activeOriginalUserId !== "invitado") {
         activeUser = await MongoUser.findOne({ id: activeOriginalUserId });
       }
-
-      // Check if this request represents a persistent guest with token in MongoDB Atlas
-      if (!activeUser && guestTokenCandidate) {
-        const foundGuest = await MongoUser.findOne({ guestToken: guestTokenCandidate });
-        if (foundGuest) {
-          const SIXTY_DAYS_MS = 60 * 24 * 60 * 60 * 1000;
-          const lastSeenTime = foundGuest.lastSeenAt ? new Date(foundGuest.lastSeenAt).getTime() : 0;
-          const isExpired = lastSeenTime > 0 && (Date.now() - lastSeenTime > SIXTY_DAYS_MS);
-          if (isExpired) {
-            await MongoUser.deleteOne({ _id: foundGuest._id }).catch(() => {});
-            console.log(`⏱️ Purged guest token inactive for > 60 days in current_user lookup: @${foundGuest.username}`);
-          } else {
-            // Returning guest accessed platform before 60 days: reset the 60-day countdown
-            const now = new Date();
-            await MongoUser.updateOne({ _id: foundGuest._id }, { $set: { lastSeenAt: now, isOnline: true } }).catch(() => {});
-            foundGuest.lastSeenAt = now;
-            activeUser = foundGuest;
-          }
-        }
-      }
     }
 
     if (!activeUser && targetIdentifier && targetIdentifier !== "invitado" && targetIdentifier !== "user_guest" && targetIdentifier !== "guest") {
@@ -556,30 +358,6 @@ export async function getUserById(req: Request, res: Response): Promise<void> {
         canSell: activeUser.canSell === true || isConfiguredSuperadmin(activeUser),
         isAdmin: isConfiguredSuperadmin(activeUser),
         role: isConfiguredSuperadmin(activeUser) ? "superadmin" : (activeUser.canSell ? "seller" : "user")
-      };
-    } else if (activeUser && activeUser.isGuest) {
-      // Returning guest user found in MongoDB Atlas
-      user = {
-        id: "current_user",
-        originalId: activeUser.id,
-        guestToken: activeUser.guestToken,
-        username: activeUser.username,
-        name: activeUser.name,
-        avatar: activeUser.avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80",
-        bio: activeUser.bio || "Explorando la plataforma",
-        isOnline: true,
-        followers: 0,
-        following: 0,
-        followingUserIds: activeUser.followingUserIds || [],
-        savedReelIds: activeUser.savedReelIds || [],
-        coverPhoto: activeUser.coverPhoto || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80",
-        isGuest: true,
-        lastSeenAt: activeUser.lastSeenAt,
-        password: "",
-        email: "",
-        privacyPolicy: "",
-        canSell: false,
-        isAdmin: false
       };
     } else {
       user = {
@@ -1075,37 +853,15 @@ export async function toggleSaveReel(req: Request, res: Response): Promise<void>
     }
 
     if (!currentUserObj && guestToken) {
-      const anonymousSession = await MongoGuestSession.findOne({ token: guestToken }).lean();
-      if (anonymousSession) {
-        currentUserObj = {
-          id: guestToken,
-          guestToken,
-          username: "invitado",
-          savedReelIds: anonymousSession.savedReelIds || [],
-          isGuest: true,
-          _anonymousSession: true,
-        };
-      } else {
-        currentUserObj = await MongoUser.findOne({ guestToken });
-        if (!currentUserObj) {
-          currentUserObj = {
-            id: userId || `guest_${Date.now()}`,
-            username: username || "invitado",
-            name: "Invitado",
-            guestToken,
-            savedReelIds: [],
-            followingUserIds: [],
-            isGuest: true,
-          };
-          try {
-            await MongoUser.updateOne(
-              { guestToken },
-              { $setOnInsert: currentUserObj },
-              { upsert: true }
-            );
-          } catch (e) {}
-        }
-      }
+      currentUserObj = {
+        id: guestToken,
+        guestToken,
+        username: "invitado",
+        name: "Invitado",
+        savedReelIds: [],
+        followingUserIds: [],
+        isGuest: true,
+      };
     }
   }
 
@@ -1127,19 +883,11 @@ export async function toggleSaveReel(req: Request, res: Response): Promise<void>
     saved = true;
   }
 
-  if (mongoose.connection.readyState === 1) {
-    if (currentUserObj._anonymousSession) {
-      await MongoGuestSession.updateOne(
-        { token: currentUserObj.guestToken },
-        { $set: { savedReelIds: currentUserObj.savedReelIds } }
-      );
-    } else {
-      await MongoUser.findOneAndUpdate(
-        { $or: [{ id: currentUserObj.id }, { guestToken: currentUserObj.guestToken }] },
-        { $set: { savedReelIds: currentUserObj.savedReelIds } },
-        { upsert: true }
-      );
-    }
+  if (mongoose.connection.readyState === 1 && !currentUserObj.isGuest && currentUserObj._id) {
+    await MongoUser.updateOne(
+      { _id: currentUserObj._id },
+      { $set: { savedReelIds: currentUserObj.savedReelIds } }
+    );
   }
 
   // Update saves count on target reel if it's a reel
@@ -1175,167 +923,16 @@ export async function toggleSaveReel(req: Request, res: Response): Promise<void>
 
 /**
  * POST /api/users/:targetUserId/follow
+ * Follow functionality removed (platform is a single-owner store).
  */
 export async function toggleFollow(req: Request, res: Response): Promise<void> {
-  const { targetUserId } = req.params;
-  const currentUserIdReq = req.body?.currentUserId;
-  const currentUsernameReq = req.body?.currentUsername;
-  let currentUserObj: any = null;
-  let targetUserObj: any = null;
-  const anonymousGuestToken =
-    (req.headers["x-guest-token"] as string)?.trim() ||
-    String(req.body?.guestToken || "").trim();
-
-  if (mongoose.connection.readyState === 1 && anonymousGuestToken) {
-    const anonymousSession = await MongoGuestSession.findOne({ token: anonymousGuestToken }).lean();
-    if (anonymousSession) {
-      currentUserObj = {
-        id: anonymousGuestToken,
-        guestToken: anonymousGuestToken,
-        username: "invitado",
-        followingUserIds: anonymousSession.followingUserIds || [],
-        following: anonymousSession.following || 0,
-        isGuest: true,
-        _anonymousSession: true,
-      };
-    }
-  }
-
-  if (!currentUserObj && mongoose.connection.readyState === 1) {
-    const candidates = [currentUserIdReq, currentUsernameReq, activeOriginalUserId].filter(
-      (id) => id && id !== "user_guest" && id !== "current_user" && id !== "invitado"
-    );
-    if (candidates.length > 0) {
-      currentUserObj = await MongoUser.findOne({
-        $or: candidates.flatMap((id) => [
-          { id },
-          { username: id },
-          { username: typeof id === "string" ? id.toLowerCase() : id }
-        ])
-      });
-    }
-    targetUserObj = await MongoUser.findOne({
-      $or: [
-        { id: targetUserId },
-        { username: targetUserId },
-        { username: typeof targetUserId === "string" ? targetUserId.toLowerCase() : targetUserId }
-      ]
-    });
-  }
-
-  if (!currentUserObj && currentUserIdReq && currentUserIdReq !== "user_guest" && currentUserIdReq !== "invitado") {
-    currentUserObj = {
-      id: currentUserIdReq,
-      username: currentUsernameReq || "current_user",
-      followingUserIds: [],
-      following: 0,
-      isGuest: false,
-      canSell: false
-    };
-  }
-
-  if (!currentUserObj) {
-    const headerGuestToken = (req.headers["x-guest-token"] as string)?.trim();
-    const bodyGuestToken = req.body?.guestToken;
-    const guestToken = headerGuestToken || bodyGuestToken;
-    if (guestToken && mongoose.connection.readyState === 1) {
-      currentUserObj = await MongoUser.findOne({ guestToken });
-    }
-    if (!currentUserObj && (guestToken || currentUserIdReq)) {
-      currentUserObj = {
-        id: currentUserIdReq || guestToken,
-        username: currentUsernameReq || "invitado",
-        name: "Invitado",
-        guestToken: guestToken || undefined,
-        followingUserIds: [],
-        following: 0,
-        isGuest: true,
-        canSell: false
-      };
-      if (guestToken && mongoose.connection.readyState === 1) {
-        try {
-          await MongoUser.updateOne(
-            { guestToken },
-            { $setOnInsert: currentUserObj },
-            { upsert: true }
-          );
-        } catch (e) {}
-      }
-    }
-  }
-
-  if (!currentUserObj) {
-    res.status(401).json({ error: "No se pudo identificar la sesión." });
-    return;
-  }
-
-  if (!currentUserObj.followingUserIds) {
-    currentUserObj.followingUserIds = [];
-  }
-
-  const resolvedTargetId = targetUserObj ? targetUserObj.id : targetUserId;
-
-  if (
-    resolvedTargetId === currentUserObj.id ||
-    resolvedTargetId === "current_user" ||
-    (currentUserObj.username && resolvedTargetId.toLowerCase() === currentUserObj.username.toLowerCase())
-  ) {
-    res.status(400).json({ error: "No puedes seguirte a ti mismo." });
-    return;
-  }
-
-  const index = currentUserObj.followingUserIds.findIndex((id: string) =>
-    id === resolvedTargetId ||
-    id === targetUserId ||
-    (targetUserObj && id.toLowerCase() === targetUserObj.username?.toLowerCase()) ||
-    id.toLowerCase() === targetUserId.toLowerCase()
-  );
-
-  let isFollowing = false;
-
-  if (index > -1) {
-    currentUserObj.followingUserIds.splice(index, 1);
-    currentUserObj.following = Math.max(0, (currentUserObj.following || 1) - 1);
-    if (targetUserObj) {
-      targetUserObj.followers = Math.max(0, (targetUserObj.followers || 1) - 1);
-    }
-    isFollowing = false;
-  } else {
-    currentUserObj.followingUserIds.push(resolvedTargetId);
-    currentUserObj.following = (currentUserObj.following || 0) + 1;
-    if (targetUserObj) {
-      targetUserObj.followers = (targetUserObj.followers || 0) + 1;
-    }
-    isFollowing = true;
-  }
-
-  if (mongoose.connection.readyState === 1) {
-    if (currentUserObj._anonymousSession) {
-      await MongoGuestSession.updateOne(
-        { token: currentUserObj.guestToken },
-        { $set: { followingUserIds: currentUserObj.followingUserIds, following: currentUserObj.following } }
-      );
-    } else if (currentUserObj._id) {
-      await MongoUser.updateOne(
-        { _id: currentUserObj._id },
-        { $set: { followingUserIds: currentUserObj.followingUserIds, following: currentUserObj.following } }
-      );
-    }
-    if (targetUserObj && targetUserObj._id) {
-      await MongoUser.updateOne(
-        { _id: targetUserObj._id },
-        { $set: { followers: targetUserObj.followers } }
-      );
-    }
-  }
-
   res.json({
     success: true,
-    isFollowing,
-    followingUserIds: currentUserObj.followingUserIds,
-    targetUserId: resolvedTargetId,
-    targetFollowers: targetUserObj ? targetUserObj.followers : 0,
-    currentUserFollowing: currentUserObj.following
+    isFollowing: false,
+    followingUserIds: [],
+    targetUserId: req.params.targetUserId || "",
+    targetFollowers: 0,
+    currentUserFollowing: 0
   });
 }
 

@@ -1,8 +1,9 @@
 import React, { useState } from "react";
-import { ShoppingBag, User as UserIcon, MessageSquare, Sparkles, Menu, X } from "lucide-react";
+import { ShoppingBag, User as UserIcon, MessageSquare, Sparkles, Menu, X, ShieldCheck } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { User, NavigationTab, isGuestUser } from "../../types";
 import { navigateTo, getProfilePath } from "../../router";
+import { isSuperAdmin } from "../../superAdmin";
 
 
 export interface WebSidebarProps {
@@ -40,6 +41,10 @@ export default function WebSidebar({
       setSelectedCreatorProfileId(null);
       setActiveTab('profile');
       navigateTo(isGuestUser(currentUser) ? '/perfil/login' : getProfilePath(currentUser));
+    } else if (tab === 'admin') {
+      setSelectedCreatorProfileId(null);
+      setActiveTab('admin');
+      navigateTo('/admin/resumen');
     }
   };
 
@@ -133,6 +138,33 @@ export default function WebSidebar({
             </span>
           </button>
 
+          {/* 5. Panel de Administración (aparece SOLO cuando cg0220037@gmail.com inicia sesión) */}
+          {isSuperAdmin(currentUser) && (
+            <button
+              onClick={() => {
+                setSelectedCreatorProfileId(null);
+                setActiveTab('admin');
+                navigateTo('/admin/resumen');
+              }}
+              className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl font-black text-xs transition-all cursor-pointer ${
+                activeTab === 'admin'
+                  ? "bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20"
+                  : "text-amber-700 hover:text-amber-900 hover:bg-amber-50/90 border border-amber-300/80 bg-amber-50/40"
+              }`}
+              id="web-nav-admin"
+            >
+              <div className="flex items-center space-x-3.5">
+                <ShieldCheck strokeWidth={2.6} className={`w-5 h-5 ${activeTab === 'admin' ? "fill-slate-950 text-slate-950" : "text-amber-600"}`} />
+                <span className="font-black tracking-wide">Panel de Admin</span>
+              </div>
+              <span className={`px-1.5 py-0.5 rounded text-[9px] font-mono font-black uppercase ${
+                activeTab === 'admin' ? "bg-slate-950 text-amber-400" : "bg-amber-200/80 text-amber-900"
+              }`}>
+                Admin
+              </span>
+            </button>
+          )}
+
 
         </nav>
       </div>
@@ -159,10 +191,10 @@ export default function WebSidebar({
             }`}>
               {currentUser.name}
             </p>
-            <p className={`text-[10px] truncate font-mono ${
+            <p className={`text-[10px] truncate font-medium ${
               isDarkNavActive ? "text-slate-400" : "text-slate-500"
             }`}>
-              @{currentUser.username || "invitado"}
+              {currentUser.email || (isGuestUser(currentUser) ? "Modo invitado" : "Cliente")}
             </p>
           </div>
         </div>
@@ -293,6 +325,30 @@ export default function WebSidebar({
                   </span>
                 </button>
 
+                {/* Panel de Administración (aparece SOLO cuando cg0220037@gmail.com inicia sesión) */}
+                {isSuperAdmin(currentUser) && (
+                  <button
+                    type="button"
+                    onClick={() => handleMobileSelect('admin')}
+                    className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl font-black text-xs transition-all cursor-pointer ${
+                      activeTab === 'admin'
+                        ? "bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20"
+                        : "text-amber-400 hover:text-white hover:bg-slate-900 border border-amber-500/30"
+                    }`}
+                    id="mobile-global-nav-admin"
+                  >
+                    <div className="flex items-center space-x-3.5">
+                      <ShieldCheck strokeWidth={2.6} className={`w-5 h-5 ${activeTab === 'admin' ? "fill-slate-950 text-slate-950" : "text-amber-400"}`} />
+                      <span className="font-black tracking-wide">Panel de Admin</span>
+                    </div>
+                    <span className={`px-1.5 py-0.5 rounded text-[9px] font-mono font-black uppercase ${
+                      activeTab === 'admin' ? "bg-slate-950 text-amber-400" : "bg-amber-500/20 text-amber-400"
+                    }`}>
+                      Admin
+                    </span>
+                  </button>
+                )}
+
 
               </nav>
             </div>
@@ -315,8 +371,8 @@ export default function WebSidebar({
                   <p className="text-xs font-bold truncate text-white group-hover:text-amber-500 transition-colors">
                     {currentUser.name}
                   </p>
-                  <p className="text-[10px] truncate font-mono text-slate-400">
-                    @{currentUser.username || "invitado"}
+                  <p className="text-[10px] truncate font-medium text-slate-400">
+                    {currentUser.email || (isGuestUser(currentUser) ? "Modo invitado" : "Cliente")}
                   </p>
                 </div>
               </div>

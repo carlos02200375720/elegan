@@ -282,7 +282,9 @@ export function ConfigPerfilView({
                   <ImageIcon className="w-4 h-4 text-amber-600" />
                   <span>Elegir foto de la galería</span>
                 </button>
-                <p className="text-[11px] text-slate-400 mt-1 font-medium">@{activeUser.username}</p>
+                {activeUser.email && (
+                  <p className="text-[11px] text-slate-400 mt-1 font-medium">{activeUser.email}</p>
+                )}
               </div>
 
               {/* Nombre Completo */}

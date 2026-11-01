@@ -140,9 +140,9 @@ export default function UsuariosAdminView({
         <table className="w-full text-left text-xs">
           <thead className="bg-slate-50 text-slate-500 uppercase font-mono text-[10px] tracking-wider border-y border-slate-100">
             <tr>
-              <th className="py-3 px-4">Usuario</th>
+              <th className="py-3 px-4">Cliente</th>
               <th className="py-3 px-4">Correo Electrónico</th>
-              <th className="py-3 px-4">Seguidores</th>
+              <th className="py-3 px-4">Teléfono</th>
               <th className="py-3 px-4">Estado</th>
               <th className="py-3 px-4">Permiso</th>
               <th className="py-3 px-4 text-right">Acciones</th>
@@ -196,8 +196,8 @@ export default function UsuariosAdminView({
                     <td className="py-3.5 px-4 font-mono text-slate-600">
                       {user.email || "No especificado"}
                     </td>
-                    <td className="py-3.5 px-4 font-mono font-bold text-slate-700">
-                      {user.followers || 0}
+                    <td className="py-3.5 px-4 font-mono text-slate-700">
+                      {user.phone || "No especificado"}
                     </td>
                     <td className="py-3.5 px-4">
                       <span

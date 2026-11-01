@@ -443,12 +443,17 @@ export default function App() {
         setSelectedCreatorProfileId(null);
       }
     } else if (currentRoute.type === 'admin') {
-      setActiveTab('admin');
-      if (typeof window !== 'undefined' && window.location.pathname.toLowerCase().replace(/\/+$/, '') === '/admin') {
-        navigateTo('/admin/resumen', { replace: true });
+      if (isSuperAdmin(currentUser)) {
+        setActiveTab('admin');
+        if (typeof window !== 'undefined' && window.location.pathname.toLowerCase().replace(/\/+$/, '') === '/admin') {
+          navigateTo('/admin/resumen', { replace: true });
+        }
+      } else {
+        setActiveTab('shop');
+        navigateTo('/tienda/catalogo', { replace: true });
       }
     }
-  }, [currentRoute, products, reels, activePlatform]);
+  }, [currentRoute, products, reels, activePlatform, currentUser]);
 
   // Keep profile URL synchronized with /perfil/:userId (dominio/perfil/id)
   useEffect(() => {

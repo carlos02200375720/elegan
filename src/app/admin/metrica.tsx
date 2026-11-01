@@ -512,12 +512,11 @@ export default function MetricaAdminView({
           productsCount: userProducts.length,
           totalViews: creatorViews,
           totalLikes: creatorLikes,
-          followers: Number(u.followers) || 0,
         };
       })
       .sort((a, b) => {
-        const scoreB = b.totalViews + b.followers * 5 + b.reelsCount * 10;
-        const scoreA = a.totalViews + a.followers * 5 + a.reelsCount * 10;
+        const scoreB = b.totalViews + b.reelsCount * 10 + b.productsCount * 5;
+        const scoreA = a.totalViews + a.reelsCount * 10 + a.productsCount * 5;
         return scoreB - scoreA;
       })
       .slice(0, 6);
@@ -1437,7 +1436,7 @@ export default function MetricaAdminView({
               </h3>
             </div>
             <span className="text-[11px] font-mono text-slate-400">
-              Por alcance, catálogo y seguidores
+              Por alcance y catálogo de productos
             </span>
           </div>
 
@@ -1461,12 +1460,12 @@ export default function MetricaAdminView({
                     <p className="text-xs font-bold text-slate-900 truncate group-hover:text-amber-600">
                       {item.user.name}
                     </p>
-                    <p className="text-[11px] font-mono text-slate-400 truncate">
-                      @{item.user.username}
+                    <p className="text-[11px] font-medium text-slate-400 truncate">
+                      {item.user.email || "Cliente de la tienda"}
                     </p>
                     <p className="text-[10px] text-slate-500 mt-0.5">
-                      <b>{item.followers}</b> seg. • <b>{item.reelsCount}</b> reels •{" "}
-                      <b>{item.productsCount}</b> prod.
+                      <b>{item.reelsCount}</b> videos •{" "}
+                      <b>{item.productsCount}</b> productos
                     </p>
                   </div>
                 </div>

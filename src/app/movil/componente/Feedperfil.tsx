@@ -191,7 +191,7 @@ export default function AndroidUserPublicationsFeed({
     <div className="fixed inset-0 z-50 bg-black flex flex-col text-white select-none" id="android-publications-feed">
       <div className="absolute top-0 inset-x-0 z-40 flex items-center justify-between p-4 bg-gradient-to-b from-black/80 to-transparent">
         <button onClick={onClose} className="p-2 rounded-full bg-black/40 text-white backdrop-blur-md active:bg-white/20"><ArrowLeft className="w-5 h-5" /></button>
-        <div className="flex items-center space-x-2"><img src={user.avatar} alt={user.name} className="w-7 h-7 rounded-full object-cover border border-amber-500" /><span className="text-xs font-semibold">{user.username}</span></div>
+        <div className="flex items-center space-x-2"><img src={user.avatar} alt={user.name} className="w-7 h-7 rounded-full object-cover border border-amber-500" /><span className="text-xs font-semibold">{user.name}</span></div>
         <button onClick={() => setIsMuted(!isMuted)} className="p-2 rounded-full bg-black/40 text-white backdrop-blur-md active:bg-white/20">
           {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
         </button>

@@ -153,7 +153,7 @@ export function ConfigPerfilView({
         body: JSON.stringify({
           name: guestRegName.trim(),
           email: emailToUse,
-          bio: "Nuevo creador en la plataforma",
+          bio: "Cliente de la tienda",
           avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80",
           coverPhoto: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80",
           password: guestRegPassword.trim(),

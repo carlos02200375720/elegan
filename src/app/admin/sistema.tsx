@@ -145,7 +145,7 @@ export default function SistemaAdminView({
             </div>
             <p className="text-base font-black text-slate-900">Control de Acceso (RBAC)</p>
             <p className="text-xs text-slate-600 leading-relaxed font-medium">
-              Sesión de administrador activa para <span className="font-bold text-slate-900">@{currentUser.username}</span> con privilegios de gestión de usuarios, catálogo y configuración global.
+              Sesión de administrador activa para <span className="font-bold text-slate-900">{currentUser.name || currentUser.email}</span> con privilegios de gestión de usuarios, catálogo y configuración global.
             </p>
             <div className="pt-2 flex items-center space-x-2 text-xs font-mono text-slate-700 font-bold">
               <ShieldCheck className="w-4 h-4 text-amber-500 shrink-0" />

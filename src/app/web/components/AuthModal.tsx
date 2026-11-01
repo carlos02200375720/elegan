@@ -92,7 +92,7 @@ export function AuthModal({
           onClose();
         }, 1000);
       } else {
-        setRegError(data.error || "Ocurrió un error al crear la cuenta. Intenta con otro nombre de usuario.");
+        setRegError(data.error || "Ocurrió un error al crear la cuenta. Por favor verifica tus datos.");
       }
     } catch (err) {
       console.error("Error al registrarse:", err);

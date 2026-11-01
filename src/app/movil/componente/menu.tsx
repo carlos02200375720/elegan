@@ -237,8 +237,8 @@ export function MovilHamburgerMenu({
                   <p className="text-xs font-bold truncate text-slate-900 group-hover:text-amber-600 transition-colors">
                     {currentUser?.name || "Invitado"}
                   </p>
-                  <p className="text-[10px] truncate font-mono text-slate-500">
-                    @{currentUser?.username || "invitado"}
+                  <p className="text-[10px] truncate font-medium text-slate-500">
+                    {currentUser?.email || (currentUser?.isGuest ? "Modo invitado" : "Cliente")}
                   </p>
                 </div>
               </div>

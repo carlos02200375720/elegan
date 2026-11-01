@@ -1599,22 +1599,18 @@ export default function AdminView({
 
                     <div className="space-y-1">
                       <h4 className="font-display font-black text-sm text-slate-900 leading-tight">
-                        Usuario Nuevo
+                        Cliente Registrado
                       </h4>
-                      <p className="text-xs font-mono text-slate-500">
-                        @nuevo_creador
+                      <p className="text-xs font-medium text-slate-500">
+                        cliente@tienda.com
                       </p>
                       <p className="text-[11px] text-slate-600 font-medium pt-1">
-                        Nuevo creador de contenido en la plataforma MallSocial
+                        Cliente registrado en la tienda
                       </p>
                     </div>
 
                     <div className="flex items-center space-x-3 pt-3 mt-2 border-t border-slate-200 text-[11px] font-bold text-slate-600">
-                      <span>0 publicaciones</span>
-                      <span>•</span>
-                      <span>0 seguidores</span>
-                      <span>•</span>
-                      <span>0 seguidos</span>
+                      <span>Cuenta de cliente verificada</span>
                     </div>
                   </div>
                 </div>
