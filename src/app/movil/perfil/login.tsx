@@ -29,7 +29,6 @@ export default function PerfilLogin({
       : "register"
   );
   const [name, setName] = useState("");
-  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [passwordConfirmation, setPasswordConfirmation] = useState("");
@@ -45,14 +44,14 @@ export default function PerfilLogin({
   ) => {
     sessionState.setUser(user);
     sessionState.setAuthenticated(true);
-    sessionState.setUsername(user.username);
+    sessionState.setUsername(user.name || user.email || "");
     removeLocalGuestToken();
 
     const savedIds = restoredSavedReels || user.savedReelIds || [];
     try {
       localStorage.setItem("mall_user", JSON.stringify(user));
       localStorage.setItem("mall_authenticated", "true");
-      localStorage.setItem("mall_username", user.username);
+      localStorage.setItem("mall_username", user.name || user.email || "");
       const userId = user.originalId || user.id;
       localStorage.setItem(`mall_user_orders_${userId}`, JSON.stringify(orders));
       localStorage.setItem(`mall_user_orders_${user.id}`, JSON.stringify(orders));
@@ -74,8 +73,8 @@ export default function PerfilLogin({
 
     const cleanEmail = email.trim().toLowerCase();
     if (mode === "register") {
-      if (!name.trim() || !username.trim() || !cleanEmail) {
-        setError("Completa tu nombre, usuario y correo electrónico.");
+      if (!name.trim() || !cleanEmail) {
+        setError("Completa tu nombre y correo electrónico.");
         return;
       }
       if (password.length < 8) {
@@ -97,12 +96,10 @@ export default function PerfilLogin({
         const guestToken = getLocalGuestToken() || currentUser.guestToken;
         const response = await androidApi.registerUser({
           name: name.trim(),
-          username: username.trim().replace(/^@/, ""),
           email: cleanEmail,
           password,
           guestToken,
           guestId: currentUser.originalId || currentUser.id,
-          guestUsername: currentUser.username,
           savedReelIds,
           cart,
         });
@@ -228,17 +225,6 @@ export default function PerfilLogin({
                   required
                   className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3 text-sm outline-none focus:border-amber-400 focus:bg-white"
                   placeholder="Tu nombre"
-                />
-              </label>
-              <label className="block text-xs font-bold text-slate-700">
-                Nombre de usuario
-                <input
-                  autoComplete="username"
-                  value={username}
-                  onChange={(event) => setUsername(event.target.value)}
-                  required
-                  className="mt-1.5 w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3 text-sm outline-none focus:border-amber-400 focus:bg-white"
-                  placeholder="tunombre"
                 />
               </label>
             </>
