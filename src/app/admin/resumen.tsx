@@ -414,7 +414,7 @@ export default function AdminView({
     return users.filter(
       (u) =>
         u.name.toLowerCase().includes(q) ||
-        u.username.toLowerCase().includes(q) ||
+        (u.email && u.email.toLowerCase().includes(q)) ||
         (u.email && u.email.toLowerCase().includes(q)) ||
         u.id.toLowerCase().includes(q)
     );
@@ -498,7 +498,7 @@ export default function AdminView({
       const data = await res.json().catch(() => ({}));
       if (!res.ok || data.success !== true) throw new Error(data.error || "No se pudo actualizar el permiso.");
       setUsers(prev => prev.map(u => u.id === user.id ? { ...u, canSell: data.canSell === true } : u));
-      setStatusMessage({ type: "success", text: nextCanSell ? `@${user.username} ahora tiene permisos de vendedor.` : `Se retiraron los permisos de vendedor de @${user.username}.` });
+      setStatusMessage({ type: "success", text: nextCanSell ? `${user.name} ahora tiene permisos de vendedor.` : `Se retiraron los permisos de vendedor de ${user.name}.` });
     } catch (err: any) {
       console.error("Error updating seller permission:", err);
       setStatusMessage({ type: "error", text: err.message || "Error al actualizar el permiso." });
@@ -930,7 +930,7 @@ export default function AdminView({
                           {u.name}
                         </p>
                         <p className="text-[11px] font-mono text-slate-400 truncate">
-                          @{u.username}
+                          {u.email || u.name}
                         </p>
                       </div>
                       <ChevronRight className="w-4 h-4 text-slate-400 group-hover:translate-x-0.5 transition-transform shrink-0" />
