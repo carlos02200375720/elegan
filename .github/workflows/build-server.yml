@@ -71,8 +71,8 @@ jobs:
       - name: Desplegar servidor en Cloud Run
         if: env.GCP_SA_KEY != '' && env.GCP_PROJECT_ID != ''
         run: |
-          gcloud run deploy carlos02200375720mall \
+          gcloud run deploy elegan-backend \
             --source . \
             --project "${{ secrets.GCP_PROJECT_ID }}" \
-            --region europe-west1 \
+            --region us-east1 \
             --quiet
