@@ -815,7 +815,7 @@ export default function App() {
       // Step 3: Restore session from sessionState if logged in
       let savedUsername = sessionState.getUsername();
       const savedPassword = "";
-      if (savedUsername && !isGuestUser({ username: savedUsername, isGuest: sessionState.getUser()?.isGuest })) {
+      if (savedUsername?.includes("@") && !isGuestUser({ isGuest: sessionState.getUser()?.isGuest })) {
         apiFetch("/api/users/current/switch", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
