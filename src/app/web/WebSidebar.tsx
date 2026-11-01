@@ -1,9 +1,9 @@
 import React, { useState } from "react";
-import { ShoppingBag, User as UserIcon, MessageSquare, Sparkles, ShieldCheck, Menu, X } from "lucide-react";
+import { ShoppingBag, User as UserIcon, MessageSquare, Sparkles, Menu, X } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { User, NavigationTab, isGuestUser } from "../../types";
 import { navigateTo, getProfilePath } from "../../router";
-import { isSuperAdmin } from "../../superAdmin";
+
 
 export interface WebSidebarProps {
   activeTab: NavigationTab;
@@ -40,10 +40,6 @@ export default function WebSidebar({
       setSelectedCreatorProfileId(null);
       setActiveTab('profile');
       navigateTo(getProfilePath(currentUser));
-    } else if (tab === 'admin') {
-      setSelectedCreatorProfileId(null);
-      setActiveTab('admin');
-      navigateTo('/admin/resumen');
     }
   };
 
@@ -137,21 +133,7 @@ export default function WebSidebar({
             </span>
           </button>
 
-          {/* 5. Panel de Administración — solo superadministrador */}
-          {isSuperAdmin(currentUser) && <button
-            onClick={() => { setSelectedCreatorProfileId(null); setActiveTab('admin'); navigateTo('/admin/resumen'); }}
-            className={`w-full flex items-center space-x-3.5 px-4 py-3 rounded-2xl font-black text-xs transition-all cursor-pointer ${
-              activeTab === 'admin'
-                ? "bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20"
-                : isDarkNavActive
-                ? "text-slate-400 hover:text-white hover:bg-slate-900"
-                : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
-            }`}
-            id="web-nav-admin"
-          >
-            <ShieldCheck strokeWidth={2.6} className={`w-5 h-5 ${activeTab === 'admin' ? "text-slate-950" : ""}`} />
-            <span className="font-black tracking-wide">Panel Admin</span>
-          </button>}
+
         </nav>
       </div>
 
@@ -311,21 +293,7 @@ export default function WebSidebar({
                   </span>
                 </button>
 
-                {isSuperAdmin(currentUser) && (
-                  <button
-                    type="button"
-                    onClick={() => handleMobileSelect('admin')}
-                    className={`w-full flex items-center space-x-3.5 px-4 py-3 rounded-2xl font-black text-xs transition-all cursor-pointer ${
-                      activeTab === 'admin'
-                        ? "bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20"
-                        : "text-slate-300 hover:text-white hover:bg-slate-900"
-                    }`}
-                    id="mobile-global-nav-admin"
-                  >
-                    <ShieldCheck strokeWidth={2.6} className="w-5 h-5" />
-                    <span className="font-black tracking-wide">Admin</span>
-                  </button>
-                )}
+
               </nav>
             </div>
 
