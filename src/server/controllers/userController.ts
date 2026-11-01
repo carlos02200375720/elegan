@@ -1042,8 +1042,25 @@ export async function toggleSaveReel(req: Request, res: Response): Promise<void>
   }
 
   let currentUserObj: any = null;
+  const guestToken =
+    (req.headers["x-guest-token"] as string)?.trim() ||
+    String(req.body?.guestToken || "").trim();
 
-  if (mongoose.connection.readyState === 1) {
+  if (mongoose.connection.readyState === 1 && guestToken) {
+    const anonymousSession = await MongoGuestSession.findOne({ token: guestToken }).lean();
+    if (anonymousSession) {
+      currentUserObj = {
+        id: guestToken,
+        guestToken,
+        username: "invitado",
+        savedReelIds: anonymousSession.savedReelIds || [],
+        isGuest: true,
+        _anonymousSession: true,
+      };
+    }
+  }
+
+  if (mongoose.connection.readyState === 1 && !currentUserObj) {
     const candidates = [userId, username, activeOriginalUserId].filter(
       (id) => id && id !== "user_guest" && id !== "current_user" && id !== "invitado"
     );
@@ -1056,10 +1073,6 @@ export async function toggleSaveReel(req: Request, res: Response): Promise<void>
         ])
       });
     }
-
-    const headerGuestToken = (req.headers["x-guest-token"] as string)?.trim();
-    const bodyGuestToken = req.body?.guestToken;
-    const guestToken = headerGuestToken || bodyGuestToken;
 
     if (!currentUserObj && guestToken) {
       const anonymousSession = await MongoGuestSession.findOne({ token: guestToken }).lean();
