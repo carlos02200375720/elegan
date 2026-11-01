@@ -92,7 +92,7 @@ export default function LoginView({
       if (response.ok && data.success) {
         sessionState.setUser(data.user);
         sessionState.setAuthenticated(true);
-        sessionState.setUsername(data.user?.name || cleanEmail);
+        sessionState.setUsername(data.user?.email || cleanEmail);
         
         onLoginSuccess(data.user);
         const parsed = typeof window !== 'undefined' ? parseRoute(window.location.pathname) : null;
@@ -158,7 +158,7 @@ export default function LoginView({
       if (response.ok && data.success) {
         // Automatically log in using the returned user session
         sessionState.setAuthenticated(true);
-        sessionState.setUsername(data.user?.name || regEmail.trim().toLowerCase());
+        sessionState.setUsername(data.user?.email || regEmail.trim().toLowerCase());
         
         sessionState.setUser(data.user);
         onRefreshUsers();
