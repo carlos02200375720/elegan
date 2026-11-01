@@ -1560,6 +1560,7 @@ export async function registerUser(req: Request, res: Response): Promise<void> {
 
     let guestSavedReels: string[] = [];
     let priorGuest: any = null;
+    let priorGuestSession: any = null;
     const guestId = (req.body?.guestId || req.headers["x-user-id"] || "").toString().trim();
     const guestUsername = (req.body?.guestUsername || req.headers["x-user-username"] || "").toString().trim();
 
@@ -1577,9 +1578,13 @@ export async function registerUser(req: Request, res: Response): Promise<void> {
         if (guestOrConditions.length > 0) {
           priorGuest = await MongoUser.findOne({ isGuest: true, $or: guestOrConditions });
         }
-        if (priorGuest && Array.isArray(priorGuest.savedReelIds)) {
-          guestSavedReels = priorGuest.savedReelIds;
+        if (headerGuestToken) {
+          priorGuestSession = await MongoGuestSession.findOne({ token: headerGuestToken }).lean();
         }
+        guestSavedReels = Array.from(new Set([
+          ...(priorGuest?.savedReelIds || []),
+          ...(priorGuestSession?.savedReelIds || [])
+        ]));
       } catch (e) {
         console.error("Error buscando el perfil invitado para migrar:", e);
         res.status(500).json({ error: "No se pudo localizar la información de invitado para migrarla." });
@@ -1616,8 +1621,8 @@ export async function registerUser(req: Request, res: Response): Promise<void> {
       avatar: resolvedAvatar,
       coverPhoto: resolvedCoverPhoto,
       followers: 0,
-      following: priorGuest?.followingUserIds?.length || 0,
-      followingUserIds: priorGuest?.followingUserIds || [],
+      following: priorGuestSession?.following ?? priorGuest?.followingUserIds?.length ?? 0,
+      followingUserIds: priorGuestSession?.followingUserIds || priorGuest?.followingUserIds || [],
       savedReelIds: mergedSavedReels,
       isOnline: true,
       password: password || "",
@@ -1720,6 +1725,9 @@ export async function registerUser(req: Request, res: Response): Promise<void> {
 
     if (priorGuest && priorGuest._id && priorGuest._id.toString() !== newUserId) {
       await MongoUser.deleteOne({ _id: priorGuest._id, isGuest: true });
+    }
+    if (priorGuestSession?._id) {
+      await MongoGuestSession.deleteOne({ _id: priorGuestSession._id });
     }
 
     const returnedUser = {
