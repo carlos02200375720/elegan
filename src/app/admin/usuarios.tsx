@@ -47,7 +47,7 @@ export default function UsuariosAdminView({
     return users.filter(
       (u) =>
         u.name.toLowerCase().includes(q) ||
-        u.username.toLowerCase().includes(q) ||
+        (u.email && u.email.toLowerCase().includes(q)) ||
         (u.email && u.email.toLowerCase().includes(q)) ||
         u.id.toLowerCase().includes(q)
     );
@@ -73,8 +73,8 @@ export default function UsuariosAdminView({
       notify({
         type: "success",
         text: nextCanSell
-          ? `@${user.username} ahora tiene permisos de vendedor.`
-          : `Se retiraron los permisos de vendedor de @${user.username}.`,
+          ? `${user.name} ahora tiene permisos de vendedor.`
+          : `Se retiraron los permisos de vendedor de ${user.name}.`,
       });
     } catch (err: any) {
       console.error("Error updating seller permission:", err);
@@ -130,7 +130,7 @@ export default function UsuariosAdminView({
             type="text"
             value={userSearch}
             onChange={(e) => setUserSearch(e.target.value)}
-            placeholder="Buscar por nombre, username o email..."
+            placeholder="Buscar por nombre, correo o ID..."
             className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-amber-500"
           />
         </div>
@@ -189,7 +189,7 @@ export default function UsuariosAdminView({
                               </span>
                             )}
                           </div>
-                          <p className="font-mono text-[11px] text-slate-400">@{user.username}</p>
+                          <p className="font-mono text-[11px] text-slate-400">{user.email || user.name}</p>
                         </div>
                       </div>
                     </td>
@@ -282,7 +282,7 @@ export default function UsuariosAdminView({
                                 onRequestDeleteUser({
                                   type: "user",
                                   id: user.id,
-                                  name: user.username,
+                                  name: user.name,
                                 });
                               } else {
                                 setLocalDeletingUser({ id: user.id, name: user.username });
