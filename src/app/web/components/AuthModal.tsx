@@ -23,7 +23,6 @@ export function AuthModal({
 
   // Register state
   const [regName, setRegName] = useState("");
-  const [regUsername, setRegUsername] = useState("");
   const [regEmail, setRegEmail] = useState("");
   const [regPassword, setRegPassword] = useState("");
   const [regError, setRegError] = useState("");
@@ -47,8 +46,8 @@ export function AuthModal({
     registeringRef.current = true;
     setRegError("");
 
-    if (!regName.trim() || !regUsername.trim()) {
-      setRegError("El nombre completo y nombre de usuario son obligatorios.");
+    if (!regName.trim()) {
+      setRegError("El nombre completo es obligatorio.");
       registeringRef.current = false;
       return;
     }
@@ -65,13 +64,6 @@ export function AuthModal({
       return;
     }
 
-    const cleanUsername = regUsername.trim().toLowerCase().replace(/\s+/g, "").replace(/^@/, "");
-    if (cleanUsername === "invitado" || cleanUsername === "current_user" || cleanUsername === "usuario_actual") {
-      setRegError("Nombre de usuario reservado. Elige otro.");
-      registeringRef.current = false;
-      return;
-    }
-
     setIsRegistering(true);
 
     try {
@@ -80,7 +72,6 @@ export function AuthModal({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: regName.trim(),
-          username: cleanUsername,
           email: regEmail.trim().toLowerCase(),
           bio: "Creador y explorador en la plataforma",
           password: regPassword.trim(),
@@ -90,11 +81,11 @@ export function AuthModal({
       const data = await response.json();
       if (response.ok && data.success) {
         sessionState.setAuthenticated(true);
-        sessionState.setUsername(cleanUsername);
+        sessionState.setUsername(data.user?.name || regEmail.trim().toLowerCase());
         
         sessionState.setUser(data.user);
 
-        setSuccessMessage(`¡Cuenta creada con éxito! Bienvenido, @${cleanUsername}`);
+        setSuccessMessage(`¡Cuenta creada con éxito! Bienvenido, ${data.user?.name || regName.trim()}`);
         setTimeout(() => {
           onLoginSuccess(data.user);
           navigateTo('/tienda/catalogo');
@@ -117,28 +108,32 @@ export function AuthModal({
     setLoginError("");
 
     if (!loginInput.trim()) {
-      setLoginError("Ingresa tu nombre de usuario o correo.");
+      setLoginError("Ingresa tu correo electrónico.");
       return;
     }
 
-    const cleanInput = loginInput.trim().toLowerCase().replace(/^@/, "");
+    const cleanInput = loginInput.trim().toLowerCase();
+    if (!cleanInput.includes("@")) {
+      setLoginError("Ingresa un correo electrónico válido.");
+      return;
+    }
     setIsLoggingIn(true);
 
     try {
       const response = await apiFetch("/api/users/current/switch", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ targetUsername: cleanInput, password: loginPassword }),
+        body: JSON.stringify({ email: cleanInput, password: loginPassword }),
       });
 
       const data = await response.json();
       if (response.ok && data.success) {
         sessionState.setAuthenticated(true);
-        sessionState.setUsername(data.user.username);
+        sessionState.setUsername(data.user.name || data.user.email || "");
         
         sessionState.setUser(data.user);
 
-        setSuccessMessage(`¡Bienvenido de vuelta, @${data.user.username}!`);
+        setSuccessMessage(`¡Bienvenido de vuelta, ${data.user.name}!`);
         setTimeout(() => {
           onLoginSuccess(data.user);
           navigateTo('/tienda/catalogo');
