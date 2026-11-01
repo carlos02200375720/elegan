@@ -1388,48 +1388,8 @@ export async function registerUser(req: Request, res: Response): Promise<void> {
         ]
       });
 
-      const escapedEmail = cleanEmail.replace(/[.*+?^${}()|[\]\\]/g, "\\      const existing = await MongoUser.findOne({
-        $or: [
-          { username: cleanUsername },
-          { email: cleanEmail }
-        ]
-      });");
-      const existing = await MongoUser.findOne({ email: { $regex: new RegExp(`^${escapedEmail}export async function registerUser(req: Request, res: Response): Promise<void> {
-  const { name, bio, avatar, coverPhoto, password, email } = req.body;
-  if (!name || !String(name).trim()) {
-    res.status(400).json({ error: "El nombre completo es obligatorio." });
-    return;
-  }
-  if (!email || !String(email).trim()) {
-    res.status(400).json({ error: "El correo electrónico es un requisito obligatorio." });
-    return;
-  }
-  if (!password || !String(password).trim()) {
-    res.status(400).json({ error: "La contraseña es obligatoria." });
-    return;
-  }
-
-  const headerGuestToken = (req.headers["x-guest-token"] as string)?.trim();
-  const cleanEmail = String(email).trim().toLowerCase();
-  const lockKey = cleanEmail;
-  if (pendingRegistrations.has(lockKey)) {
-    res.status(409).json({ error: "Ya hay una solicitud de registro en proceso con este correo. Por favor espera." });
-    return;
-  }
-  pendingRegistrations.add(lockKey);
-
-  try {
-    if (mongoose.connection.readyState === 1) {
-      await MongoUser.deleteMany({
-        $or: [
-          { id: "current_user" },
-          { id: "usuario_actual" },
-          { id: "user_guest" },
-          { id: "usuario_invitado" }
-        ]
-      });
-
-, "i") } });
+      const escapedEmail = cleanEmail.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&");
+      const existing = await MongoUser.findOne({ email: { $regex: new RegExp(`^${escapedEmail}$`, "i") } });
 
       if (existing) {
         const isSelfGuest = Boolean(headerGuestToken && existing.guestToken === headerGuestToken && existing.isGuest);
@@ -1531,7 +1491,7 @@ export async function registerUser(req: Request, res: Response): Promise<void> {
       id: newUserId,
       originalId: newUserId,
       name: String(name).trim(),
-            email: cleanEmail,
+      email: cleanEmail,
       bio: bio || priorGuest?.bio || "Nuevo creador de contenido en la plataforma",
       avatar: resolvedAvatar,
       coverPhoto: resolvedCoverPhoto,
@@ -1646,7 +1606,10 @@ export async function registerUser(req: Request, res: Response): Promise<void> {
       ...newUser,
       id: newUser.id,
       originalId: newUser.id,
-      isGuest: false
+      isGuest: false,
+      username: newUser.name,
+      isAdmin: isConfiguredSuperadmin(newUser),
+      role: isConfiguredSuperadmin(newUser) ? "superadmin" : (newUser.canSell ? "seller" : "user")
     };
 
     res.status(201).json({
