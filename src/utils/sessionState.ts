@@ -18,12 +18,12 @@ function getStoredUsername(): string | null {
   if (typeof window === "undefined") return null;
   try {
     const rawUser = getStoredUser();
-    if (rawUser?.username && !isGuestUser(rawUser)) {
-      return rawUser.username;
+    if (rawUser?.email && !isGuestUser(rawUser)) {
+      return rawUser.email;
     }
-    const username = localStorage.getItem("mall_username");
-    if (username && !isGuestUser({ username })) {
-      return username;
+    const email = localStorage.getItem("mall_username");
+    if (email?.includes("@")) {
+      return email.toLowerCase();
     }
   } catch {}
   return null;
@@ -59,13 +59,13 @@ export const sessionState = {
   setUser: (user: User | null): void => {
     sessionUser = user;
     const isGuest = !user || isGuestUser(user);
-    sessionUsername = (user && !isGuest) ? user.username : null;
+    sessionUsername = (user && !isGuest) ? (user.email || null) : null;
     authenticated = !!user && !isGuest;
     if (typeof window !== "undefined") {
       try {
         if (user && !isGuest) {
           localStorage.setItem("mall_user", JSON.stringify(user));
-          localStorage.setItem("mall_username", user.username);
+          localStorage.setItem("mall_username", user.email || "");
           localStorage.setItem("mall_authenticated", "true");
         } else {
           localStorage.removeItem("mall_user");
@@ -85,11 +85,7 @@ export const sessionState = {
     return sessionUsername;
   },
   setUsername: (username: string | null): void => {
-    if (username && isGuestUser({ username })) {
-      sessionUsername = null;
-    } else {
-      sessionUsername = username;
-    }
+    sessionUsername = username && username.includes("@") ? username.trim().toLowerCase() : null;
     if (typeof window !== "undefined") {
       try {
         if (sessionUsername) {
