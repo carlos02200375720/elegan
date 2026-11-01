@@ -55,7 +55,7 @@ export const sessionState = {
     }
     return sessionUser;
   },
-  getUserId: (): string | null => sessionUser?.id ?? sessionUsername ?? null,
+  getUserId: (): string | null => sessionUser?.originalId || sessionUser?.id || sessionUsername || null,
   setUser: (user: User | null): void => {
     sessionUser = user;
     const isGuest = !user || isGuestUser(user);
