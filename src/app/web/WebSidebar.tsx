@@ -169,7 +169,7 @@ export default function WebSidebar({
       </div>
     </aside>
 
-    {/* Fixed Hamburger Button for Mobile Web on Tienda (catalog only), Perfil, Chat & Admin */}
+    {/* Fixed Hamburger Button for Mobile Web on Tienda, Perfil y Chat */}
     {!isHomeActive && !hideMobileHamburger && (
       <button
         type="button"
