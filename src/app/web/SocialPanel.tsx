@@ -230,7 +230,7 @@ export default function SocialPanel({
       clients = clients.filter(
         (c) =>
           c.user.name.toLowerCase().includes(query) ||
-          c.user.username.toLowerCase().includes(query) ||
+          (c.user.email && c.user.email.toLowerCase().includes(query)) ||
           (c.user.email && c.user.email.toLowerCase().includes(query))
       );
     }
@@ -454,7 +454,7 @@ export default function SocialPanel({
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Buscar cliente por nombre o @usuario..."
+                  placeholder="Buscar cliente por nombre o correo..."
                   className="w-full bg-slate-50 border border-slate-200 text-xs text-slate-900 pl-9 pr-3 py-2 rounded-xl focus:outline-none focus:border-amber-500 focus:bg-white transition-all font-medium"
                 />
               </div>
@@ -540,7 +540,7 @@ export default function SocialPanel({
                               )}
                             </div>
                             <p className="text-[11px] text-slate-500 font-medium truncate">
-                              @{user.username}
+                              {user.name}
                             </p>
                             <p className="text-xs text-slate-600 truncate mt-0.5 font-normal">
                               {lastMsg ? lastMsg.text : "Sin mensajes aún"}
@@ -598,7 +598,7 @@ export default function SocialPanel({
                       {!isAdmin && <ShieldCheck className="w-3.5 h-3.5 text-amber-600 shrink-0" />}
                       {isAdmin && (
                         <span className="text-[10px] text-slate-500 font-mono">
-                          (@{activeChatUser.username})
+                          ({activeChatUser.name})
                         </span>
                       )}
                     </div>
