@@ -207,7 +207,7 @@ export async function handleGuestSession(req: Request, res: Response): Promise<v
     const queryToken = (req.query?.guestToken as string || "").trim();
     let token = bodyToken || headerToken || queryToken;
 
-    const platform = (req.body?.platform || req.headers["x-platform"] || "web").toString();
+    const platform = (req.body?.platform || req.headers["x-platform"] || "web").toString().trim().toLowerCase();
     const deviceInfo = (req.body?.deviceInfo || req.headers["user-agent"] || "").toString();
 
     // Web visitors use anonymous sessions, never User documents.
