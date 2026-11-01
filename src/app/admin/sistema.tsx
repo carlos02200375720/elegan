@@ -46,7 +46,7 @@ export default function SistemaAdminView({
           <div className="text-slate-600">•</div>
           <div className="flex items-center space-x-2">
             <span className="text-slate-300 font-semibold">Sesión Actual:</span>
-            <span className="text-white font-bold">@{currentUser.username}</span>
+            <span className="text-white font-bold">{currentUser.name}</span>
           </div>
         </div>
       </div>
