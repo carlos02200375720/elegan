@@ -1882,6 +1882,7 @@ export async function loginWithEmail(req: Request, res: Response): Promise<void>
       savedProductIds: user.savedProductIds || [],
       isGuest: false,
       isOnline: true,
+      username: user.name || "",
       email: user.email || cleanEmail,
       address: user.address || "",
       shippingAddress: user.shippingAddress || user.address || "",
