@@ -1388,8 +1388,7 @@ export async function registerUser(req: Request, res: Response): Promise<void> {
         ]
       });
 
-      const escapedEmail = cleanEmail.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&");
-      const existing = await MongoUser.findOne({ email: { $regex: new RegExp(`^${escapedEmail}$`, "i") } });
+      const existing = await MongoUser.findOne({ email: cleanEmail });
 
       if (existing) {
         const isSelfGuest = Boolean(headerGuestToken && existing.guestToken === headerGuestToken && existing.isGuest);
@@ -1650,11 +1649,7 @@ export async function switchUser(req: Request, res: Response): Promise<void> {
       res.status(503).json({ error: "La base de datos no está disponible." });
       return;
     }
-    const escapedEmail = cleanEmail.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-    const targetUser = await MongoUser.findOne({
-      email: { $regex: new RegExp(`^${escapedEmail}$`, "i") },
-      id: { $ne: "current_user" }
-    });
+    const targetUser = await MongoUser.findOne({ email: cleanEmail, id: { $ne: "current_user" } });
     if (!targetUser) {
       res.status(404).json({ error: "No existe ninguna cuenta registrada con este correo electrónico.", code: "USER_NOT_FOUND" });
       return;
@@ -1811,7 +1806,7 @@ export async function adminDeleteUser(req: Request, res: Response): Promise<void
  */
 export async function loginWithEmail(req: Request, res: Response): Promise<void> {
   try {
-    const rawEmail = req.body?.email || req.body?.targetEmail || req.body?.username;
+    const rawEmail = req.body?.email || req.body?.targetEmail;
     if (!rawEmail || typeof rawEmail !== "string") {
       res.status(400).json({ error: "Debe ingresar un correo electrónico válido." });
       return;
@@ -1822,10 +1817,7 @@ export async function loginWithEmail(req: Request, res: Response): Promise<void>
     let user: any = null;
     if (mongoose.connection.readyState === 1) {
       user = await MongoUser.findOne({
-        $or: [
-          { email: { $regex: new RegExp(`^${escapedEmail}$`, "i") } },
-          { username: cleanEmail }
-        ],
+        email: cleanEmail,
         id: { $ne: "current_user" }
       });
     }
@@ -1833,9 +1825,7 @@ export async function loginWithEmail(req: Request, res: Response): Promise<void>
     if (!user) {
       const allUsers = await getUsers();
       user = allUsers.find(
-        (u) =>
-          u.email?.trim().toLowerCase() === cleanEmail ||
-          u.username?.trim().toLowerCase() === cleanEmail
+        (u) => u.email?.trim().toLowerCase() === cleanEmail
       );
     }
 
@@ -1881,7 +1871,6 @@ export async function loginWithEmail(req: Request, res: Response): Promise<void>
     const formattedUser: User = {
       id: user.id,
       originalId: user._id ? user._id.toString() : user.id,
-      username: user.username,
       name: user.name,
       bio: user.bio || "",
       avatar: user.avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80",
@@ -1904,7 +1893,7 @@ export async function loginWithEmail(req: Request, res: Response): Promise<void>
       role: isConfiguredSuperadmin(user) ? "superadmin" : (user.canSell ? "seller" : "user")
     };
 
-    console.log(`📱 Sesión iniciada con correo: ${cleanEmail} -> @${user.username} (Pedidos: ${userOrders.length}, Carrito: ${userCart.length})`);
+    console.log(`Sesión iniciada con correo: ${cleanEmail} (Pedidos: ${userOrders.length}, Carrito: ${userCart.length})`);
 
     res.json({
       success: true,
