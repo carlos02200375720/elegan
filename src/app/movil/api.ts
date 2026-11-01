@@ -208,11 +208,11 @@ export const androidApi = {
     return readResponseBody(res);
   },
 
-  switchUser: async (targetUsername: string, password?: string, isSessionRestore?: boolean) => {
+  switchUser: async (email: string, password?: string, isSessionRestore?: boolean) => {
     const res = await androidApiFetch("/users/current/switch", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ targetUsername, password, isSessionRestore }),
+      body: JSON.stringify({ email, password, isSessionRestore }),
     });
     return readResponseBody(res);
   },
