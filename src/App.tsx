@@ -814,13 +814,6 @@ export default function App() {
 
       // Step 3: Restore session from sessionState if logged in
       let savedUsername = sessionState.getUsername();
-      if (savedUsername === "carlosg") {
-        savedUsername = "carlos";
-        sessionState.setUsername("carlos");
-      } else if (savedUsername === "davidb") {
-        savedUsername = "david";
-        sessionState.setUsername("david");
-      }
       const savedPassword = "";
       if (savedUsername && !isGuestUser({ username: savedUsername, isGuest: sessionState.getUser()?.isGuest })) {
         apiFetch("/api/users/current/switch", {
