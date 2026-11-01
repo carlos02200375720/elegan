@@ -1,4 +1,4 @@
-name: Compilar Servidor en la Nube
+name: Compilar y desplegar Servidor en Cloud Run
 
 on:
   push:
@@ -41,3 +41,29 @@ jobs:
         with:
           name: app-server-dist
           path: dist/server.cjs
+
+  deploy-cloud-run:
+    name: Desplegar en Cloud Run
+    needs: build-server
+    runs-on: ubuntu-latest
+    # El despliegue se activa cuando se configuran las credenciales de Google Cloud.
+    if: ${{ secrets.GCP_SA_KEY != '' && secrets.GCP_PROJECT_ID != '' }}
+    steps:
+      - name: Descargar código actual
+        uses: actions/checkout@v4
+
+      - name: Autenticar en Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Configurar Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Desplegar servidor en Cloud Run
+        run: |
+          gcloud run deploy carlos02200375720mall \
+            --source . \
+            --project "${{ secrets.GCP_PROJECT_ID }}" \
+            --region europe-west1 \
+            --quiet
