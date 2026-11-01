@@ -28,7 +28,6 @@ export function ConfigPerfilView({
 }: ConfigPerfilProps) {
   // Profile edit states
   const [editName, setEditName] = useState(currentUser.name || "");
-  const [editUsername, setEditUsername] = useState(currentUser.username || "");
   const [editBio, setEditBio] = useState(currentUser.bio || "");
   const [editAvatar, setEditAvatar] = useState(currentUser.avatar || "");
   const [editCoverPhoto, setEditCoverPhoto] = useState(currentUser.coverPhoto || "");
@@ -41,7 +40,7 @@ export function ConfigPerfilView({
 
   // Register user states
   const [regName, setRegName] = useState("");
-  const [regUsername, setRegUsername] = useState("");
+  const [regEmail, setRegEmail] = useState("");
   const [regBio, setRegBio] = useState("");
   const [regAvatar, setRegAvatar] = useState("");
   const [regCoverPhoto, setRegCoverPhoto] = useState("");
@@ -64,7 +63,6 @@ export function ConfigPerfilView({
   const [isGuestLoggingIn, setIsGuestLoggingIn] = useState(false);
 
   const [guestRegName, setGuestRegName] = useState("");
-  const [guestRegUsername, setGuestRegUsername] = useState("");
   const [guestRegEmail, setGuestRegEmail] = useState("");
   const [guestRegPassword, setGuestRegPassword] = useState("");
   const [guestRegError, setGuestRegError] = useState("");
@@ -74,7 +72,6 @@ export function ConfigPerfilView({
   useEffect(() => {
     if (currentUser && !checkIsGuest(currentUser)) {
       setEditName(currentUser.name || "");
-      setEditUsername(currentUser.username || "");
       setEditBio(currentUser.bio || "");
       setEditAvatar(currentUser.avatar || "");
       setEditCoverPhoto(currentUser.coverPhoto || "");
@@ -84,7 +81,7 @@ export function ConfigPerfilView({
 
   const isUserAuthenticated = Boolean(
     sessionState.isAuthenticated() ||
-    (currentUser && !checkIsGuest(currentUser) && currentUser.username !== "invitado" && currentUser.username !== "guest")
+    (currentUser && !checkIsGuest(currentUser))
   );
   const isGuestUser = !isUserAuthenticated;
 
@@ -110,7 +107,6 @@ export function ConfigPerfilView({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          targetUsername: cleanEmail,
           email: cleanEmail,
           password: guestLoginPassword.trim(),
         }),
@@ -124,7 +120,7 @@ export function ConfigPerfilView({
 
       if (data.user) {
         sessionState.setAuthenticated(true);
-        sessionState.setUsername(data.user.username);
+        sessionState.setUsername(data.user.name || data.user.email || "");
         sessionState.setUser(data.user);
         onProfileSaved?.(data.user);
         onRefreshUsers?.();
@@ -143,18 +139,11 @@ export function ConfigPerfilView({
     if (isGuestRegistering) return;
     setGuestRegError("");
 
-    const cleanUsername = String(guestRegUsername)
-      .trim()
-      .toLowerCase()
-      .replace(/\s+/g, "")
-      .replace(/^@/, "");
-
-    if (!guestRegName.trim() || !cleanUsername) {
-      setGuestRegError("El nombre completo y nombre de usuario son obligatorios.");
+    const emailToUse = guestRegEmail.trim().toLowerCase();
+    if (!guestRegName.trim() || !emailToUse || !emailToUse.includes("@") || !guestRegPassword.trim()) {
+      setGuestRegError("Completa tu nombre, correo electrónico y contraseña.");
       return;
     }
-
-    const emailToUse = guestRegEmail.trim() || `${cleanUsername}@mallsocial.app`;
 
     try {
       setIsGuestRegistering(true);
@@ -163,7 +152,6 @@ export function ConfigPerfilView({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: guestRegName.trim(),
-          username: cleanUsername,
           email: emailToUse,
           bio: "Nuevo creador en la plataforma",
           avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80",
@@ -197,9 +185,7 @@ export function ConfigPerfilView({
   useEffect(() => {
     if (
       currentUser &&
-      currentUser.username &&
-      currentUser.username !== "invitado" &&
-      !currentUser.isGuest
+      !checkIsGuest(currentUser)
     ) {
       setEditName(currentUser.name || "");
       setEditUsername(currentUser.username || "");
@@ -229,9 +215,7 @@ export function ConfigPerfilView({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userId: currentUser.originalId || currentUser.id,
-          currentUsername: currentUser.username,
           name: editName,
-          username: editUsername,
           bio: editBio,
           avatar: editAvatar,
           coverPhoto: editCoverPhoto,
@@ -253,13 +237,13 @@ export function ConfigPerfilView({
     }
   };
 
-  const handleSwitchUser = async (targetUsername: string, password?: string) => {
+  const handleSwitchUser = async (targetEmail: string, password?: string) => {
     try {
       setSwitchError("");
       const response = await apiFetch("/api/users/current/switch", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ targetUsername, password }),
+        body: JSON.stringify({ email: targetEmail, password }),
       });
       const data = await response.json();
       if (!response.ok || !data.success) {
@@ -268,7 +252,7 @@ export function ConfigPerfilView({
       }
       if (response.ok && data.success) {
         sessionState.setAuthenticated(true);
-        sessionState.setUsername(targetUsername);
+        sessionState.setUsername(data.user?.name || targetEmail);
         sessionState.setUser(data.user);
 
         onProfileSaved?.(data.user);
@@ -292,18 +276,17 @@ export function ConfigPerfilView({
     setRegisterSuccess(false);
 
     try {
-      const cleanUsername = String(regUsername)
-        .trim()
-        .toLowerCase()
-        .replace(/\s+/g, "")
-        .replace(/^@/, "");
+      const cleanEmail = regEmail.trim().toLowerCase();
+      if (!regName.trim() || !cleanEmail || !cleanEmail.includes("@") || !regPassword.trim()) {
+        setRegisterError("Completa el nombre, correo electrónico y contraseña.");
+        return;
+      }
       const response = await apiFetch("/api/users/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: regName.trim(),
-          username: cleanUsername,
-          email: `${cleanUsername}@mallsocial.app`,
+          email: cleanEmail,
           bio: regBio.trim() || "Creador en la plataforma",
           avatar:
             regAvatar ||
@@ -321,10 +304,10 @@ export function ConfigPerfilView({
       }
       if (data.success) {
         setRegisterSuccess(true);
-        const registeredUsername = regUsername;
+        const registeredEmail = cleanEmail;
         const registeredPassword = regPassword;
         setRegName("");
-        setRegUsername("");
+        setRegEmail("");
         setRegPassword("");
         setRegBio("");
         setRegAvatar("");
@@ -332,8 +315,8 @@ export function ConfigPerfilView({
         onRefreshUsers?.();
         setTimeout(() => setRegisterSuccess(false), 3000);
 
-        if (profileUser?.isGuest || profileUser?.username === "invitado") {
-          await handleSwitchUser(registeredUsername, registeredPassword);
+        if (profileUser?.isGuest || checkIsGuest(profileUser)) {
+          await handleSwitchUser(registeredEmail, registeredPassword);
         }
       }
     } catch (err) {
@@ -512,30 +495,14 @@ export function ConfigPerfilView({
 
               <div className="space-y-1.5">
                 <label className="text-[11px] font-bold text-slate-600 block uppercase tracking-wider">
-                  Nombre de Usuario
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">@</span>
-                  <input
-                    type="text"
-                    value={guestRegUsername}
-                    onChange={(e) => setGuestRegUsername(e.target.value)}
-                    placeholder="carlos_gomez"
-                    required
-                    className="w-full text-xs font-semibold pl-8 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none text-slate-900 transition-all"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-bold text-slate-600 block uppercase tracking-wider">
-                  Correo Electrónico (Opcional)
+                  Correo Electrónico
                 </label>
                 <input
                   type="email"
                   value={guestRegEmail}
                   onChange={(e) => setGuestRegEmail(e.target.value)}
                   placeholder="ejemplo@correo.com"
+                  required
                   className="w-full text-xs font-semibold px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none text-slate-900 transition-all"
                 />
               </div>
@@ -638,26 +605,6 @@ export function ConfigPerfilView({
                 placeholder="Tu Nombre"
                 required
               />
-            </div>
-
-            {/* Username Input */}
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
-                Nombre de Usuario (Username)
-              </label>
-              <div className="relative">
-                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">
-                  @
-                </span>
-                <input
-                  type="text"
-                  value={editUsername}
-                  onChange={(e) => setEditUsername(e.target.value)}
-                  className="w-full text-xs font-semibold pl-8 pr-3 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none text-slate-800"
-                  placeholder="nombre_usuario"
-                  required
-                />
-              </div>
             </div>
 
             {/* Password Input */}
@@ -1013,22 +960,8 @@ export function ConfigPerfilView({
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
-                  Nombre de Usuario (Username)
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400">
-                    @
-                  </span>
-                  <input
-                    type="text"
-                    value={regUsername}
-                    onChange={(e) => setRegUsername(e.target.value)}
-                    className="w-full text-xs font-semibold pl-8 pr-3 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none text-slate-800"
-                    placeholder="carlos_gomez"
-                    required
-                  />
-                </div>
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Correo electrónico</label>
+                <input type="email" value={regEmail} onChange={(e) => setRegEmail(e.target.value)} className="w-full text-xs font-semibold px-3 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none text-slate-800" placeholder="correo@ejemplo.com" required />
               </div>
 
               <div className="space-y-1.5">
