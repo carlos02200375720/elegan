@@ -217,11 +217,11 @@ export const androidApi = {
     return readResponseBody(res);
   },
 
-  loginUser: async (username: string, password: string) => {
+  loginUser: async (email: string, password: string) => {
     const res = await androidApiFetch("/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify({ email, password }),
     });
     return readResponseBody(res);
   },
