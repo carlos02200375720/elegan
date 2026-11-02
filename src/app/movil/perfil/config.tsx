@@ -82,6 +82,9 @@ export function ConfigPerfilView({
   const [editPhone, setEditPhone] = useState(
     (activeUser as any).phone || (currentUser as any).phone || sessionU?.phone || cached?.phone || ""
   );
+  const [editPostalCode, setEditPostalCode] = useState(
+    (activeUser as any).postalCode || (currentUser as any).postalCode || sessionU?.postalCode || cached?.postalCode || ""
+  );
   const [editAvatar, setEditAvatar] = useState(
     activeUser.avatar || currentUser.avatar || sessionU?.avatar || cached?.avatar || ""
   );
@@ -93,7 +96,7 @@ export function ConfigPerfilView({
   React.useEffect(() => {
     const storedUser = sessionState.getUser() || getCachedUserData();
     const sources = [activeUser, currentUser, storedUser].filter(Boolean);
-    const getValue = (key: "name" | "email" | "shippingAddress" | "address" | "city" | "country" | "phone" | "avatar") =>
+    const getValue = (key: "name" | "email" | "shippingAddress" | "address" | "city" | "country" | "phone" | "postalCode" | "avatar") =>
       sources.map((source) => source[key]).find((value) => typeof value === "string" && value.trim()) || "";
 
     setEditName(getValue("name"));
@@ -102,6 +105,7 @@ export function ConfigPerfilView({
     setEditCity(getValue("city"));
     setEditCountry(getValue("country") || "República Dominicana");
     setEditPhone(getValue("phone"));
+    setEditPostalCode(getValue("postalCode"));
     setEditAvatar(getValue("avatar"));
   }, [activeUser, currentUser]);
 
@@ -147,6 +151,7 @@ export function ConfigPerfilView({
       city: editCity.trim(),
       country: editCountry.trim(),
       phone: editPhone.trim(),
+      postalCode: editPostalCode.trim(),
     };
 
     try {
@@ -368,6 +373,20 @@ export function ConfigPerfilView({
                     className="w-full px-3.5 py-2.5 bg-slate-50 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-amber-500 focus:bg-white border border-slate-200 transition-colors"
                   />
                 </div>
+              </div>
+
+              {/* Código Postal */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Código Postal
+                </label>
+                <input
+                  type="text"
+                  value={editPostalCode}
+                  onChange={(e) => setEditPostalCode(e.target.value)}
+                  placeholder="Código postal"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 rounded-xl text-xs text-slate-900 focus:outline-none focus:border-amber-500 focus:bg-white border border-slate-200 transition-colors"
+                />
               </div>
 
               {/* Teléfono de Contacto */}
