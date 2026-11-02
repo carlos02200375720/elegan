@@ -5,6 +5,10 @@ on:
     branches: [ "main", "master", "fix/reels-video-performance" ]
     paths:
       - 'src/app/movil/**'
+      - 'src/App.tsx'
+      - 'src/utils/**'
+      - 'src/config.ts'
+      - 'src/types.ts'
       - 'capacitor.config.json'
       - '.github/workflows/build-movil.yml'
   workflow_dispatch:

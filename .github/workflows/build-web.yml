@@ -5,6 +5,10 @@ on:
     branches: [ "main", "master", "fix/reels-video-performance" ]
     paths:
       - 'src/app/web/**'
+      - 'src/App.tsx'
+      - 'src/utils/**'
+      - 'src/config.ts'
+      - 'src/types.ts'
       - 'src/router/**'
       - 'index.html'
       - 'vite.config.ts'
