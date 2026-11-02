@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
 import { ShoppingCart, ArrowLeft, Search, X, Check, Bookmark } from "lucide-react";
-import { Product, CartItem, Order, User } from "../../../types";
+import { Product, CartItem, Order, User, isGuestUser } from "../../../types";
 import { motion, AnimatePresence } from "motion/react";
 import { getProductShareUrl, getProductPath, getThankYouPath, navigateTo, parseRoute } from "../../../router";
 import { apiFetch } from "../../../config";
 import ProductoIdTiendaView from "./productoid";
 import CarritoTiendaView from "./carrito";
-import VerificasionTiendaView from "./verificasion";
+import VerificasionTiendaView, { DEST_COUNTRIES } from "./verificasion";
 import GraciaTiendaView from "./gracia";
 import { trackFunnelStep } from "../../../utils/analyticsTracker";
 
@@ -336,40 +336,50 @@ export default function Tienda({
     }, 1500);
   };
 
-  // Checkout Form states
-  const [name, setName] = useState("Carlos Gómez");
-  const [email, setEmail] = useState("carlos@example.com");
-  const [phone, setPhone] = useState("+34 612 345 678");
-  const [address, setAddress] = useState("Avenida de la Constitución 142, Piso 4B");
+  // Checkout form: delivery details come from the saved customer profile.
+  const [name, setName] = useState(currentUser?.name || "");
+  const [email, setEmail] = useState(currentUser?.email || "");
+  const [phone, setPhone] = useState(currentUser?.phone || "");
+  const [address, setAddress] = useState(currentUser?.shippingAddress || currentUser?.address || "");
   const [country, setCountry] = useState("República Dominicana 🇩🇴");
-  const [city, setCity] = useState("Santo Domingo");
+  const [city, setCity] = useState(currentUser?.city || "");
+  const [postalCode, setPostalCode] = useState(currentUser?.postalCode || "");
   const [cardNumber, setCardNumber] = useState("4152 8391 0023 9482");
   const [expiry, setExpiry] = useState("09/29");
   const [cvv, setCvv] = useState("384");
   const [isFormValid, setIsFormValid] = useState(true);
 
   useEffect(() => {
-    if (currentUser?.username === "invitado") {
+    if (isGuestUser(currentUser)) {
       setName("");
       setEmail("");
       setPhone("");
       setAddress("");
       setCountry("República Dominicana 🇩🇴");
       setCity("");
+      setPostalCode("");
       setCardNumber("");
       setExpiry("");
       setCvv("");
-    } else {
-      setName(currentUser?.name || "Carlos Gómez");
-      setEmail(currentUser?.email || "carlos@example.com");
-      setPhone("+34 612 345 678");
-      setAddress("Avenida de la Constitución 142, Piso 4B");
-      setCountry("República Dominicana 🇩🇴");
-      setCity("Santo Domingo");
-      setCardNumber("4152 8391 0023 9482");
-      setExpiry("09/29");
-      setCvv("384");
+      return;
     }
+
+    const savedCountry = String(currentUser?.country || "").trim().toLowerCase();
+    const matchedCountry = DEST_COUNTRIES.find((option) => {
+      const plainName = option.name
+        .replace(/\\s+[\\u{1F1E6}-\\u{1F1FF}]{2}$/u, "")
+        .trim()
+        .toLowerCase();
+      return option.name.trim().toLowerCase() === savedCountry || plainName === savedCountry;
+    });
+
+    setName(currentUser?.name || "");
+    setEmail(currentUser?.email || "");
+    setPhone(currentUser?.phone || "");
+    setAddress(currentUser?.shippingAddress || currentUser?.address || "");
+    setCountry(matchedCountry?.name || "República Dominicana 🇩🇴");
+    setCity(currentUser?.city || "");
+    setPostalCode(currentUser?.postalCode || "");
   }, [currentUser]);
 
   // Success Order State
@@ -630,6 +640,7 @@ export default function Tienda({
       !phone.trim() ||
       !address.trim() ||
       !city.trim() ||
+      !postalCode.trim() ||
       !cardNumber.trim()
     ) {
       setIsFormValid(false);
@@ -639,7 +650,7 @@ export default function Tienda({
     setActiveStep("payment");
 
     setTimeout(() => {
-      const fullShippingAddress = `${address}, ${city}, ${country} (Tel: ${phone}, Email: ${email})`;
+      const fullShippingAddress = `${address}, ${city}, ${country}${postalCode ? `, C.P. ${postalCode}` : ""} (Tel: ${phone}, Email: ${email})`;
       const totalShippingCost = effectiveCheckoutItems.reduce((acc, item) => {
         const shippingFee =
           item.selectedShippingCost !== undefined
@@ -1192,6 +1203,8 @@ export default function Tienda({
               setCountry={setCountry}
               city={city}
               setCity={setCity}
+              postalCode={postalCode}
+              setPostalCode={setPostalCode}
               cardNumber={cardNumber}
               setCardNumber={setCardNumber}
               expiry={expiry}
