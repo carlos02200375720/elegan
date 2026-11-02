@@ -11,6 +11,7 @@ import * as liveController from "../controllers/liveController";
 import * as uploadController from "../controllers/uploadController";
 import * as settingsController from "../controllers/settingsController";
 import * as analyticsController from "../controllers/analyticsController";
+import * as visitorController from "../controllers/visitorController";
 import * as paypalController from "../controllers/paypalController";
 import { getMongoStatus, connectToMongoDB } from "../config/database";
 
@@ -127,6 +128,8 @@ export function createApiRouter(): Router {
 
   // Analytics & Sales Funnel routes
   router.get("/analytics/funnel", analyticsController.getFunnelAnalytics);
+  router.post("/analytics/visitors/track", visitorController.trackDailyVisitor);
+  router.get("/analytics/visitors/daily", visitorController.getDailyVisitorAnalytics);
   router.post("/analytics/track", analyticsController.trackFunnelEvent);
 
   return router;
