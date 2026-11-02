@@ -1100,6 +1100,14 @@ export async function registerUser(req: Request, res: Response): Promise<void> {
   }
 
   const headerGuestToken = (req.headers["x-guest-token"] as string)?.trim();
+  const requestedPlatform = String(
+    req.body?.platform ||
+    req.headers["x-client-platform"] ||
+    req.headers["x-platform"] ||
+    "web"
+  ).trim().toLowerCase();
+  const registrationPlatform: "web" | "android" = requestedPlatform === "android" ? "android" : "web";
+  const registeredAt = new Date();
   const cleanEmail = String(email).trim().toLowerCase();
   const lockKey = cleanEmail;
   if (pendingRegistrations.has(lockKey)) {
@@ -1222,7 +1230,7 @@ export async function registerUser(req: Request, res: Response): Promise<void> {
     );
 
     const newUserId = "user_" + generateId();
-    const newUser: User = {
+    const newUser: User & { registeredAt: Date; registrationPlatform: "web" | "android"; platform: "web" | "android" } = {
       id: newUserId,
       originalId: newUserId,
       name: String(name).trim(),
@@ -1237,6 +1245,9 @@ export async function registerUser(req: Request, res: Response): Promise<void> {
       isOnline: true,
       password: password || "",
       isGuest: false,
+      platform: registrationPlatform,
+      registeredAt,
+      registrationPlatform,
       canSell: isConfiguredSuperadmin({ email: cleanEmail }),
       address: req.body?.address || priorGuest?.address || "",
       shippingAddress: req.body?.shippingAddress || req.body?.address || priorGuest?.shippingAddress || priorGuest?.address || "",
