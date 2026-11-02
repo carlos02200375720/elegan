@@ -148,6 +148,7 @@ export async function trackDailyVisitor(req: Request, res: Response): Promise<vo
         dateKey,
         platform,
         firstVisitAt: now,
+        visitCount: 0,
       },
       $inc: { visitCount: 1 },
     };
