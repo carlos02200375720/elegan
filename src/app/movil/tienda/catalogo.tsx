@@ -867,6 +867,7 @@ export default function Catalogo({
     const fullAddress = [
       shippingAddress || checkoutForm.shippingAddress,
       checkoutForm.city,
+      checkoutForm.postalCode ? `C.P. ${checkoutForm.postalCode}` : "",
       checkoutForm.country,
     ].filter(Boolean).join(", ") || "Dirección Android Principal";
     setLastOrderItems(itemsToCheckout.map((item) => ({ ...item, product: { ...item.product } })));
