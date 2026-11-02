@@ -235,6 +235,8 @@ export default function App() {
 
   // Private 1-on-1 Chat States
   const [activeChatUser, setActiveChatUser] = useState<User | null>(null);
+  const activeChatUserRef = useRef<User | null>(activeChatUser);
+  activeChatUserRef.current = activeChatUser;
   const [privateMessages, setPrivateMessages] = useState<ChatMessage[]>([]);
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
   const [savedReelIds, setSavedReelIds] = useState<string[]>(() => {
@@ -350,13 +352,13 @@ export default function App() {
       }
     } else if (currentRoute.type === 'inicio' || currentRoute.type === 'reels') {
       if (activePlatform === 'web') {
-        setActiveTab('shop');
-        setShopInitialStep('catalog');
-        setDirectSelectedProduct(null);
-        setIsProductDetailOpen(false);
+        setActiveTab((prev) => (prev === 'shop' ? prev : 'shop'));
+        setShopInitialStep((prev) => (prev === 'catalog' ? prev : 'catalog'));
+        setDirectSelectedProduct((prev) => (prev === null ? prev : null));
+        setIsProductDetailOpen((prev) => (prev === false ? prev : false));
         navigateTo('/tienda/catalogo', { replace: true });
       } else {
-        setActiveTab('inicio');
+        setActiveTab((prev) => (prev === 'inicio' ? prev : 'inicio'));
       }
       if (activePlatform === 'android' && currentRoute.reelId) {
         const existingReel =
@@ -382,32 +384,32 @@ export default function App() {
         }
       }
     } else if (currentRoute.type === 'store') {
-      setActivePlatform('web');
-      setActiveTab('profile');
-      setSelectedCreatorProfileId(currentRoute.sellerId);
+      setActivePlatform((prev) => (prev === 'web' ? prev : 'web'));
+      setActiveTab((prev) => (prev === 'profile' ? prev : 'profile'));
+      setSelectedCreatorProfileId((prev) => (prev === currentRoute.sellerId ? prev : currentRoute.sellerId));
     } else if (currentRoute.type === 'shop') {
-      setActiveTab('shop');
-      setShopInitialStep('catalog');
-      setDirectSelectedProduct(null);
-      setIsProductDetailOpen(false);
+      setActiveTab((prev) => (prev === 'shop' ? prev : 'shop'));
+      setShopInitialStep((prev) => (prev === 'catalog' ? prev : 'catalog'));
+      setDirectSelectedProduct((prev) => (prev === null ? prev : null));
+      setIsProductDetailOpen((prev) => (prev === false ? prev : false));
       if (typeof window !== 'undefined' && window.location.pathname.toLowerCase() !== '/tienda/catalogo') {
         navigateTo('/tienda/catalogo', { replace: true });
       }
     } else if (currentRoute.type === 'cart') {
-      setActiveTab('shop');
-      setShopInitialStep('cart');
+      setActiveTab((prev) => (prev === 'shop' ? prev : 'shop'));
+      setShopInitialStep((prev) => (prev === 'cart' ? prev : 'cart'));
       if (typeof window !== 'undefined' && window.location.pathname.toLowerCase() !== '/tienda/carrito') {
         navigateTo('/tienda/carrito', { replace: true });
       }
     } else if (currentRoute.type === 'checkout') {
-      setActiveTab('shop');
-      setShopInitialStep('checkout');
+      setActiveTab((prev) => (prev === 'shop' ? prev : 'shop'));
+      setShopInitialStep((prev) => (prev === 'checkout' ? prev : 'checkout'));
       if (typeof window !== 'undefined' && window.location.pathname.toLowerCase() !== '/tienda/verificacion') {
         navigateTo('/tienda/verificacion', { replace: true });
       }
     } else if (currentRoute.type === 'thankyou') {
-      setActiveTab('shop');
-      setShopInitialStep('thankyou');
+      setActiveTab((prev) => (prev === 'shop' ? prev : 'shop'));
+      setShopInitialStep((prev) => (prev === 'thankyou' ? prev : 'thankyou'));
       if (currentRoute.orderId) {
         const canonicalThankYou = getThankYouPath(currentRoute.orderId);
         if (typeof window !== 'undefined' && window.location.pathname.toLowerCase() !== canonicalThankYou.toLowerCase()) {
@@ -415,19 +417,19 @@ export default function App() {
         }
       }
     } else if (currentRoute.type === 'messages') {
-      setActiveTab('messages');
+      setActiveTab((prev) => (prev === 'messages' ? prev : 'messages'));
     } else if (currentRoute.type === 'login') {
-      setActiveTab('profile');
-      setSelectedCreatorProfileId(null);
+      setActiveTab((prev) => (prev === 'profile' ? prev : 'profile'));
+      setSelectedCreatorProfileId((prev) => (prev === null ? prev : null));
     } else if (currentRoute.type === 'profile') {
       if (typeof window !== 'undefined' && (window.location.pathname.startsWith('/app/movil') || window.location.pathname.startsWith('/movil'))) {
-        setActivePlatform('android');
+        setActivePlatform((prev) => (prev === 'android' ? prev : 'android'));
         sessionState.setPlatform('android');
         try {
           localStorage.setItem('mall_last_active_platform', 'android');
         } catch {}
       }
-      setActiveTab('profile');
+      setActiveTab((prev) => (prev === 'profile' ? prev : 'profile'));
       if (currentRoute.userId) {
         const cleanRouteUser = decodeURIComponent(currentRoute.userId).toLowerCase().replace(/^@/, '');
         const sessionUser = sessionState.getUser();
@@ -453,18 +455,19 @@ export default function App() {
           (Boolean(sessionUser?.originalId) && currentRoute.userId === sessionUser.originalId) ||
           (Boolean(sessionUser?.guestToken) && currentRoute.userId === sessionUser.guestToken) ||
           currentRoute.userId === getLocalGuestToken();
-        setSelectedCreatorProfileId(isOwnUser ? null : currentRoute.userId);
+        const targetCreator = isOwnUser ? null : currentRoute.userId;
+        setSelectedCreatorProfileId((prev) => (prev === targetCreator ? prev : targetCreator));
       } else {
-        setSelectedCreatorProfileId(null);
+        setSelectedCreatorProfileId((prev) => (prev === null ? prev : null));
       }
     } else if (currentRoute.type === 'admin') {
       if (isSuperAdmin(currentUser)) {
-        setActiveTab('admin');
+        setActiveTab((prev) => (prev === 'admin' ? prev : 'admin'));
         if (typeof window !== 'undefined' && window.location.pathname.toLowerCase().replace(/\/+$/, '') === '/admin') {
           navigateTo('/admin/resumen', { replace: true });
         }
       } else {
-        setActiveTab('shop');
+        setActiveTab((prev) => (prev === 'shop' ? prev : 'shop'));
         navigateTo('/tienda/catalogo', { replace: true });
       }
     }
@@ -535,7 +538,7 @@ export default function App() {
         navigateTo(expectedPath, { replace: true });
       }
     }
-  }, [activeTab, selectedCreatorProfileId, currentUser, users, activePlatform, isLoggedIn]);
+  }, [activeTab, selectedCreatorProfileId, currentUser.id, currentUser.username, activePlatform, isLoggedIn]);
 
   // Android permanece en la pantalla nativa con fondo blanco hasta que la app/catálogo cargue.
   const [isInitialLoading, setIsInitialLoading] = useState(false);
@@ -981,22 +984,56 @@ export default function App() {
         switch (payload.type) {
           case "presence_list": {
             if (Array.isArray(payload.users)) {
-              setUsers(deduplicateById(payload.users));
+              setUsers((prev: User[]) => {
+                const incoming = deduplicateById(payload.users) as User[];
+                const prevMap = new Map<string, User>(prev.map((u) => [u.id, u]));
+                let hasChanges = incoming.length !== prev.length;
+                const merged: User[] = incoming.map((user: User) => {
+                  const existing = prevMap.get(user.id);
+                  if (!existing) {
+                    hasChanges = true;
+                    return user;
+                  }
+                  if (
+                    existing.isOnline !== user.isOnline ||
+                    existing.avatar !== user.avatar ||
+                    existing.name !== user.name ||
+                    existing.username !== user.username
+                  ) {
+                    hasChanges = true;
+                  }
+                  return {
+                    ...existing,
+                    ...user,
+                    email: user.email || existing.email,
+                    role: user.role || existing.role,
+                    canSell: user.canSell !== undefined ? user.canSell : existing.canSell,
+                    isAdmin: user.isAdmin !== undefined ? user.isAdmin : existing.isAdmin,
+                  };
+                });
+                for (const existingUser of prev) {
+                  if (!merged.some((u) => u.id === existingUser.id)) {
+                    merged.push(existingUser);
+                  }
+                }
+                return hasChanges ? merged : prev;
+              });
             }
             break;
           }
 
           case "private_msg": {
             const msg: ChatMessage = payload.message;
-            const isSupportChat = activeChatUser && isSupportAlias(activeChatUser.id);
+            const currentChat = activeChatUserRef.current;
+            const isSupportChat = currentChat && isSupportAlias(currentChat.id);
             const isMsgFromSupport = isSupportAlias(msg.senderId);
             const isMsgToSupport = isSupportAlias(msg.receiverId);
 
             const matchesCurrentChat =
-              activeChatUser &&
-              (msg.senderId === activeChatUser.id ||
-                msg.receiverId === activeChatUser.id ||
-                (activeChatUser.originalId && (msg.senderId === activeChatUser.originalId || msg.receiverId === activeChatUser.originalId)) ||
+              currentChat &&
+              (msg.senderId === currentChat.id ||
+                msg.receiverId === currentChat.id ||
+                (currentChat.originalId && (msg.senderId === currentChat.originalId || msg.receiverId === currentChat.originalId)) ||
                 (isSupportChat && (isMsgFromSupport || isMsgToSupport)));
 
             if (matchesCurrentChat) {
@@ -1215,7 +1252,7 @@ export default function App() {
       ws?.close();
     } catch (e) {}
   };
-}, [activeChatUser, currentUser.id]);
+}, [currentUser.id]);
 
   // --- API HANDLERS ---
 
@@ -1861,12 +1898,15 @@ export default function App() {
   };
 
   // Clear unreads
-  const handleClearUnreads = (userId: string) => {
-    setUnreadCounts((prev) => ({
-      ...prev,
-      [userId]: 0
-    }));
-  };
+  const handleClearUnreads = useCallback((userId: string) => {
+    setUnreadCounts((prev) => {
+      if (!prev[userId]) return prev;
+      return {
+        ...prev,
+        [userId]: 0
+      };
+    });
+  }, []);
 
   // Public/Creator profile cross linkers
   const handleCreatorProfileLink = (creatorId: string) => {
@@ -2075,6 +2115,7 @@ export default function App() {
               savedReelIds={savedReelIds}
               isLiveViewerOpen={isLiveViewerOpen}
               totalUnreads={totalUnreads}
+              targetReelId={targetReelId}
               handleAddToCart={handleAddToCart}
               handleRemoveFromCart={handleRemoveFromCart}
               handleUpdateCartQuantity={handleUpdateCartQuantity}

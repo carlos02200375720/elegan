@@ -168,6 +168,15 @@ export default function AndroidApp({
   const [profileInitialTab, setProfileInitialTab] = React.useState<"reels" | "products" | "saved" | "orders" | undefined>(undefined);
   const [pendingCheckoutItems, setPendingCheckoutItems] = React.useState<CartItem[] | null>(null);
 
+  const handleClearInitialStep = React.useCallback(() => {
+    setShopInitialStep('catalog');
+    setShopInitialSelectedIndices([]);
+  }, [setShopInitialStep, setShopInitialSelectedIndices]);
+
+  const handleClearInitialTab = React.useCallback(() => {
+    setProfileInitialTab(undefined);
+  }, []);
+
   const requestCheckoutLogin = (itemsToCheckout: CartItem[]) => {
     setPendingCheckoutItems(itemsToCheckout);
     setShopInitialStep('checkout');
@@ -352,10 +361,7 @@ export default function AndroidApp({
                 onToggleCart={setIsCartPageOpen}
                 initialStep={shopInitialStep}
                 initialSelectedCartIndices={shopInitialSelectedIndices}
-                onClearInitialStep={() => {
-                  setShopInitialStep('catalog');
-                  setShopInitialSelectedIndices([]);
-                }}
+                onClearInitialStep={handleClearInitialStep}
                 onSelectProduct={(p) => {
                   setDirectSelectedProduct(p);
                   setIsProductDetailOpen(true);
@@ -449,7 +455,7 @@ export default function AndroidApp({
                     savedReelIds={savedReelIds}
                     onToggleSaveReel={handleToggleSaveReel}
                     initialTab={profileInitialTab}
-                    onClearInitialTab={() => setProfileInitialTab(undefined)}
+                    onClearInitialTab={handleClearInitialTab}
                     onBackToSelf={() => {
                       setSelectedCreatorProfileId(null);
                       navigateTo(getProfilePath(currentUser));

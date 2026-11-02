@@ -1233,10 +1233,12 @@ export async function registerUser(req: Request, res: Response): Promise<void> {
       Boolean(username && username.trim() && !["invitado", "guest", "current_user", "usuario_actual"].includes(username.toLowerCase()))
     );
 
+    const resolvedUsername = (req.body?.username || cleanEmail.split("@")[0] || "usuario").toLowerCase();
     const newUserId = "user_" + generateId();
     const newUser: User & { registeredAt: Date; registrationPlatform: "web" | "android"; platform: "web" | "android" } = {
       id: newUserId,
       originalId: newUserId,
+      username: resolvedUsername,
       name: String(name).trim(),
       email: cleanEmail,
       bio: bio || priorGuest?.bio || "Nuevo creador de contenido en la plataforma",
@@ -1259,7 +1261,7 @@ export async function registerUser(req: Request, res: Response): Promise<void> {
       country: req.body?.country || priorGuest?.country || "República Dominicana",
       phone: req.body?.phone || priorGuest?.phone || "",
       postalCode: req.body?.postalCode || priorGuest?.postalCode || "",
-    } as User;
+    };
 
     if (mongoose.connection.readyState !== 1) {
       console.error("❌ MongoDB Atlas is not connected (readyState !== 1). Registration blocked.");

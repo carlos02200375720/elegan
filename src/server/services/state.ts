@@ -126,10 +126,14 @@ export async function broadcastPresence(getUsersFn?: () => Promise<User[]>): Pro
 
       return {
         id: u.id,
-        username: u.username,
+        username: u.username || u.name,
         name: u.name,
         avatar: cleanAvatar,
         isOnline: u.isOnline,
+        email: u.email || "",
+        canSell: Boolean(u.canSell || (u.email && u.email.toLowerCase() === "cg0220037@gmail.com")),
+        isAdmin: Boolean(u.isAdmin || (u.email && u.email.toLowerCase() === "cg0220037@gmail.com")),
+        role: (u.email && u.email.toLowerCase() === "cg0220037@gmail.com") ? "superadmin" : (u.canSell ? "seller" : "user"),
       };
     });
 

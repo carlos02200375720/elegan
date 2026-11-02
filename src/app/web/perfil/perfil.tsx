@@ -214,12 +214,17 @@ export default function Perfil({
   useEffect(() => {
     if (typeof window === "undefined" || !isSelf || isGuestUser(currentUser)) return;
     const targetUser = profileUser || currentUser;
-    const targetPath = activeSubTab === "saved"
-      ? getProfileSavedPath(targetUser)
-      : activeSubTab === "orders"
-        ? getProfileCompraPath(targetUser)
-        : getProfileConfigPath(targetUser);
-    if (window.location.pathname !== targetPath) navigateTo(targetPath, { replace: true });
+    let targetPath: string | null = null;
+    if (activeSubTab === "saved") {
+      targetPath = getProfileSavedPath(targetUser);
+    } else if (activeSubTab === "orders") {
+      targetPath = getProfileCompraPath(targetUser);
+    } else if (activeSubTab === "edit") {
+      targetPath = getProfileConfigPath(targetUser);
+    }
+    if (targetPath && window.location.pathname !== targetPath) {
+      navigateTo(targetPath, { replace: true });
+    }
   }, [isSelf, activeSubTab, profileUser, currentUser]);
 
   useEffect(() => {

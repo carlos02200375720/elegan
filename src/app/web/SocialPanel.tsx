@@ -70,9 +70,9 @@ export default function SocialPanel({
   useEffect(() => {
     if (!isAdmin && (!activeChatUser || !activeChatUser.id)) {
       onSelectChatUser(supportUser);
-      clearUnreads(supportUser.id);
-      clearUnreads(SUPPORT_USER_ID);
-      clearUnreads(SUPPORT_EMAIL);
+      if (unreadCounts[supportUser.id]) clearUnreads(supportUser.id);
+      if (unreadCounts[SUPPORT_USER_ID]) clearUnreads(SUPPORT_USER_ID);
+      if (unreadCounts[SUPPORT_EMAIL]) clearUnreads(SUPPORT_EMAIL);
     }
   }, [isAdmin, activeChatUser?.id, supportUser.id]);
 

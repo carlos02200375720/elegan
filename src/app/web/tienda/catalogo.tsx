@@ -497,16 +497,14 @@ export default function Tienda({
   useEffect(() => {
     if (initialStep === "cart") {
       setShowCartDrawer(true);
-      onClearInitialStep?.();
     } else if (initialStep && initialStep !== "catalog") {
       setShowCartDrawer(false);
       setActiveStep(initialStep);
       if (initialSelectedCartIndices && initialSelectedCartIndices.length > 0) {
         setSelectedCartIndices(initialSelectedCartIndices);
       }
-      onClearInitialStep?.();
     }
-  }, [initialStep, initialSelectedCartIndices, onClearInitialStep]);
+  }, [initialStep, initialSelectedCartIndices]);
 
   // Synchronize Product Detail, Cart Drawer, Checkout, and Thank You step with browser URL
   useEffect(() => {

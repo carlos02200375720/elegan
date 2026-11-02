@@ -342,20 +342,17 @@ export default function Catalogo({
       setSelectedProduct(null);
       setShowThankYouPage(false);
       setShowCheckoutPage(true);
-      onClearInitialStep?.();
     } else if (initialStep === "cart") {
       setShowCheckoutPage(false);
       setShowThankYouPage(false);
       setIsCartOpen(true);
-      onClearInitialStep?.();
     } else if (initialStep === "thankyou") {
       setIsCartOpen(false);
       setSelectedProduct(null);
       setShowCheckoutPage(false);
       setShowThankYouPage(true);
-      onClearInitialStep?.();
     }
-  }, [initialStep, onClearInitialStep]);
+  }, [initialStep]);
 
   // Synchronize Product Detail, Cart, Checkout, and Thank You page state with browser URL
   useEffect(() => {

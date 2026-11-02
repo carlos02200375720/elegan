@@ -125,6 +125,15 @@ export default function WebApp({
 }: WebAppProps) {
   const [profileInitialSubTab, setProfileInitialSubTab] = React.useState<"publish" | "publications" | "products" | "saved" | "orders" | "performance" | "edit" | undefined>(undefined);
 
+  const handleClearInitialStep = React.useCallback(() => {
+    setShopInitialStep('catalog');
+    setShopInitialSelectedIndices([]);
+  }, [setShopInitialStep, setShopInitialSelectedIndices]);
+
+  const handleClearInitialSubTab = React.useCallback(() => {
+    setProfileInitialSubTab((prev) => (prev === undefined ? prev : undefined));
+  }, []);
+
   React.useEffect(() => {
     trackFunnelStep("page_visit", {
       path: typeof window !== "undefined" ? window.location.pathname : `/${activeTab}`,
@@ -210,10 +219,7 @@ export default function WebApp({
                 onToggleDetailView={setIsProductDetailOpen}
                 initialStep={shopInitialStep}
                 initialSelectedCartIndices={shopInitialSelectedIndices}
-                onClearInitialStep={() => {
-                  setShopInitialStep('catalog');
-                  setShopInitialSelectedIndices([]);
-                }}
+                onClearInitialStep={handleClearInitialStep}
                 onProductSelect={(prod) => {
                   setDirectSelectedProduct(prod);
                   navigateTo(getProductPath(prod));
@@ -251,7 +257,7 @@ export default function WebApp({
                   savedReelIds={savedReelIds}
                   onToggleSave={handleToggleSaveReel}
                   initialSubTab={profileInitialSubTab}
-                  onClearInitialSubTab={() => setProfileInitialSubTab(undefined)}
+                  onClearInitialSubTab={handleClearInitialSubTab}
                   onBackToSelf={() => {
                     setSelectedCreatorProfileId(null);
                     navigateTo(getProfilePath(currentUser));
