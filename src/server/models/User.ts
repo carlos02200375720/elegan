@@ -28,6 +28,7 @@ const UserSchema = new mongoose.Schema({
   city: { type: String, default: "" },
   country: { type: String, default: "" },
   phone: { type: String, default: "" },
+  postalCode: { type: String, default: "" },
   privacyPolicy: { type: String, default: "" },
   canSell: { type: Boolean, default: false }
 }, { timestamps: true });
