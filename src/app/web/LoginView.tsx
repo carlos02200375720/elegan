@@ -202,14 +202,17 @@ export default function LoginView({
             {/* Logo */}
             <div className="flex items-center space-x-2.5 bg-amber-500/15 border border-amber-500/30 px-3.5 py-1.5 rounded-full w-fit">
               <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-              <span className="text-[10px] font-mono font-bold tracking-wider uppercase text-amber-700">Plataforma Social</span>
+              <span className="text-[10px] font-mono font-bold tracking-[0.2em] uppercase text-amber-700">ELEGAN</span>
             </div>
             
             <h1 className="font-display font-black text-2xl mt-6 leading-tight tracking-tight text-slate-900">
-              Sintoniza, Chatea, <span className="text-amber-500">Vende</span>
+              Descubre. Elige. <span className="text-amber-500">Disfruta.</span>
             </h1>
-            <p className="text-xs text-slate-600 mt-3 leading-relaxed">
-              Únete a la nueva era del comercio interactivo. Comparte reels de tus productos, interactúa en vivo y gestiona tu propio catálogo.
+            <p className="text-xs font-semibold text-slate-700 mt-3 leading-relaxed">
+              Mucho más que comprar, una nueva forma de descubrir lo que te gusta.
+            </p>
+            <p className="text-[11px] text-slate-600 mt-2 leading-relaxed">
+              En Elegan encontrarás una experiencia de compra diferente. Explora productos, descubre novedades en videos y encuentra fácilmente lo que buscas. Todo en una sola tienda, diseñada para que comprar sea sencillo, cómodo y agradable.
             </p>
           </div>
 
@@ -220,8 +223,8 @@ export default function LoginView({
                 <Play className="w-3.5 h-3.5 fill-current" />
               </div>
               <div>
-                <h4 className="text-xs font-bold text-slate-900">Reels de Compra Directa</h4>
-                <p className="text-[10px] text-slate-500 leading-normal">Vincula tus productos en videos interactivos y vende con un clic.</p>
+                <h4 className="text-xs font-bold text-slate-900">Productos que cobran vida</h4>
+                <p className="text-[10px] text-slate-500 leading-normal">Descubre nuestros productos en videos y conoce sus detalles antes de elegir.</p>
               </div>
             </div>
 
@@ -230,8 +233,8 @@ export default function LoginView({
                 <ShoppingBag className="w-3.5 h-3.5" />
               </div>
               <div>
-                <h4 className="text-xs font-bold text-slate-900">Catálogo Completo</h4>
-                <p className="text-[10px] text-slate-500 leading-normal">Publica en múltiples categorías con soporte multimedia.</p>
+                <h4 className="text-xs font-bold text-slate-900">Todo en un solo lugar</h4>
+                <p className="text-[10px] text-slate-500 leading-normal">Explora nuestro catálogo, encuentra tus favoritos y descubre nuevas opciones.</p>
               </div>
             </div>
 
@@ -240,10 +243,13 @@ export default function LoginView({
                 <MessageSquare className="w-3.5 h-3.5" />
               </div>
               <div>
-                <h4 className="text-xs font-bold text-slate-900">Mensajería en Vivo</h4>
-                <p className="text-[10px] text-slate-500 leading-normal">Chatea en tiempo real con compradores y otros creadores.</p>
+                <h4 className="text-xs font-bold text-slate-900">Atención personalizada</h4>
+                <p className="text-[10px] text-slate-500 leading-normal">¿Tienes alguna pregunta? Chatea con nosotros y recibe atención directa durante tu experiencia de compra.</p>
               </div>
             </div>
+            <p className="text-[10px] font-bold text-amber-700 tracking-wide leading-relaxed">
+              Elegan: tus productos favoritos están a un clic de distancia.
+            </p>
           </div>
 
         </div>
