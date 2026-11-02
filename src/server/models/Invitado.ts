@@ -8,7 +8,7 @@ const InvitadoSchema = new mongoose.Schema({
   userId: { type: String, default: "" },
   firstVisitAt: { type: Date, default: Date.now },
   lastVisitAt: { type: Date, default: Date.now },
-  visitCount: { type: Number, default: 1 },
+  visitCount: { type: Number, default: 0 },
 }, {
   timestamps: true,
   collection: "invitados",
