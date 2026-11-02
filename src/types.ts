@@ -24,6 +24,7 @@ export interface User {
   city?: string;
   country?: string;
   phone?: string;
+  postalCode?: string;
   privacyPolicy?: string;
   role?: string;
   isAdmin?: boolean;
