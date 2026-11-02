@@ -286,13 +286,15 @@ export default function App() {
   // Register one unique daily visitor for the currently active app surface.
   // The backend upserts by device token + date + platform, not one document per refresh.
   useEffect(() => {
-    const visitorPlatform =
-      typeof window !== "undefined" &&
-      (window.location.pathname.startsWith("/app/movil") ||
-        window.location.pathname.startsWith("/movil") ||
-        Capacitor.isNativePlatform())
-        ? "android"
-        : activePlatform;
+    const configuredTarget = String((import.meta as any).env?.VITE_APP_TARGET || "").toLowerCase();
+    const currentPath = typeof window !== "undefined" ? window.location.pathname : "";
+    const isAndroidSurface =
+      Capacitor.isNativePlatform() ||
+      currentPath.startsWith("/app/movil") ||
+      currentPath.startsWith("/movil") ||
+      configuredTarget === "android";
+    const isWebSurface = currentPath.startsWith("/app/web") || configuredTarget === "web";
+    const visitorPlatform = isAndroidSurface ? "android" : isWebSurface ? "web" : activePlatform;
     trackDailyVisitor(visitorPlatform);
   }, [activePlatform, currentUser.id, currentUser.originalId, currentUser.isGuest]);
 
