@@ -148,7 +148,6 @@ export async function trackDailyVisitor(req: Request, res: Response): Promise<vo
         dateKey,
         platform,
         firstVisitAt: now,
-        visitCount: 0,
       },
       $inc: { visitCount: 1 },
     };
@@ -157,7 +156,7 @@ export async function trackDailyVisitor(req: Request, res: Response): Promise<vo
       await MongoInvitado.findOneAndUpdate(filter, update, {
         upsert: true,
         new: true,
-        setDefaultsOnInsert: true,
+        setDefaultsOnInsert: false,
       });
     } catch (writeError: any) {
       // Handle two simultaneous first requests from the same visitor safely.
