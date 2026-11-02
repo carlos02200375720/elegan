@@ -19,6 +19,8 @@ const UserSchema = new mongoose.Schema({
   lastSeenAt: { type: Date, default: Date.now },
   firstVisitAt: { type: Date, default: Date.now },
   visitCount: { type: Number, default: 1 },
+  registeredAt: { type: Date },
+  registrationPlatform: { type: String, enum: ["web", "android"] },
   password: { type: String },
   email: { type: String, unique: true, sparse: true, lowercase: true, trim: true },
   address: { type: String, default: "" },
