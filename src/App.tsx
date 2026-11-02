@@ -10,7 +10,7 @@ import { isSuperAdmin } from "./superAdmin";
 import { resolveSupportUser, isSupportAdmin, isSupportAlias, SUPPORT_EMAIL, SUPPORT_USER_ID } from "./utils/supportChat";
 import { sessionState } from "./utils/sessionState";
 import { getLocalGuestToken, getOrCreateGuestToken, syncGuestSession } from "./utils/guestToken";
-import { trackFunnelStep } from "./utils/analyticsTracker";
+import { trackFunnelStep, trackDailyVisitor } from "./utils/analyticsTracker";
 import { INITIAL_USERS, INITIAL_PRODUCTS, INITIAL_REELS } from "./initialData";
 import { useCurrentRoute, navigateTo, parseRoute, getProfilePath, getProfileSavedPath, getProfileCompraPath, getProfileConfigPath, getProfileProductoPath, getProfileVentaPath, getProfilePublicacionesPath, getProfilePublicarPath, getProfileRendimientoPath, getProductPath, getInicioPath, getThankYouPath, findReelByInicioParam } from "./router";
 
@@ -282,6 +282,19 @@ export default function App() {
     }
     return "web";
   });
+
+  // Register one unique daily visitor for the currently active app surface.
+  // The backend upserts by device token + date + platform, not one document per refresh.
+  useEffect(() => {
+    const visitorPlatform =
+      typeof window !== "undefined" &&
+      (window.location.pathname.startsWith("/app/movil") ||
+        window.location.pathname.startsWith("/movil") ||
+        Capacitor.isNativePlatform())
+        ? "android"
+        : activePlatform;
+    trackDailyVisitor(visitorPlatform);
+  }, [activePlatform, currentUser.id, currentUser.originalId, currentUser.isGuest]);
 
   const handleSwitchPlatform = useCallback((target: 'android' | 'web') => {
     setActivePlatform(target);
