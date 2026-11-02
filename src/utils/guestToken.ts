@@ -71,14 +71,47 @@ export interface GuestSessionResult {
 }
 
 /**
- * Synchronizes the guest session with MongoDB Atlas:
- * - If this device visits for the first time, generates a unique access token and persists it in MongoDB Atlas & device storage.
- * - If the user is returning, sends their local token to recognize their identity and load their profile history.
+ * Keeps web visitors anonymous with a local-only token.
+ * Android continues to synchronize its guest session with the backend.
  */
 export async function syncGuestSession(
   platform: "web" | "android" = "web"
 ): Promise<GuestSessionResult | null> {
   const existingToken = getLocalGuestToken() || getOrCreateGuestToken();
+
+  // Web visitors remain anonymous and are identified only by a local browser token.
+  // Do not send a guest-session request to the backend: a visit must never create a User document.
+  if (platform === "web") {
+    const user: User = {
+      id: "current_user",
+      originalId: existingToken,
+      guestToken: existingToken,
+      username: "invitado",
+      name: "Invitado",
+      avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80",
+      bio: "Explorando la plataforma",
+      isOnline: false,
+      followers: 0,
+      following: 0,
+      followingUserIds: [],
+      savedReelIds: [],
+      coverPhoto: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80",
+      isGuest: true,
+      canSell: false,
+      isAdmin: false,
+    };
+
+    if (!sessionState.isAuthenticated()) {
+      sessionState.setUser(user);
+    }
+
+    return {
+      success: true,
+      isNew: false,
+      guestToken: existingToken,
+      user,
+    };
+  }
 
   try {
     const res = await apiFetch("/api/auth/guest-session", {
