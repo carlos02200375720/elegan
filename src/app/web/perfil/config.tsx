@@ -31,6 +31,11 @@ export function ConfigPerfilView({
   const [editBio, setEditBio] = useState(currentUser.bio || "");
   const [editAvatar, setEditAvatar] = useState(currentUser.avatar || "");
   const [editCoverPhoto, setEditCoverPhoto] = useState(currentUser.coverPhoto || "");
+  const [editAddress, setEditAddress] = useState(currentUser.shippingAddress || currentUser.address || "");
+  const [editCity, setEditCity] = useState(currentUser.city || "");
+  const [editCountry, setEditCountry] = useState(currentUser.country || "República Dominicana");
+  const [editPhone, setEditPhone] = useState(currentUser.phone || "");
+  const [editPostalCode, setEditPostalCode] = useState(currentUser.postalCode || "");
   const [editPassword, setEditPassword] = useState("");
   const [editPrivacyPolicy, setEditPrivacyPolicy] = useState(
     profileUser?.privacyPolicy || currentUser.privacyPolicy || ""
@@ -75,6 +80,11 @@ export function ConfigPerfilView({
       setEditBio(currentUser.bio || "");
       setEditAvatar(currentUser.avatar || "");
       setEditCoverPhoto(currentUser.coverPhoto || "");
+      setEditAddress(currentUser.shippingAddress || currentUser.address || "");
+      setEditCity(currentUser.city || "");
+      setEditCountry(currentUser.country || "República Dominicana");
+      setEditPhone(currentUser.phone || "");
+      setEditPostalCode(currentUser.postalCode || "");
       setEditPrivacyPolicy(currentUser.privacyPolicy || profileUser?.privacyPolicy || "");
     }
   }, [currentUser, profileUser]);
@@ -191,6 +201,11 @@ export function ConfigPerfilView({
       setEditBio(currentUser.bio || "");
       setEditAvatar(currentUser.avatar || "");
       setEditCoverPhoto(currentUser.coverPhoto || "");
+      setEditAddress(currentUser.shippingAddress || currentUser.address || "");
+      setEditCity(currentUser.city || "");
+      setEditCountry(currentUser.country || "República Dominicana");
+      setEditPhone(currentUser.phone || "");
+      setEditPostalCode(currentUser.postalCode || "");
       const resolvedPolicy =
         profileUser?.privacyPolicy !== undefined
           ? profileUser.privacyPolicy
@@ -220,6 +235,12 @@ export function ConfigPerfilView({
           coverPhoto: editCoverPhoto,
           password: editPassword,
           privacyPolicy: editPrivacyPolicy,
+          address: editAddress.trim(),
+          shippingAddress: editAddress.trim(),
+          city: editCity.trim(),
+          country: editCountry.trim(),
+          phone: editPhone.trim(),
+          postalCode: editPostalCode.trim(),
         }),
       });
       const data = await response.json();
@@ -634,6 +655,66 @@ export function ConfigPerfilView({
                 placeholder="Cuéntale a tu audiencia sobre ti..."
                 required
               />
+            </div>
+
+            {/* Saved delivery address */}
+            <div className="md:col-span-2 space-y-3 rounded-2xl border border-slate-200 bg-white p-4">
+              <div>
+                <h4 className="text-[11px] font-extrabold uppercase tracking-wider text-slate-800">Dirección de entrega</h4>
+                <p className="mt-1 text-[11px] text-slate-500">Guarda estos datos para completar automáticamente la información de entrega en tus próximos pedidos.</p>
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Calle y número</label>
+                <input
+                  type="text"
+                  value={editAddress}
+                  onChange={(e) => setEditAddress(e.target.value)}
+                  placeholder="Calle, número, sector, edificio o apartamento"
+                  className="w-full text-xs font-semibold px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none text-slate-800"
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Ciudad</label>
+                  <input
+                    type="text"
+                    value={editCity}
+                    onChange={(e) => setEditCity(e.target.value)}
+                    placeholder="Santo Domingo"
+                    className="w-full text-xs font-semibold px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none text-slate-800"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">País</label>
+                  <input
+                    type="text"
+                    value={editCountry}
+                    onChange={(e) => setEditCountry(e.target.value)}
+                    placeholder="República Dominicana"
+                    className="w-full text-xs font-semibold px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none text-slate-800"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Teléfono / WhatsApp</label>
+                  <input
+                    type="tel"
+                    value={editPhone}
+                    onChange={(e) => setEditPhone(e.target.value)}
+                    placeholder="+1 809 000 0000"
+                    className="w-full text-xs font-semibold px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none text-slate-800"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Código postal</label>
+                  <input
+                    type="text"
+                    value={editPostalCode}
+                    onChange={(e) => setEditPostalCode(e.target.value)}
+                    placeholder="Código postal"
+                    className="w-full text-xs font-semibold px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none text-slate-800"
+                  />
+                </div>
+              </div>
             </div>
 
             {/* Privacy Policy & Terms Input */}
