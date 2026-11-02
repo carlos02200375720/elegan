@@ -457,13 +457,13 @@ export default function Catalogo({
     if (currentUser) {
       setCheckoutForm((prev) => ({
         ...prev,
-        fullName: currentUser.name || prev.fullName || "",
-        email: currentUser.email || prev.email || "",
-        phone: (currentUser as any)?.phone || prev.phone || "",
-        shippingAddress: (currentUser as any)?.shippingAddress || (currentUser as any)?.address || prev.shippingAddress || "",
-        city: (currentUser as any)?.city || prev.city || "",
-        country: (currentUser as any)?.country || prev.country || "República Dominicana",
-        postalCode: (currentUser as any)?.postalCode || prev.postalCode || "",
+        fullName: currentUser.name || "",
+        email: currentUser.email || "",
+        phone: (currentUser as any)?.phone || "",
+        shippingAddress: (currentUser as any)?.shippingAddress || (currentUser as any)?.address || "",
+        city: (currentUser as any)?.city || "",
+        country: (currentUser as any)?.country || "República Dominicana",
+        postalCode: (currentUser as any)?.postalCode || "",
       }));
     }
   }, [currentUser]);
