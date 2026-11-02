@@ -640,7 +640,6 @@ export default function Tienda({
       !phone.trim() ||
       !address.trim() ||
       !city.trim() ||
-      !postalCode.trim() ||
       !cardNumber.trim()
     ) {
       setIsFormValid(false);
