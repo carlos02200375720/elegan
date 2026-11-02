@@ -367,7 +367,7 @@ export default function Tienda({
     const savedCountry = String(currentUser?.country || "").trim().toLowerCase();
     const matchedCountry = DEST_COUNTRIES.find((option) => {
       const plainName = option.name
-        .replace(/\\s+[\\u{1F1E6}-\\u{1F1FF}]{2}$/u, "")
+        .replace(/\s+[\u{1F1E6}-\u{1F1FF}]{2}$/u, "")
         .trim()
         .toLowerCase();
       return option.name.trim().toLowerCase() === savedCountry || plainName === savedCountry;
