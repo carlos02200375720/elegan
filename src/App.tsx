@@ -1998,8 +1998,12 @@ export default function App() {
   };
 
   const handleLogout = () => {
+    // Keep the anonymous identity stable while the server session is being cleared.
+    const guestToken = getLocalGuestToken() || getOrCreateGuestToken();
     const guestUser: User = {
       id: "current_user",
+      originalId: guestToken,
+      guestToken,
       username: "invitado",
       name: "Invitado",
       avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80",
@@ -2012,11 +2016,18 @@ export default function App() {
 
     sessionState.setAuthenticated(false);
     sessionState.setUsername(null);
-    sessionState.setUser(null);
+    sessionState.setUser(guestUser);
     setIsLoggedIn(false);
     setSelectedCreatorProfileId(null);
     setCurrentUser(guestUser);
     setSavedReelIds([]);
+
+    // Web logout must leave the old profile route immediately; otherwise the
+    // profile URL synchronizer can alternate between the previous account and guest.
+    if (activePlatform === "web") {
+      setActiveTab("profile");
+      navigateTo("/perfil/login", { replace: true });
+    }
 
     // Notify server to clear session
     fetch("/api/android/users/current/logout", {
@@ -2028,11 +2039,10 @@ export default function App() {
       method: "POST",
       headers: { "Content-Type": "application/json" }
     })
-      .then(() => {
-        return syncGuestSession(activePlatform);
-      })
+      .then(() => syncGuestSession(activePlatform))
       .then((guestData) => {
-        if (guestData && guestData.user) {
+        // A late logout response must never replace a newer authenticated session.
+        if (!sessionState.isAuthenticated() && guestData?.user) {
           setCurrentUser(guestData.user);
           if (guestData.user.savedReelIds) {
             setSavedReelIds(guestData.user.savedReelIds);
