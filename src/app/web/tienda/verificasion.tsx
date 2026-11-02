@@ -39,6 +39,8 @@ export interface VerificasionTiendaViewProps {
   setCountry: (val: string) => void;
   city: string;
   setCity: (val: string) => void;
+  postalCode: string;
+  setPostalCode: (val: string) => void;
   cardNumber: string;
   setCardNumber: (val: string) => void;
   expiry: string;
@@ -67,6 +69,8 @@ export function VerificasionTiendaView({
   setCountry,
   city,
   setCity,
+  postalCode,
+  setPostalCode,
   cardNumber,
   setCardNumber,
   expiry,
@@ -171,6 +175,18 @@ export function VerificasionTiendaView({
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="text-[10px] uppercase font-bold text-slate-500 block mb-1">
+                  Código Postal
+                </label>
+                <input
+                  type="text"
+                  placeholder="Código postal"
+                  value={postalCode}
+                  onChange={(e) => setPostalCode(e.target.value)}
+                  className="w-full bg-slate-50/70 border border-slate-200 text-xs rounded-xl p-3 font-semibold text-slate-800 focus:outline-none focus:bg-white focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all"
+                />
+              </div>
               <div>
                 <label className="text-[10px] uppercase font-bold text-slate-500 block mb-1">
                   País
