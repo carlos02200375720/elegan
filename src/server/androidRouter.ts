@@ -135,6 +135,7 @@ export function createAndroidRouter(deps: AndroidRouterDependencies): Router {
           city: u.city || "",
           country: u.country || "",
           phone: u.phone || "",
+          postalCode: u.postalCode || "",
           canSell: u.canSell === true || isConfiguredSuperadmin(u),
           isAdmin: isConfiguredSuperadmin(u),
           role: isConfiguredSuperadmin(u) ? "superadmin" : (u.canSell ? "seller" : "user")
@@ -201,6 +202,7 @@ export function createAndroidRouter(deps: AndroidRouterDependencies): Router {
           city: targetUser.city || "",
           country: targetUser.country || "",
           phone: targetUser.phone || "",
+          postalCode: targetUser.postalCode || "",
         };
         res.json({ success: true, user: userObj });
         return;
@@ -242,7 +244,7 @@ export function createAndroidRouter(deps: AndroidRouterDependencies): Router {
   // Android: Update profile
   router.post("/users/current/update", async (req: Request, res: Response) => {
     try {
-      const { userId, name, bio, avatar, email, address, shippingAddress, city, country, phone, currentUsername } = req.body;
+      const { userId, name, bio, avatar, email, address, shippingAddress, city, country, phone, postalCode, currentUsername } = req.body;
       const headerUsername = (req.headers["x-user-username"] as string)?.trim().toLowerCase();
       const headerUserId = (req.headers["x-user-id"] as string)?.trim();
       const targetId = userId || headerUserId;
@@ -266,6 +268,7 @@ export function createAndroidRouter(deps: AndroidRouterDependencies): Router {
       if (city !== undefined) updateFields.city = String(city).trim();
       if (country !== undefined) updateFields.country = String(country).trim();
       if (phone !== undefined) updateFields.phone = String(phone).trim();
+      if (postalCode !== undefined) updateFields.postalCode = String(postalCode).trim();
 
       if (avatar) {
         if (typeof avatar === "string" && avatar.startsWith("data:")) {
@@ -330,6 +333,7 @@ export function createAndroidRouter(deps: AndroidRouterDependencies): Router {
         city: updated.city || city || "",
         country: updated.country || country || "",
         phone: updated.phone || phone || "",
+        postalCode: updated.postalCode || postalCode || "",
         canSell: updated.canSell === true || isConfiguredSuperadmin(updated),
         isAdmin: isConfiguredSuperadmin(updated),
         role: isConfiguredSuperadmin(updated) ? "superadmin" : (updated.canSell ? "seller" : "user")
@@ -385,6 +389,7 @@ export function createAndroidRouter(deps: AndroidRouterDependencies): Router {
             city: user.city || "",
             country: user.country || "",
             phone: user.phone || "",
+            postalCode: user.postalCode || "",
             canSell: user.canSell === true || isConfiguredSuperadmin(user),
             isAdmin: isConfiguredSuperadmin(user),
             role: isConfiguredSuperadmin(user) ? "superadmin" : (user.canSell ? "seller" : "user"),
