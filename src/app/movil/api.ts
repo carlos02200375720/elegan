@@ -1,5 +1,6 @@
 import { sessionState } from "../../utils/sessionState";
 import { User, Reel, Product, CartItem, Order, ChatMessage } from "../../types";
+import { syncGuestSession as syncLocalGuestSession } from "../../utils/guestToken";
 import { BACKEND_URL, CLOUD_RUN_BACKEND_URL, isExternalStaticHost } from "../../config";
 
 /**
@@ -391,23 +392,8 @@ export const androidApi = {
     return readResponseBody(res);
   },
 
-  syncGuestSession: async (deviceInfo?: string) => {
-    const existingToken = typeof window !== "undefined" ? localStorage.getItem("mall_guest_access_token") : null;
-    const res = await androidApiFetch("/auth/guest-session", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        guestToken: existingToken || undefined,
-        platform: "android",
-        deviceInfo
-      }),
-    });
-    const data = await readResponseBody(res);
-    if (data?.guestToken && typeof window !== "undefined") {
-      try {
-        localStorage.setItem("mall_guest_access_token", data.guestToken);
-      } catch {}
-    }
-    return data;
+  syncGuestSession: async (_deviceInfo?: string) => {
+    // Android visitors use the same local-only guest session as the web app.
+    return syncLocalGuestSession("android");
   },
 };
