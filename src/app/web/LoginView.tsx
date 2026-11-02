@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { User as UserIcon, ShieldCheck, UserPlus, ArrowRight, Sparkles, Check, Play, ShoppingBag, MessageSquare, Radio, Mail } from "lucide-react";
+import { User as UserIcon, UserPlus, ArrowRight, Sparkles, Check, Play, ShoppingBag, MessageSquare, Radio, Mail } from "lucide-react";
 import { User } from "../../types";
 import { apiFetch } from "../../config";
 import { sessionState } from "../../utils/sessionState";
@@ -32,8 +32,7 @@ export default function LoginView({
   onRefreshUsers,
   users,
   currentUser,
-  initialTab,
-  restrictionNotice
+  initialTab
 }: LoginViewProps) {
   const [activeTab, setActiveTab] = useState<"login" | "register">(() => {
     if (initialTab) return initialTab;
@@ -345,18 +344,6 @@ export default function LoginView({
             {/* TAB CONTENT: REGISTER */}
             {activeTab === "register" && (
               <div className="space-y-4 pb-4">
-                {restrictionNotice && (
-                  <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 flex items-start space-x-2.5 text-amber-950">
-                    <ShieldCheck className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                    <div>
-                      <h4 className="text-xs font-bold text-slate-900">Acceso a Perfil Restringido</h4>
-                      <p className="text-[11px] text-slate-600 mt-0.5 leading-snug">
-                        {restrictionNotice}
-                      </p>
-                    </div>
-                  </div>
-                )}
-
                 <div>
                   <h2 className="text-lg font-extrabold text-slate-900 tracking-tight">Crea tu Cuenta</h2>
                   <p className="text-xs text-slate-500 mt-1">
