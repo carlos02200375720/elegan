@@ -71,78 +71,43 @@ export interface GuestSessionResult {
 }
 
 /**
- * Keeps web visitors anonymous with a local-only token.
- * Android continues to synchronize its guest session with the backend.
+ * Keeps anonymous visitors local to their device on both Web and Android.
+ * A visitor is never inserted into MongoDB; only registerUser creates a User document.
  */
 export async function syncGuestSession(
   platform: "web" | "android" = "web"
 ): Promise<GuestSessionResult | null> {
+  // Keep the platform argument for existing callers; guest identity is local on both platforms.
+  void platform;
   const existingToken = getLocalGuestToken() || getOrCreateGuestToken();
 
-  // Web visitors remain anonymous and are identified only by a local browser token.
-  // Do not send a guest-session request to the backend: a visit must never create a User document.
-  if (platform === "web") {
-    const user: User = {
-      id: "current_user",
-      originalId: existingToken,
-      guestToken: existingToken,
-      username: "invitado",
-      name: "Invitado",
-      avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80",
-      bio: "Explorando la plataforma",
-      isOnline: false,
-      followers: 0,
-      following: 0,
-      followingUserIds: [],
-      savedReelIds: [],
-      coverPhoto: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80",
-      isGuest: true,
-      canSell: false,
-      isAdmin: false,
-    };
+  const user: User = {
+    id: "current_user",
+    originalId: existingToken,
+    guestToken: existingToken,
+    username: "invitado",
+    name: "Invitado",
+    avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80",
+    bio: "Explorando la plataforma",
+    isOnline: false,
+    followers: 0,
+    following: 0,
+    followingUserIds: [],
+    savedReelIds: [],
+    coverPhoto: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80",
+    isGuest: true,
+    canSell: false,
+    isAdmin: false,
+  };
 
-    if (!sessionState.isAuthenticated()) {
-      sessionState.setUser(user);
-    }
-
-    return {
-      success: true,
-      isNew: false,
-      guestToken: existingToken,
-      user,
-    };
+  if (!sessionState.isAuthenticated()) {
+    sessionState.setUser(user);
   }
 
-  try {
-    const res = await apiFetch("/api/auth/guest-session", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...(existingToken ? { "x-guest-token": existingToken } : {})
-      },
-      body: JSON.stringify({
-        guestToken: existingToken || undefined,
-        platform,
-        deviceInfo: typeof navigator !== "undefined" ? navigator.userAgent : ""
-      })
-    });
-
-    if (!res.ok) {
-      console.warn("⚠️ Sincronización de sesión de invitado devolvió HTTP", res.status);
-      return null;
-    }
-
-    const data: GuestSessionResult = await res.json();
-    if (data && data.guestToken) {
-      setLocalGuestToken(data.guestToken);
-      if (data.user && !sessionState.isAuthenticated()) {
-        sessionState.setUser(data.user);
-      }
-      return data;
-    }
-  } catch (err) {
-    console.warn("⚠️ Error en syncGuestSession:", err);
-  }
-
-  return null;
+  return {
+    success: true,
+    isNew: false,
+    guestToken: existingToken,
+    user,
+  };
 }
