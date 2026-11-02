@@ -62,6 +62,7 @@ export async function getUsers(): Promise<User[]> {
         city: u.city || "",
         country: u.country || "",
         phone: u.phone || "",
+        postalCode: u.postalCode || "",
         privacyPolicy: u.privacyPolicy || "",
         canSell: u.canSell === true || isConfiguredSuperadmin(u),
         isAdmin: isConfiguredSuperadmin(u),
@@ -354,6 +355,7 @@ export async function getUserById(req: Request, res: Response): Promise<void> {
         city: activeUser.city || "",
         country: activeUser.country || "",
         phone: activeUser.phone || "",
+        postalCode: activeUser.postalCode || "",
         privacyPolicy: activeUser.privacyPolicy || "",
         canSell: activeUser.canSell === true || isConfiguredSuperadmin(activeUser),
         isAdmin: isConfiguredSuperadmin(activeUser),
@@ -415,6 +417,7 @@ export async function getUserById(req: Request, res: Response): Promise<void> {
             city: found.city || "",
             country: found.country || "",
             phone: found.phone || "",
+            postalCode: found.postalCode || "",
             privacyPolicy: found.privacyPolicy || "",
             canSell: found.canSell === true || isConfiguredSuperadmin(found),
             isAdmin: isConfiguredSuperadmin(found),
@@ -940,7 +943,7 @@ export async function toggleFollow(req: Request, res: Response): Promise<void> {
  * POST /api/users/current/update
  */
 export async function updateCurrentUser(req: Request, res: Response): Promise<void> {
-  const { name, username, bio, avatar, coverPhoto, password, privacyPolicy, userId, currentUsername, email, address, shippingAddress, city, country, phone } = req.body;
+  const { name, username, bio, avatar, coverPhoto, password, privacyPolicy, userId, currentUsername, email, address, shippingAddress, city, country, phone, postalCode } = req.body;
   if (mongoose.connection.readyState !== 1) {
     res.status(503).json({ error: "MongoDB Atlas no está disponible. El perfil no se guardó." });
     return;
@@ -994,6 +997,7 @@ export async function updateCurrentUser(req: Request, res: Response): Promise<vo
   if (city !== undefined) updateFields.city = city;
   if (country !== undefined) updateFields.country = country;
   if (phone !== undefined) updateFields.phone = phone;
+  if (postalCode !== undefined) updateFields.postalCode = String(postalCode).trim();
 
   if (avatar !== undefined) {
     if (avatar && avatar.startsWith("data:")) {
@@ -1254,6 +1258,7 @@ export async function registerUser(req: Request, res: Response): Promise<void> {
       city: req.body?.city || priorGuest?.city || "",
       country: req.body?.country || priorGuest?.country || "República Dominicana",
       phone: req.body?.phone || priorGuest?.phone || "",
+      postalCode: req.body?.postalCode || priorGuest?.postalCode || "",
     } as User;
 
     if (mongoose.connection.readyState !== 1) {
@@ -1432,7 +1437,7 @@ export async function switchUser(req: Request, res: Response): Promise<void> {
       guestToken: targetUser.guestToken || headerGuestToken || undefined, isGuest: false, password: targetUser.password || "",
       email: targetUser.email || cleanEmail, address: targetUser.address || "",
       shippingAddress: targetUser.shippingAddress || targetUser.address || "", city: targetUser.city || "",
-      country: targetUser.country || "", phone: targetUser.phone || "", privacyPolicy: targetUser.privacyPolicy || "",
+      country: targetUser.country || "", phone: targetUser.phone || "", postalCode: targetUser.postalCode || "", privacyPolicy: targetUser.privacyPolicy || "",
       canSell: targetUser.canSell === true || isSuperadmin, isAdmin: isSuperadmin,
       role: isSuperadmin ? "superadmin" : (targetUser.canSell ? "seller" : "user")
     };
@@ -1639,6 +1644,7 @@ export async function loginWithEmail(req: Request, res: Response): Promise<void>
       city: user.city || "",
       country: user.country || "",
       phone: user.phone || "",
+      postalCode: user.postalCode || "",
       canSell: user.canSell === true || isConfiguredSuperadmin(user),
       isAdmin: isConfiguredSuperadmin(user),
       role: isConfiguredSuperadmin(user) ? "superadmin" : (user.canSell ? "seller" : "user")
