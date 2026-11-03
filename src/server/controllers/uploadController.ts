@@ -4,7 +4,7 @@ import { bucket, bucketName, isGcsAvailable } from "../config/storage";
 import { uploadToGCS, deleteFullPublicationMedia } from "../services/mediaStorage";
 import { hlsQueue, transcodeVideoToLocalHlsDirect } from "../hlsTranscoder";
 import { generateId } from "../utils/helpers";
-import { MongoUser, MongoReel, MongoPublicacion, MongoProduct } from "../models";
+import { MongoUser, MongoSuperAdmin, MongoReel, MongoPublicacion, MongoProduct } from "../models";
 import { reels, setReels, broadcastToAll } from "../services/state";
 
 /**
@@ -277,18 +277,47 @@ export async function uploadAvatar(req: any, res: any): Promise<void> {
       return;
     }
 
-    const userId = req.body.userId || "current_user";
-    console.log(`🚀 Iniciando subida de avatar para el usuario: ${userId}`);
+    const userId = String(req.body?.userId || req.headers["x-user-id"] || "").trim();
+    const email = String(req.body?.email || req.headers["x-user-email"] || "").trim().toLowerCase();
+    if (!userId && !email) {
+      res.status(400).json({ error: "Se requiere el identificador o correo de la cuenta para actualizar el avatar." });
+      return;
+    }
+
+    console.log(`🚀 Iniciando subida de avatar para la cuenta: ${userId || email}`);
     const publicUrl = await uploadToGCS(req.file, "avatars");
     console.log(`✅ Avatar subido con éxito a GCS: ${publicUrl}`);
 
-    if (mongoose.connection.readyState === 1) {
-      try {
-        await MongoUser.findOneAndUpdate({ id: userId }, { avatar: publicUrl });
-        console.log(`💾 Avatar actualizado en MongoDB para: ${userId}`);
-      } catch (dbErr) {
-        console.error("❌ Error al guardar el avatar en MongoDB:", dbErr);
+    if (mongoose.connection.readyState !== 1) {
+      res.status(503).json({ error: "MongoDB Atlas no está disponible. El avatar no se guardó." });
+      return;
+    }
+
+    const accountConditions: any[] = [];
+    if (userId) accountConditions.push({ id: userId });
+    if (email) accountConditions.push({ email });
+    const accountFilter = { $or: accountConditions };
+
+    try {
+      // The superadmin avatar belongs only to super_admins; regular users belong to user.
+      const superadmin = await MongoSuperAdmin.findOne(accountFilter);
+      const AccountModel = superadmin ? MongoSuperAdmin : MongoUser;
+      const updatedAccount = await AccountModel.findOneAndUpdate(
+        accountFilter,
+        { $set: { avatar: publicUrl } },
+        { returnDocument: "after" }
+      );
+
+      if (!updatedAccount) {
+        res.status(404).json({ error: "No se encontró la cuenta para guardar el avatar." });
+        return;
       }
+
+      console.log(`💾 Avatar guardado en ${superadmin ? "super_admins" : "user"} para: ${updatedAccount.id}`);
+    } catch (dbErr) {
+      console.error("❌ Error al guardar el avatar en MongoDB:", dbErr);
+      res.status(500).json({ error: "No se pudo guardar el avatar en MongoDB." });
+      return;
     }
 
     res.status(200).json({ success: true, url: publicUrl });
