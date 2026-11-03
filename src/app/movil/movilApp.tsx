@@ -403,7 +403,8 @@ export default function AndroidApp({
                     const existingIndex = previous.findIndex(
                       (item) =>
                         item.id === user.id ||
-                        item.username.toLowerCase() === user.username.toLowerCase()
+                        (item.username && user.username &&
+                          item.username.toLowerCase() === user.username.toLowerCase())
                     );
                     if (existingIndex >= 0) {
                       const next = [...previous];
