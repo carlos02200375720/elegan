@@ -986,12 +986,8 @@ export function createAndroidRouter(deps: AndroidRouterDependencies): Router {
         } catch {}
       }
 
-      // If GCS is unavailable or failed, store in MongoDB Atlas GridFS (persistent cloud database, zero local disk)
       if (!hlsUrl || !hlsUrl.startsWith("https://storage.googleapis.com/")) {
-        console.log(`📱 [Android Gateway] Almacenando video en la nube en MongoDB Atlas GridFS: ${originalName}`);
-        const { saveMediaToMongoGridFS } = await import("./services/mongoGridFs");
-        const gridVideo = await saveMediaToMongoGridFS(req.file.buffer, originalName, req.file.mimetype || "video/mp4");
-        hlsUrl = gridVideo.url;
+        throw new Error("No se pudo almacenar el video en Google Cloud Storage.");
       }
 
       return res.json({
