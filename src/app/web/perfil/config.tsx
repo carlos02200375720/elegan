@@ -186,16 +186,14 @@ export function ConfigPerfilView({
       !checkIsGuest(currentUser)
     ) {
       setEditName(currentUser.name || "");
-      setEditBio(currentUser.bio || "");
       setEditAvatar(currentUser.avatar || "");
-      setEditCoverPhoto(currentUser.coverPhoto || "");
       setEditAddress(currentUser.shippingAddress || currentUser.address || "");
       setEditCity(currentUser.city || "");
       setEditCountry(currentUser.country || "República Dominicana");
       setEditPhone(currentUser.phone || "");
       setEditPostalCode(currentUser.postalCode || "");
     }
-  }, [currentUser, profileUser?.privacyPolicy]);
+  }, [currentUser];
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
