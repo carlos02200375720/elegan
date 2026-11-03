@@ -23,8 +23,6 @@ export const uploadToGCS = async (file: Express.Multer.File, folder: string = "p
       }
     }
     throw new Error("Google Cloud Storage no está disponible para guardar el video.");
-  }
-
   } else if (mimeType.startsWith("image/")) {
     const lowerName = originalName.toLowerCase();
     const validExtensions = [".png", ".jpg", ".jpeg", ".webp", ".gif", ".svg", ".avif", ".heic", ".heif"];
@@ -78,7 +76,7 @@ export const uploadToGCS = async (file: Express.Multer.File, folder: string = "p
 // Helper: Upload base64 data URL exclusively to cloud storage. No local storage allowed.
 export async function uploadBase64ToGCS(
   base64Str: string,
-  folder: string = "profiles",
+  folder: string = "profiles"
 ): Promise<string> {
   if (!base64Str || !base64Str.startsWith("data:")) return base64Str;
 
@@ -131,7 +129,6 @@ export async function uploadBase64ToGCS(
     }
   }
   throw new Error("Google Cloud Storage no está disponible; la imagen no se guardó.");
-  }
 }
 
 // Helper: Delete file from GCS exclusively by URL
