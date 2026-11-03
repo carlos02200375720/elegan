@@ -15,6 +15,7 @@ export interface WebSidebarProps {
   setSelectedCreatorProfileId: (creatorId: string | null) => void;
   hideMobileHamburger?: boolean;
   onOpenSaved: () => void;
+  onOpenPurchaseHistory: () => void;
 }
 
 export default function WebSidebar({
@@ -26,16 +27,25 @@ export default function WebSidebar({
   setSelectedCreatorProfileId,
   hideMobileHamburger = false,
   onOpenSaved,
+  onOpenPurchaseHistory,
 }: WebSidebarProps) {
   const isHomeActive = false;
   const isDarkNavActive = false;
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const isSavedActive = typeof window !== "undefined" && parseRoute(window.location.pathname)?.profileTab === "guardado";
+  const activeProfileTab = typeof window !== "undefined" ? parseRoute(window.location.pathname)?.profileTab : undefined;
+  const isSavedActive = activeProfileTab === "guardado";
+  const isPurchaseHistoryActive = activeProfileTab === "compra";
 
   const handleOpenSaved = () => {
     setIsMobileMenuOpen(false);
     setSelectedCreatorProfileId(null);
     onOpenSaved();
+  };
+
+  const handleOpenPurchaseHistory = () => {
+    setIsMobileMenuOpen(false);
+    setSelectedCreatorProfileId(null);
+    onOpenPurchaseHistory();
   };
 
   const handleMobileSelect = (tab: NavigationTab) => {
@@ -133,7 +143,7 @@ export default function WebSidebar({
           <button
             onClick={() => { setSelectedCreatorProfileId(null); setActiveTab('profile'); navigateTo(isGuestUser(currentUser) ? '/perfil/login' : getProfilePath(currentUser)); }}
             className={`w-full flex items-center space-x-3.5 px-4 py-3 rounded-2xl font-black text-xs transition-all cursor-pointer ${
-              activeTab === 'profile' && selectedCreatorProfileId === null && !isSavedActive
+              activeTab === 'profile' && selectedCreatorProfileId === null && !isSavedActive && !isPurchaseHistoryActive
                 ? "bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20"
                 : isDarkNavActive
                 ? "text-slate-400 hover:text-white hover:bg-slate-900"
@@ -159,6 +169,20 @@ export default function WebSidebar({
           >
             <Bookmark strokeWidth={2.6} className="w-5 h-5" />
             <span className="font-black tracking-wide">Guardados</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleOpenPurchaseHistory}
+            className={`w-full flex items-center space-x-3.5 px-4 py-3 rounded-2xl font-black text-xs transition-all cursor-pointer ${
+              isPurchaseHistoryActive
+                ? "bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20"
+                : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+            }`}
+            id="web-nav-purchase-history"
+          >
+            <ShoppingBag strokeWidth={2.6} className="w-5 h-5" />
+            <span className="font-black tracking-wide">Historial de compras</span>
           </button>
 
           {/* 5. Panel de Administración (aparece SOLO cuando cg0220037@gmail.com inicia sesión) */}
@@ -336,7 +360,7 @@ export default function WebSidebar({
                   type="button"
                   onClick={() => handleMobileSelect('profile')}
                   className={`w-full flex items-center space-x-3.5 px-4 py-3 rounded-2xl font-black text-xs transition-all cursor-pointer ${
-                    activeTab === 'profile' && !isSavedActive
+                    activeTab === 'profile' && !isSavedActive && !isPurchaseHistoryActive
                       ? "bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20"
                       : "text-slate-300 hover:text-white hover:bg-slate-900"
                   }`}
@@ -360,6 +384,20 @@ export default function WebSidebar({
                 >
                   <Bookmark strokeWidth={2.6} className="w-5 h-5" />
                   <span className="font-black tracking-wide">Guardados</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleOpenPurchaseHistory}
+                  className={`w-full flex items-center space-x-3.5 px-4 py-3 rounded-2xl font-black text-xs transition-all cursor-pointer ${
+                    isPurchaseHistoryActive
+                      ? "bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20"
+                      : "text-slate-300 hover:text-white hover:bg-slate-900"
+                  }`}
+                  id="mobile-global-nav-purchase-history"
+                >
+                  <ShoppingBag strokeWidth={2.6} className="w-5 h-5" />
+                  <span className="font-black tracking-wide">Historial de compras</span>
                 </button>
 
                 {/* Panel de Administración (aparece SOLO cuando cg0220037@gmail.com inicia sesión) */}
