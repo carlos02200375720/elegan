@@ -5,13 +5,11 @@ const UserSchema = new mongoose.Schema({
   username: { type: String, required: false, lowercase: true, trim: true },
   name: { type: String, required: true },
   avatar: { type: String },
-  bio: { type: String },
   isOnline: { type: Boolean, default: false },
   followers: { type: Number, default: 0 },
   following: { type: Number, default: 0 },
   followingUserIds: { type: [String], default: [] },
   savedReelIds: { type: [String], default: [] },
-  coverPhoto: { type: String },
   isGuest: { type: Boolean, default: false },
   guestToken: { type: String, sparse: true, unique: true, index: true },
   deviceInfo: { type: String, default: "" },
@@ -29,7 +27,6 @@ const UserSchema = new mongoose.Schema({
   country: { type: String, default: "" },
   phone: { type: String, default: "" },
   postalCode: { type: String, default: "" },
-  privacyPolicy: { type: String, default: "" },
   canSell: { type: Boolean, default: false }
 }, { timestamps: true });
 
