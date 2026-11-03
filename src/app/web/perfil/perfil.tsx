@@ -175,7 +175,6 @@ export default function Perfil({
 
   // Dedicated user publications feed state
   const [activeFeedReelId, setActiveFeedReelId] = useState<string | null>(null);
-  const [editPrivacyPolicy, setEditPrivacyPolicy] = useState(currentUser.privacyPolicy || "");
 
   const handleSelectSubTab = (
     tab: "saved" | "orders" | "edit"
@@ -264,7 +263,6 @@ export default function Perfil({
     if (isSelf) {
       if (currentUser && !isGuestUser(currentUser)) {
         setProfileUser(currentUser);
-        setEditPrivacyPolicy(currentUser.privacyPolicy || "");
       } else {
         setProfileUser(currentUser);
       }
@@ -303,8 +301,6 @@ export default function Perfil({
       .then((data) => {
         if (!data.error && data.user) {
           if (isSelf && currentUser && !isGuestUser(currentUser)) {
-            const resolvedPolicy =
-              data.user.privacyPolicy !== undefined ? data.user.privacyPolicy : currentUser.privacyPolicy || "";
             setProfileUser({
               ...currentUser,
               ...data.user,
@@ -313,13 +309,8 @@ export default function Perfil({
               username: currentUser.name || data.user.name,
               name: currentUser.name || data.user.name,
               avatar: currentUser.avatar || data.user.avatar,
-              coverPhoto: currentUser.coverPhoto || data.user.coverPhoto,
               isGuest: false,
-              privacyPolicy: resolvedPolicy,
             });
-            if (resolvedPolicy) {
-              setEditPrivacyPolicy(resolvedPolicy);
-            }
           } else {
             setProfileUser(data.user);
           }
@@ -659,7 +650,6 @@ export default function Perfil({
                     onRefreshUsers={onRefreshUsers}
                     onBackToSelf={onBackToSelf}
                     onCancel={() => handleSelectSubTab("saved")}
-                    onPrivacyPolicyChange={(policy) => setEditPrivacyPolicy(policy)}
                   />
                 )}
               </AnimatePresence>
@@ -674,106 +664,15 @@ export default function Perfil({
               className="space-y-6"
             >
               <AnimatePresence mode="wait">
-                <motion.div
-                    key="public-policies"
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -8 }}
-                    transition={{ duration: 0.15 }}
-                    className="space-y-4 max-w-2xl mx-auto"
+                <div className="max-w-2xl mx-auto flex justify-end">
+                  <button
+                    onClick={() => onOpenDirectChat(profileUser)}
+                    className="px-3.5 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-extrabold rounded-xl transition-all flex items-center space-x-1.5 shadow-2xs cursor-pointer"
                   >
-                    <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-950 text-white p-4 sm:p-5 rounded-2xl border border-slate-800 shadow-md">
-                      <div className="flex items-start space-x-3.5">
-                        <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 shrink-0">
-                          <ShieldCheck className="w-5 h-5" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <h3 className="font-display font-extrabold text-sm sm:text-base text-white">
-                            Política y Privacidad del Negocio
-                          </h3>
-                          <p className="text-[11px] text-slate-300 font-medium mt-0.5">
-                            Términos comerciales, garantías y resguardo de datos de{" "}
-                            <span className="text-amber-400 font-bold">{profileUser.name}</span> .
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-3 gap-2 mt-4 pt-3.5 border-t border-slate-700/60">
-                        <div className="flex flex-col items-center text-center p-2 rounded-xl bg-white/5 border border-white/5">
-                          <Shield className="w-4 h-4 text-emerald-400 mb-1" />
-                          <span className="text-[10px] font-bold text-white leading-tight">Compra Segura</span>
-                          <span className="text-[9px] text-slate-400">Garantizada</span>
-                        </div>
-                        <div className="flex flex-col items-center text-center p-2 rounded-xl bg-white/5 border border-white/5">
-                          <Lock className="w-4 h-4 text-sky-400 mb-1" />
-                          <span className="text-[10px] font-bold text-white leading-tight">Privacidad</span>
-                          <span className="text-[9px] text-slate-400">100% Protegido</span>
-                        </div>
-                        <div className="flex flex-col items-center text-center p-2 rounded-xl bg-white/5 border border-white/5">
-                          <MessageCircle className="w-4 h-4 text-amber-400 mb-1" />
-                          <span className="text-[10px] font-bold text-white leading-tight">Atención</span>
-                          <span className="text-[9px] text-slate-400">Chat Directo</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 shadow-2xs">
-                      <div className="flex items-center space-x-2 pb-3 mb-3 border-b border-slate-100">
-                        <FileText className="w-4 h-4 text-amber-500" />
-                        <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700">
-                          Términos y Políticas del Vendedor
-                        </h4>
-                      </div>
-
-                      {(() => {
-                        const matchedUser = users?.find(
-                          (u) =>
-                            u.id === profileUser.id ||
-                            (profileUser.username && u.username?.toLowerCase() === profileUser.username.toLowerCase()) ||
-                            (profileUser.originalId && u.originalId === profileUser.originalId) ||
-                            (profileUser.name && u.name?.toLowerCase() === profileUser.name.toLowerCase())
-                        );
-                        const effectivePolicy =
-                          (profileUser.privacyPolicy && profileUser.privacyPolicy.trim()) ||
-                          (matchedUser?.privacyPolicy && matchedUser.privacyPolicy.trim()) ||
-                          (isSelf && editPrivacyPolicy && editPrivacyPolicy.trim()) ||
-                          "";
-
-                        return effectivePolicy ? (
-                          <div className="text-xs text-slate-700 font-medium leading-relaxed whitespace-pre-line space-y-2 bg-slate-50/60 p-4 rounded-xl border border-slate-100">
-                            {effectivePolicy}
-                          </div>
-                        ) : (
-                          <div className="space-y-3 py-2">
-                            <div className="p-3.5 bg-amber-50/70 border border-amber-200/60 rounded-xl text-amber-900 text-xs leading-relaxed font-medium">
-                              <p className="font-bold mb-1">Garantías estándar de la plataforma:</p>
-                              <ul className="list-disc list-inside space-y-1 text-[11px] text-amber-800">
-                                <li>Todas tus transacciones cuentan con protección al comprador.</li>
-                                <li>Puedes comunicarte directamente con el vendedor a través del chat oficial.</li>
-                                <li>Tus datos personales y dirección solo son usados para la logística del despacho.</li>
-                              </ul>
-                            </div>
-                            <p className="text-[11px] text-slate-400 italic text-center">
-                              (El vendedor aún no ha configurado términos adicionales personalizados)
-                            </p>
-                          </div>
-                        );
-                      })()}
-
-                      <div className="mt-4 pt-3.5 border-t border-slate-100 flex items-center justify-between flex-wrap gap-2">
-                        <span className="text-[11px] font-bold text-slate-500">
-                          ¿Deseas consultar o aclarar alguna duda?
-                        </span>
-                        <button
-                          onClick={() => onOpenDirectChat(profileUser)}
-                          className="px-3.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-extrabold rounded-xl transition-all flex items-center space-x-1.5 shadow-2xs cursor-pointer"
-                        >
-                          <MessageCircle className="w-3.5 h-3.5" />
-                          <span>Contactar al Negocio</span>
-                        </button>
-                      </div>
-                    </div>
-                  </motion.div>
+                    <MessageCircle className="w-3.5 h-3.5" />
+                    <span>Contactar al Negocio</span>
+                  </button>
+                </div>
               </AnimatePresence>
             </motion.div>
           )}
