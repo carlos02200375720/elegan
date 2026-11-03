@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { ArrowLeft, Eye, EyeOff, LockKeyhole, Mail, ShoppingBag } from "lucide-react";
 import { CartItem, Order, User } from "../../../types";
 import { androidApi } from "../api";
-import { getLocalGuestToken, removeLocalGuestToken } from "../../../utils/guestToken";
+import { getLocalGuestToken } from "../../../utils/guestToken";
 import { sessionState } from "../../../utils/sessionState";
 import coverImage from "../../../../assets/portada-elegan.jpg";
 
@@ -45,7 +45,6 @@ export default function PerfilLogin({
     sessionState.setUser(user);
     sessionState.setAuthenticated(true);
     sessionState.setUsername(user.email || "");
-    removeLocalGuestToken();
 
     const savedIds = restoredSavedReels || user.savedReelIds || [];
     try {
