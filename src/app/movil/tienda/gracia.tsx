@@ -4,6 +4,7 @@ import { Capacitor } from "@capacitor/core";
 import { Sparkles, ShoppingBag } from "lucide-react";
 import { CartItem } from "../../../types";
 import { formatPrice } from "../../../utils/currency";
+import { getProductImageUrl } from "./productMedia";
 
 export interface AndroidGraciaProps {
   lastOrderItems: CartItem[];
@@ -147,7 +148,7 @@ export function GraciaTiendaView({
                   className="flex items-center gap-3 rounded-2xl bg-white border border-slate-200 p-3 shadow-2xs"
                 >
                   <img
-                    src={item.product.imageUrl}
+                    src={getProductImageUrl(item.product)}
                     alt={item.product.name}
                     className="w-12 h-12 rounded-xl object-cover border border-slate-100 bg-slate-100"
                   />
