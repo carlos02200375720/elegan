@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ShoppingBag, User as UserIcon, MessageSquare, Sparkles, Menu, X, ShieldCheck, Bookmark } from "lucide-react";
+import { ShoppingBag, User as UserIcon, MessageSquare, Sparkles, Menu, X, ShieldCheck, Bookmark, Settings } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { User, NavigationTab, isGuestUser } from "../../types";
 import { navigateTo, getProfilePath, parseRoute } from "../../router";
@@ -16,6 +16,7 @@ export interface WebSidebarProps {
   hideMobileHamburger?: boolean;
   onOpenSaved: () => void;
   onOpenPurchaseHistory: () => void;
+  onOpenSettings: () => void;
 }
 
 export default function WebSidebar({
@@ -28,6 +29,7 @@ export default function WebSidebar({
   hideMobileHamburger = false,
   onOpenSaved,
   onOpenPurchaseHistory,
+  onOpenSettings,
 }: WebSidebarProps) {
   const isHomeActive = false;
   const isDarkNavActive = false;
@@ -35,6 +37,7 @@ export default function WebSidebar({
   const activeProfileTab = typeof window !== "undefined" ? parseRoute(window.location.pathname)?.profileTab : undefined;
   const isSavedActive = activeProfileTab === "guardado";
   const isPurchaseHistoryActive = activeProfileTab === "compra";
+  const isSettingsActive = activeProfileTab === "config";
 
   const handleOpenSaved = () => {
     setIsMobileMenuOpen(false);
@@ -46,6 +49,12 @@ export default function WebSidebar({
     setIsMobileMenuOpen(false);
     setSelectedCreatorProfileId(null);
     onOpenPurchaseHistory();
+  };
+
+  const handleOpenSettings = () => {
+    setIsMobileMenuOpen(false);
+    setSelectedCreatorProfileId(null);
+    onOpenSettings();
   };
 
   const handleMobileSelect = (tab: NavigationTab) => {
@@ -183,6 +192,20 @@ export default function WebSidebar({
           >
             <ShoppingBag strokeWidth={2.6} className="w-5 h-5" />
             <span className="font-black tracking-wide">Historial de compras</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleOpenSettings}
+            className={`w-full flex items-center space-x-3.5 px-4 py-3 rounded-2xl font-black text-xs transition-all cursor-pointer ${
+              isSettingsActive
+                ? "bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20"
+                : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+            }`}
+            id="web-nav-settings"
+          >
+            <Settings strokeWidth={2.6} className="w-5 h-5" />
+            <span className="font-black tracking-wide">Configuración</span>
           </button>
 
           {/* 5. Panel de Administración (aparece SOLO cuando cg0220037@gmail.com inicia sesión) */}
@@ -398,6 +421,20 @@ export default function WebSidebar({
                 >
                   <ShoppingBag strokeWidth={2.6} className="w-5 h-5" />
                   <span className="font-black tracking-wide">Historial de compras</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleOpenSettings}
+                  className={`w-full flex items-center space-x-3.5 px-4 py-3 rounded-2xl font-black text-xs transition-all cursor-pointer ${
+                    isSettingsActive
+                      ? "bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20"
+                      : "text-slate-300 hover:text-white hover:bg-slate-900"
+                  }`}
+                  id="mobile-global-nav-settings"
+                >
+                  <Settings strokeWidth={2.6} className="w-5 h-5" />
+                  <span className="font-black tracking-wide">Configuración</span>
                 </button>
 
                 {/* Panel de Administración (aparece SOLO cuando cg0220037@gmail.com inicia sesión) */}
