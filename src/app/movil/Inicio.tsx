@@ -189,69 +189,100 @@ export default function Inicio({
   >({});
 
   const allReels = useMemo(() => {
-    const productPublications = products
-      .filter((product) => {
-        if (!product.id) return false;
-        return !publishedReels.some(
-          (reel) =>
-            reel.id === `reel_prod_${product.id}` ||
-            (reel.type === "product" && reel.productId === product.id)
-        );
-      })
-      .map((product): Reel => {
-        const canonicalId = `reel_prod_${product.id}`;
-        const override = localReelOverrides[canonicalId] || localReelOverrides[product.id];
-        const existingReel = publishedReels.find(
-          (r) => r.id === canonicalId || (r.type === "product" && r.productId === product.id)
-        );
+    const productPublications = products.flatMap((product): Reel[] => {
+      if (!product.id) return [];
 
-        const productImages = (product.images || []).filter(
-          (image): image is string => typeof image === "string" && image.trim().length > 0
-        );
-        if (productImages.length === 0 && product.imageUrl) {
-          productImages.push(product.imageUrl);
-        }
-        const productVideos = (product.videos || []).filter(
-          (video): video is string => typeof video === "string" && video.trim().length > 0
-        );
+      const canonicalId = `reel_prod_${product.id}`;
+      const existingReel = publishedReels.find(
+        (reel) => reel.id === canonicalId ||
+          (reel.type === "product" && reel.productId === product.id)
+      );
+      const productImages = (product.images || []).filter(
+        (image): image is string => typeof image === "string" && image.trim().length > 0
+      );
+      if (productImages.length === 0 && product.imageUrl?.trim()) {
+        productImages.push(product.imageUrl);
+      }
+      const productVideos = (product.videos || []).filter(
+        (video): video is string => typeof video === "string" && video.trim().length > 0
+      );
+      const seller = users.find(
+        (user) =>
+          user.id === product.sellerId ||
+          user.originalId === product.sellerId ||
+          user.username === product.sellerUsername
+      );
+      const description = product.description?.trim() || "";
+      const creator = {
+        creatorId: seller?.id || product.sellerId || "seller",
+        creatorName: seller?.name || product.sellerName || "Vendedor",
+        creatorUsername: seller?.username || product.sellerUsername,
+        creatorAvatar:
+          seller?.avatar ||
+          product.sellerAvatar ||
+          "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80",
+      };
+
+      const generated: Reel[] = [];
+
+      // Publicación principal: reúne todos los videos e imágenes del mismo producto.
+      if (!existingReel) {
+        const override = localReelOverrides[canonicalId] || localReelOverrides[product.id];
         const media: ReelMedia[] = [
           ...productVideos.map((url) => ({ type: "video" as const, url })),
           ...productImages.map((url) => ({ type: "image" as const, url })),
         ];
-        const seller = users.find(
-          (user) =>
-            user.id === product.sellerId ||
-            user.originalId === product.sellerId ||
-            user.username === product.sellerUsername
-        );
-        const description = product.description?.trim() || "";
-
-        return {
+        generated.push({
           id: canonicalId,
           type: "product",
           title: product.name,
           description,
           caption: description,
-          creatorId: seller?.id || product.sellerId || "seller",
-          creatorName: seller?.name || product.sellerName || "Vendedor",
-          creatorUsername: seller?.username || product.sellerUsername,
-          creatorAvatar:
-            seller?.avatar ||
-            "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80",
+          ...creator,
           videoUrl: productVideos[0] || "",
           thumbnailUrl: product.imageUrl || productImages[0] || "",
           images: productImages,
           media,
-          likes: override?.likes ?? existingReel?.likes ?? 0,
-          likedBy: override?.likedBy ?? existingReel?.likedBy ?? [],
-          comments: override?.comments ?? existingReel?.comments ?? [],
-          shares: override?.shares ?? existingReel?.shares ?? 0,
-          saves: override?.saves ?? existingReel?.saves ?? 0,
+          likes: override?.likes ?? 0,
+          likedBy: override?.likedBy ?? [],
+          comments: override?.comments ?? [],
+          shares: override?.shares ?? 0,
+          saves: override?.saves ?? 0,
           views: existingReel?.views ?? 0,
           productId: product.id,
           aspectRatio: "square",
-        };
+        });
+      }
+
+      // Un Reel independiente por imagen, vinculado al producto existente.
+      productImages.forEach((imageUrl, index) => {
+        const reelId = `${canonicalId}_imagen_${index + 1}`;
+        if (publishedReels.some((reel) => reel.id === reelId)) return;
+        const override = localReelOverrides[reelId];
+        generated.push({
+          id: reelId,
+          type: "image",
+          title: product.name,
+          description,
+          caption: description,
+          ...creator,
+          videoUrl: "",
+          thumbnailUrl: imageUrl,
+          images: [imageUrl],
+          media: [{ type: "image", url: imageUrl, order: 0 }],
+          likes: override?.likes ?? 0,
+          likedBy: override?.likedBy ?? [],
+          comments: override?.comments ?? [],
+          shares: override?.shares ?? 0,
+          saves: override?.saves ?? 0,
+          views: 0,
+          productId: product.id,
+          aspectRatio: "square",
+        });
       });
+
+      return generated;
+    });
 
     return [...publishedReels, ...productPublications].map((reel) => {
       const override =
