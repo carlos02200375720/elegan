@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import mongoose from "mongoose";
+import { waitForMongoConnection } from "../utils/mongoConnection";
 import crypto from "crypto";
 import { User, Reel } from "../../types";
 import { MongoUser, MongoSuperAdmin, MongoReel, MongoProduct, MongoOrder, MongoCart, MongoChatMessage } from "../models";
@@ -1388,7 +1389,7 @@ export async function switchUser(req: Request, res: Response): Promise<void> {
       res.status(400).json({ error: "Debe ingresar un correo electrónico válido." });
       return;
     }
-    if (mongoose.connection.readyState !== 1) {
+    if (!(await waitForMongoConnection())) {
       res.status(503).json({ error: "La base de datos no está disponible." });
       return;
     }
