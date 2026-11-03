@@ -1037,7 +1037,11 @@ export default function Inicio({
 
           const displayUsername = storeProfile?.username?.trim() || "elegan";
           const displayName = storeProfile?.name?.trim() || "Elegan";
-          const displayAvatar = storeProfile?.avatar?.trim() || "";
+          const displayAvatar =
+            reelItem.creatorAvatar?.trim() ||
+            storeProfile?.avatar?.trim() ||
+            taggedProduct?.sellerAvatar?.trim() ||
+            "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80";
 
           const isLiked = Boolean(
             reelItem.likedBy?.some(
@@ -1088,24 +1092,36 @@ export default function Inicio({
                     className="shrink-0 rounded-full"
                     aria-label={`Ver perfil de ${displayName}`}
                   >
-                    {displayAvatar ? (
-                      <img src={displayAvatar} alt="Elegan" className="h-10 w-10 rounded-full object-cover" />
-                    ) : (
-                      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100 text-sm font-black text-slate-900">E</span>
-                    )}
+                    <img
+                      src={displayAvatar}
+                      alt={reelItem.creatorName || displayName}
+                      className="h-10 w-10 rounded-full object-cover"
+                      onError={(event) => {
+                        const fallbackAvatar = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80";
+                        if (event.currentTarget.src !== fallbackAvatar) {
+                          event.currentTarget.src = fallbackAvatar;
+                        }
+                      }}
+                    />
                   </button>
                   <div className="min-w-0 flex-1">
-                    <button
-                      type="button"
-                      onClick={() => handleCreatorNav(reelItem)}
-                      className="inline-flex max-w-full items-center gap-1 text-left text-sm font-bold text-slate-900"
-                    >
-                      <span className="truncate">{displayName}</span>
+                    <div className="flex min-w-0 max-w-full items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => handleCreatorNav(reelItem)}
+                        className="min-w-0 truncate text-left text-sm font-bold text-slate-900"
+                      >
+                        {displayName}
+                      </button>
                       <BadgeCheck
-                        className="h-4 w-4 shrink-0 fill-blue-500 text-white"
+                        size={18}
+                        className="shrink-0"
+                        fill="#2563eb"
+                        color="#ffffff"
+                        strokeWidth={2.5}
                         aria-label="Cuenta verificada"
                       />
-                    </button>
+                    </div>
                   </div>
                 </div>
 
