@@ -927,6 +927,8 @@ export default function Inicio({
           const taggedProduct =
             (reelItem as any).product ||
             products.find((p) => p.id === (reelItem.productId || (reelItem as any).taggedProductId));
+          const publicationDescription =
+            taggedProduct?.description?.trim() || reelItem.description?.trim() || "";
 
           const creatorUser = users.find(
             (u) =>
@@ -976,9 +978,16 @@ export default function Inicio({
             <div
               key={reelItem.id || reelIndex}
               id={`android-reel-card-${reelItem.id}`}
-              className="w-full shrink-0 relative flex flex-col items-center justify-start gap-2 bg-white overflow-hidden select-none px-0 pt-2"
+              className={`w-full shrink-0 relative flex flex-col items-center justify-start gap-2 bg-white overflow-hidden select-none px-0 pt-2 ${
+                isProductPub && taggedProduct && handleProductSelect ? "cursor-pointer" : ""
+              }`}
               style={{
                 backgroundColor: "#ffffff",
+              }}
+              onClick={(event) => {
+                if (!isProductPub || !taggedProduct || !handleProductSelect) return;
+                if (event.target instanceof Element && event.target.closest("button, a, input, textarea")) return;
+                handleProductSelect(taggedProduct);
               }}
             >
               {/* Información del creador sobre la publicación */}
@@ -1001,9 +1010,19 @@ export default function Inicio({
                   </button>
                 </div>
               </div>
-              {reelItem.description && (
+              {publicationDescription && (
                 <div className="mx-auto w-full max-w-xl shrink-0 px-2">
                   <div className="relative">
+                    {taggedProduct && (
+                      <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
+                        <p className="min-w-0 flex-1 truncate text-sm font-bold text-slate-900">
+                          {taggedProduct.name}
+                        </p>
+                        <span className="shrink-0 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-black text-slate-900">
+                          {formatPrice(Number(taggedProduct.price) || 0)}
+                        </span>
+                      </div>
+                    )}
                     <p
                       ref={(element) => {
                         descriptionRefs.current[reelItem.id] = element;
@@ -1012,16 +1031,17 @@ export default function Inicio({
                         expandedDescriptions[reelItem.id] ? "" : "line-clamp-2"
                       }`}
                     >
-                      {reelItem.description}
+                      {publicationDescription}
                       {expandedDescriptions[reelItem.id] && (
                         <button
                           type="button"
-                          onClick={() =>
+                          onClick={(event) => {
+                            event.stopPropagation();
                             setExpandedDescriptions((previous) => ({
                               ...previous,
                               [reelItem.id]: false,
-                            }))
-                          }
+                            }));
+                          }}
                           className="ml-1 font-semibold text-slate-500 hover:text-slate-800"
                         >
                           Ver menos
@@ -1031,12 +1051,13 @@ export default function Inicio({
                     {!expandedDescriptions[reelItem.id] && descriptionOverflow[reelItem.id] && (
                       <button
                         type="button"
-                        onClick={() =>
+                        onClick={(event) => {
+                          event.stopPropagation();
                           setExpandedDescriptions((previous) => ({
                             ...previous,
                             [reelItem.id]: true,
-                          }))
-                        }
+                          }));
+                        }}
                         className="absolute bottom-0 right-0 bg-white pl-1 font-semibold leading-5 text-slate-500 hover:text-slate-800"
                       >
                         …más
@@ -1051,11 +1072,6 @@ export default function Inicio({
                   isProductPub && taggedProduct && handleProductSelect ? "cursor-pointer" : ""
                 }`}
                 style={{ ...formatStyle, touchAction: "pan-x pan-y", boxShadow: "none" }}
-                onClick={(event) => {
-                  if (!isProductPub || !taggedProduct || !handleProductSelect) return;
-                  if (event.target instanceof Element && event.target.closest("button")) return;
-                  handleProductSelect(taggedProduct);
-                }}
               >
                 {/* Horizontal Scroll Gallery Slider - exactly like productoid.tsx */}
                 <div
