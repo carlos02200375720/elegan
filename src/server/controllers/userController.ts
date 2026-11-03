@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import mongoose from "mongoose";
 import crypto from "crypto";
 import { User, Reel } from "../../types";
-import { MongoUser, MongoGuestSession, MongoReel, MongoProduct, MongoOrder, MongoCart, MongoChatMessage } from "../models";
+import { MongoUser, MongoSuperAdmin, MongoGuestSession, MongoReel, MongoProduct, MongoOrder, MongoCart, MongoChatMessage } from "../models";
 import { generateId } from "../utils/helpers";
 import { uploadBase64ToGCS } from "../services/mediaStorage";
 import { bucketName } from "../config/storage";
@@ -176,6 +176,12 @@ export async function resolveAuthenticatedUser(req: any, fallbackRole = "creator
   return resolvedUser;
 }
 
+async function findAccount(filter: any): Promise<any> {
+  if (mongoose.connection.readyState !== 1) return null;
+  const admin = await MongoSuperAdmin.findOne(filter);
+  return admin || MongoUser.findOne(filter);
+}
+
 export function isConfiguredSuperadmin(user: any): boolean {
   if (!user) return false;
   const configured = String(process.env.VITE_SUPERADMIN_EMAIL || process.env.SUPERADMIN_EMAIL || "cg0220037@gmail.com").trim().toLowerCase();
@@ -311,7 +317,7 @@ export async function getUserById(req: Request, res: Response): Promise<void> {
 
     if (mongoose.connection.readyState === 1) {
       if (targetIdentifier && targetIdentifier !== "invitado" && targetIdentifier !== "user_guest" && targetIdentifier !== "current_user" && targetIdentifier !== "guest") {
-        activeUser = await MongoUser.findOne({
+        activeUser = await findAccount({
           $or: [
             { username: targetIdentifier.toLowerCase() },
             { id: targetIdentifier },
@@ -321,7 +327,7 @@ export async function getUserById(req: Request, res: Response): Promise<void> {
       }
 
       if (!activeUser && activeOriginalUserId && activeOriginalUserId !== "user_guest" && activeOriginalUserId !== "current_user" && activeOriginalUserId !== "invitado") {
-        activeUser = await MongoUser.findOne({ id: activeOriginalUserId });
+        activeUser = await findAccount({ id: activeOriginalUserId });
       }
     }
 
@@ -384,7 +390,7 @@ export async function getUserById(req: Request, res: Response): Promise<void> {
     // Direct MongoDB lookup
     if (mongoose.connection.readyState === 1) {
       try {
-        const found = await MongoUser.findOne({
+        const found = await findAccount({
           $or: [
             { id: rawParam },
             { id: cleanParam },
@@ -962,13 +968,13 @@ export async function updateCurrentUser(req: Request, res: Response): Promise<vo
 
   try {
     for (const cid of idCandidates) {
-      currentUserObj = await MongoUser.findOne({ id: cid });
+      currentUserObj = await findAccount({ id: cid });
       if (currentUserObj) break;
     }
 
     if (!currentUserObj) {
       for (const un of usernameCandidates) {
-        currentUserObj = await MongoUser.findOne({ username: un.toLowerCase() });
+        currentUserObj = await findAccount({ username: un.toLowerCase() });
         if (currentUserObj) break;
       }
     }
@@ -1041,7 +1047,8 @@ export async function updateCurrentUser(req: Request, res: Response): Promise<vo
 
   let updatedUser: any;
   try {
-    updatedUser = await MongoUser.findOneAndUpdate(
+    const AccountModel = isConfiguredSuperadmin(currentUserObj) ? MongoSuperAdmin : MongoUser;
+    updatedUser = await AccountModel.findOneAndUpdate(
       { id: currentUserObj.id },
       updateFields,
       { returnDocument: "after", runValidators: true }
@@ -1131,7 +1138,7 @@ export async function registerUser(req: Request, res: Response): Promise<void> {
         ]
       });
 
-      const existing = await MongoUser.findOne({ email: cleanEmail });
+      const existing = await findAccount({ email: cleanEmail });
 
       if (existing) {
         const isSelfGuest = Boolean(headerGuestToken && existing.guestToken === headerGuestToken && existing.isGuest);
@@ -1272,7 +1279,9 @@ export async function registerUser(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    const mongoUser = new MongoUser(newUser);
+    const isNewSuperadmin = isConfiguredSuperadmin(newUser);
+    const AccountModel = isNewSuperadmin ? MongoSuperAdmin : MongoUser;
+    const mongoUser = new AccountModel({ ...newUser, canSell: isNewSuperadmin || newUser.canSell, isAdmin: isNewSuperadmin, role: isNewSuperadmin ? "superadmin" : "user" });
     await mongoUser.save();
     console.log(`Cuenta registrada para ${newUser.email} con id=${newUser.id} en MongoDB Atlas.`);
     setActiveOriginalUserId(newUser.id);
@@ -1406,7 +1415,7 @@ export async function switchUser(req: Request, res: Response): Promise<void> {
       res.status(503).json({ error: "La base de datos no está disponible." });
       return;
     }
-    const targetUser = await MongoUser.findOne({ email: cleanEmail, id: { $ne: "current_user" } });
+    const targetUser = await findAccount({ email: cleanEmail, id: { $ne: "current_user" } });
     if (!targetUser) {
       res.status(404).json({ error: "No existe ninguna cuenta registrada con este correo electrónico.", code: "USER_NOT_FOUND" });
       return;
@@ -1422,8 +1431,8 @@ export async function switchUser(req: Request, res: Response): Promise<void> {
         const priorGuest = await MongoUser.findOne({ guestToken: headerGuestToken });
         if (priorGuest && Array.isArray(priorGuest.savedReelIds) && priorGuest.savedReelIds.length > 0) {
           const merged = Array.from(new Set([...(targetUser.savedReelIds || []), ...priorGuest.savedReelIds]));
-          await MongoUser.updateOne({ id: targetUser.id }, { $set: { savedReelIds: merged } });
           targetUser.savedReelIds = merged;
+          await targetUser.save();
         }
       } catch (guestErr) { console.warn("No se pudieron migrar los guardados de la sesión invitada:", guestErr); }
     }
@@ -1471,7 +1480,7 @@ export async function updateUserSellerPermission(req: Request, res: Response): P
       return;
     }
 
-    const requester = await MongoUser.findOne({
+    const requester = await findAccount({
       $or: [
         { id: requesterId },
         ...(requesterUsername ? [{ username: requesterUsername }] : [])
@@ -1573,7 +1582,7 @@ export async function loginWithEmail(req: Request, res: Response): Promise<void>
 
     let user: any = null;
     if (mongoose.connection.readyState === 1) {
-      user = await MongoUser.findOne({
+      user = await findAccount({
         email: cleanEmail,
         id: { $ne: "current_user" }
       });
