@@ -13,7 +13,7 @@ import {
 } from "./services/reelService";
 import { isConfiguredSuperadmin, handleGuestSession, registerUser, switchUser, loginWithEmail } from "./controllers/userController";
 import { createPaypalOrder, getPaypalConfig } from "./controllers/paypalController";
-import { MongoCart, MongoChatMessage } from "./models";
+import { MongoCart, MongoChatMessage, MongoSuperAdmin } from "./models";
 
 export interface AndroidRouterDependencies {
   MongoUser: any;
@@ -165,17 +165,15 @@ export function createAndroidRouter(deps: AndroidRouterDependencies): Router {
       let targetUser = null;
       if (mongoose.connection.readyState === 1) {
         if (headerUsername && headerUsername !== "invitado" && headerUsername !== "guest") {
-          targetUser = await MongoUser.findOne({
-            $or: [
-              { username: headerUsername.toLowerCase() },
-              { username: headerUsername },
-              { email: headerUsername.toLowerCase() },
-            ],
-          });
+          const accountQuery = { $or: [
+            { username: headerUsername.toLowerCase() },
+            { username: headerUsername },
+            { email: headerUsername.toLowerCase() },
+          ] };
+          targetUser = await MongoSuperAdmin.findOne(accountQuery) || await MongoUser.findOne(accountQuery);
         } else if (headerUserId && headerUserId !== "current_user" && headerUserId !== "user_guest") {
-          targetUser = await MongoUser.findOne({
-            $or: [{ id: headerUserId }, { _id: mongoose.isValidObjectId(headerUserId) ? headerUserId : undefined }],
-          });
+          const accountQuery = { $or: [{ id: headerUserId }, { _id: mongoose.isValidObjectId(headerUserId) ? headerUserId : undefined }] };
+          targetUser = await MongoSuperAdmin.findOne(accountQuery) || await MongoUser.findOne(accountQuery);
         }
       }
 
@@ -301,8 +299,11 @@ export function createAndroidRouter(deps: AndroidRouterDependencies): Router {
         return;
       }
 
-      const updated = await MongoUser.findOneAndUpdate(
-        { $or: searchCriteria },
+      const accountFilter = { $or: searchCriteria };
+      const adminAccount = await MongoSuperAdmin.findOne(accountFilter);
+      const AccountModel = adminAccount ? MongoSuperAdmin : MongoUser;
+      const updated = await AccountModel.findOneAndUpdate(
+        accountFilter,
         { $set: updateFields },
         { returnDocument: "after", runValidators: true }
       );
@@ -357,13 +358,12 @@ export function createAndroidRouter(deps: AndroidRouterDependencies): Router {
       const targetId = req.params.id;
       let user = null;
       if (mongoose.connection.readyState === 1) {
-        user = await MongoUser.findOne({
-          $or: [
-            { id: targetId },
-            { username: targetId.toLowerCase() },
-            { _id: mongoose.isValidObjectId(targetId) ? targetId : undefined },
-          ],
-        });
+        const accountQuery = { $or: [
+          { id: targetId },
+          { username: targetId.toLowerCase() },
+          { _id: mongoose.isValidObjectId(targetId) ? targetId : undefined },
+        ] };
+        user = await MongoSuperAdmin.findOne(accountQuery) || await MongoUser.findOne(accountQuery);
       }
 
       if (user) {
@@ -414,13 +414,12 @@ export function createAndroidRouter(deps: AndroidRouterDependencies): Router {
       }
 
       if (mongoose.connection.readyState === 1) {
-        const userDoc = await MongoUser.findOne({
-          $or: [
-            { id: targetId },
-            { username: targetId.toLowerCase() },
-            { _id: mongoose.isValidObjectId(targetId) ? targetId : undefined },
-          ],
-        });
+        const accountQuery = { $or: [
+          { id: targetId },
+          { username: targetId.toLowerCase() },
+          { _id: mongoose.isValidObjectId(targetId) ? targetId : undefined },
+        ] };
+        const userDoc = await MongoSuperAdmin.findOne(accountQuery) || await MongoUser.findOne(accountQuery);
 
         if (userDoc) {
           if (userDoc.id) userIdentifiers.add(userDoc.id);
