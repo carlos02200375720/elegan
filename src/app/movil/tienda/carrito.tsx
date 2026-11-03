@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect } from "react";
 import { ArrowRight, ShoppingBag, Check, Trash2, Minus, Plus, CreditCard } from "lucide-react";
 import { Product, CartItem } from "../../../types";
 import { formatPrice } from "../../../utils/currency";
+import { getProductImageUrl } from "./productMedia";
 
 export interface AndroidCarritoProps {
   cart: CartItem[];
@@ -162,7 +163,7 @@ export function CarritoTiendaView({
                 >
                   <div className="w-24 sm:w-28 shrink-0 relative bg-slate-200 h-full overflow-hidden">
                     <img
-                      src={item.product.imageUrl}
+                      src={getProductImageUrl(item.product)}
                       alt={item.product.name}
                       referrerPolicy="no-referrer"
                       className="w-full h-full object-cover cursor-pointer hover:scale-105 transition-transform duration-300"
