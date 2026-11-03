@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { MongoUser, MongoProduct, MongoReel, MongoOrder, MongoPublicacion } from "../models";
+import { MongoUser, MongoSuperAdmin, MongoProduct, MongoReel, MongoOrder, MongoPublicacion } from "../models";
 import { Product, Order } from "../../types";
 import {
   setProducts,
@@ -90,6 +90,31 @@ export async function connectToMongoDB(): Promise<void> {
     console.log("🔌 Connecting to MongoDB Atlas...");
     await mongoose.connect(mongoUri);
     console.log("✅ Successfully connected to MongoDB Atlas!");
+
+    // Move the configured superadministrator out of the regular users collection.
+    const configuredSuperadminEmail = String(
+      process.env.VITE_SUPERADMIN_EMAIL || process.env.SUPERADMIN_EMAIL || "cg0220037@gmail.com"
+    ).trim().toLowerCase();
+    if (configuredSuperadminEmail) {
+      const existingSuperadmin = await MongoSuperAdmin.findOne({ email: configuredSuperadminEmail });
+      const legacySuperadmin = await MongoUser.findOne({ email: configuredSuperadminEmail });
+      if (!existingSuperadmin && legacySuperadmin) {
+        const adminData = legacySuperadmin.toObject ? legacySuperadmin.toObject() : { ...legacySuperadmin };
+        delete adminData._id;
+        await MongoSuperAdmin.create({
+          ...adminData,
+          email: configuredSuperadminEmail,
+          canSell: true,
+          isAdmin: true,
+          role: "superadmin",
+        });
+        await MongoUser.deleteOne({ _id: legacySuperadmin._id });
+        console.log("🛡️ Superadministrator migrated from users to super_admins.");
+      } else if (existingSuperadmin && legacySuperadmin) {
+        await MongoUser.deleteOne({ _id: legacySuperadmin._id });
+        console.log("🧹 Removed duplicate superadministrator record from users.");
+      }
+    }
 
     // Delete any guest/ghost users or test profiles from the database.
     // Users are created in MongoUser only when the client registers.
