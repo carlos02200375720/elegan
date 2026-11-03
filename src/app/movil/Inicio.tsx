@@ -983,7 +983,11 @@ export default function Inicio({
                   className="shrink-0 rounded-full"
                   aria-label={`Ver perfil de ${displayName}`}
                 >
-                  <img src={displayAvatar} alt="" className="h-10 w-10 rounded-full object-cover" />
+                  {displayAvatar ? (
+                    <img src={displayAvatar} alt="Elegan" className="h-10 w-10 rounded-full object-cover" />
+                  ) : (
+                    <span className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100 text-sm font-black text-slate-900">E</span>
+                  )}
                 </button>
                 <div className="min-w-0 flex-1">
                   <button
