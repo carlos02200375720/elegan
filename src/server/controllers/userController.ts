@@ -187,6 +187,7 @@ export function isConfiguredSuperadmin(user: any): boolean {
   const configured = String(process.env.VITE_SUPERADMIN_EMAIL || process.env.SUPERADMIN_EMAIL || "cg0220037@gmail.com").trim().toLowerCase();
   const email = String(user?.email || "").trim().toLowerCase();
   return Boolean(
+    user?.collection?.name === "super_admins" ||
     email === "cg0220037@gmail.com" ||
     (configured && email === configured)
   );
