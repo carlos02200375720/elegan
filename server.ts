@@ -2,7 +2,6 @@ import express from "express";
 import path from "path";
 import fs from "fs";
 import { createServer as createHttpServer } from "http";
-import { createServer as createViteServer } from "vite";
 import dotenv from "dotenv";
 
 import { connectToMongoDB } from "./src/server/config/database";
@@ -416,6 +415,7 @@ async function startServer() {
 
   // Vite Integration
   if (process.env.NODE_ENV !== "production") {
+    const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
