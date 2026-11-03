@@ -318,15 +318,6 @@ export async function uploadCover(req: any, res: any): Promise<void> {
     const publicUrl = await uploadToGCS(req.file, "covers");
     console.log(`✅ Portada subida con éxito a GCS: ${publicUrl}`);
 
-    if (mongoose.connection.readyState === 1) {
-      try {
-        await MongoUser.findOneAndUpdate({ id: userId }, { coverPhoto: publicUrl });
-        console.log(`💾 Portada actualizada en MongoDB para: ${userId}`);
-      } catch (dbErr) {
-        console.error("❌ Error al guardar la portada en MongoDB:", dbErr);
-      }
-    }
-
     res.status(200).json({ success: true, url: publicUrl });
   } catch (err: any) {
     console.error("❌ Error al subir portada:", err);
