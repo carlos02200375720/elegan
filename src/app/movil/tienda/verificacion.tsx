@@ -20,6 +20,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { CartItem } from "../../../types";
 import { formatPrice } from "../../../utils/currency";
 import { androidApi } from "../api";
+import { getProductImageUrl } from "./productMedia";
 
 interface PaypalSdk {
   Buttons: (options: {
@@ -640,7 +641,7 @@ export function VerificacionTiendaView({
                 className="flex items-center gap-3 border-b border-slate-100 pb-3 last:border-b-0 last:pb-0"
               >
                 <img
-                  src={item.product.imageUrl}
+                  src={getProductImageUrl(item.product)}
                   alt={item.product.name}
                   className="w-12 h-12 rounded-xl object-cover border border-slate-200"
                 />
