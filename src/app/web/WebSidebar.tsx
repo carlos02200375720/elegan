@@ -148,24 +148,6 @@ export default function WebSidebar({
             )}
           </button>
 
-          {/* 4. Perfil */}
-          <button
-            onClick={() => { setSelectedCreatorProfileId(null); setActiveTab('profile'); navigateTo(isGuestUser(currentUser) ? '/perfil/login' : getProfilePath(currentUser)); }}
-            className={`w-full flex items-center space-x-3.5 px-4 py-3 rounded-2xl font-black text-xs transition-all cursor-pointer ${
-              activeTab === 'profile' && selectedCreatorProfileId === null && !isSavedActive && !isPurchaseHistoryActive
-                ? "bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20"
-                : isDarkNavActive
-                ? "text-slate-400 hover:text-white hover:bg-slate-900"
-                : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
-            }`}
-            id="web-nav-profile"
-          >
-            <UserIcon strokeWidth={2.6} className="w-5 h-5" />
-            <span className="font-black tracking-wide">
-              {isGuestUser(currentUser) ? "Mi Perfil (Registrarse)" : "Dashboard / Perfil"}
-            </span>
-          </button>
-
           <button
             type="button"
             onClick={handleOpenSaved}
@@ -377,22 +359,6 @@ export default function WebSidebar({
                       {totalUnreads > 9 ? "9+" : totalUnreads}
                     </span>
                   )}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleMobileSelect('profile')}
-                  className={`w-full flex items-center space-x-3.5 px-4 py-3 rounded-2xl font-black text-xs transition-all cursor-pointer ${
-                    activeTab === 'profile' && !isSavedActive && !isPurchaseHistoryActive
-                      ? "bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20"
-                      : "text-slate-300 hover:text-white hover:bg-slate-900"
-                  }`}
-                  id="mobile-global-nav-profile"
-                >
-                  <UserIcon strokeWidth={2.6} className="w-5 h-5" />
-                  <span className="font-black tracking-wide">
-                    {isGuestUser(currentUser) ? "Mi Perfil (Registrarse)" : "Perfil"}
-                  </span>
                 </button>
 
                 <button
