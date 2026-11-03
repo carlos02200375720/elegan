@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { Reel, ReelMedia, Product, User, Comment, CartItem, NavigationTab, isGuestUser } from "../../types";
-import { Heart, MessageCircle, Share2, Bookmark, ShoppingBag, Volume2, VolumeX, Send, X, RefreshCw, Video } from "lucide-react";
+import { Heart, MessageCircle, Share2, Bookmark, ShoppingBag, Volume2, VolumeX, Send, X, RefreshCw, Video, BadgeCheck } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { MovilVideoPlay, MovilVideoPlayHandle } from "./componente/videoplay";
 import { AndroidProgressBar } from "./componente/barraprogreso";
@@ -1098,9 +1098,13 @@ export default function Inicio({
                     <button
                       type="button"
                       onClick={() => handleCreatorNav(reelItem)}
-                      className="block max-w-full truncate text-left text-sm font-bold text-slate-900"
+                      className="inline-flex max-w-full items-center gap-1 text-left text-sm font-bold text-slate-900"
                     >
-                      {displayName}
+                      <span className="truncate">{displayName}</span>
+                      <BadgeCheck
+                        className="h-4 w-4 shrink-0 fill-blue-500 text-white"
+                        aria-label="Cuenta verificada"
+                      />
                     </button>
                   </div>
                 </div>
