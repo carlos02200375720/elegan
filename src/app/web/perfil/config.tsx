@@ -193,7 +193,7 @@ export function ConfigPerfilView({
       setEditPhone(currentUser.phone || "");
       setEditPostalCode(currentUser.postalCode || "");
     }
-  }, [currentUser];
+  }, [currentUser]);
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
