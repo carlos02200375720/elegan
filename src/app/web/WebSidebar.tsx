@@ -336,7 +336,7 @@ export default function WebSidebar({
                   type="button"
                   onClick={() => handleMobileSelect('profile')}
                   className={`w-full flex items-center space-x-3.5 px-4 py-3 rounded-2xl font-black text-xs transition-all cursor-pointer ${
-                    activeTab === 'profile'
+                    activeTab === 'profile' && !isSavedActive
                       ? "bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20"
                       : "text-slate-300 hover:text-white hover:bg-slate-900"
                   }`}
