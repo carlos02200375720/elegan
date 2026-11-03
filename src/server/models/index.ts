@@ -1,4 +1,5 @@
 export { MongoUser } from "./User";
+export { MongoSuperAdmin } from "./SuperAdmin";
 export { MongoGuestSession } from "./GuestSession";
 export { MongoPublicacion } from "./Publicacion";
 export { MongoProduct } from "./Product";
