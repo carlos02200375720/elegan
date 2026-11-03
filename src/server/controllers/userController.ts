@@ -38,12 +38,16 @@ export async function getUsers(): Promise<User[]> {
       ]);
     }
     if (mongoose.connection.readyState === 1) {
-      const dbUsers = await MongoUser.find({
+      const userFilter = {
         id: { $nin: ["current_user", "user_guest", "creator", "creador"] },
         username: { $nin: ["invitado", "creador", "creator"] },
         isGuest: { $ne: true }
-      });
-      const mapped = dbUsers.map((u: any) => ({
+      };
+      const [dbUsers, dbSuperAdmins] = await Promise.all([
+        MongoUser.find(userFilter),
+        MongoSuperAdmin.find({ id: { $nin: ["current_user", "user_guest", "creator", "creador"] } })
+      ]);
+      const mapAccount = (u: any, isSuperadmin = false) => ({
         id: u.id,
         username: u.username,
         name: u.name,
@@ -65,8 +69,12 @@ export async function getUsers(): Promise<User[]> {
         postalCode: u.postalCode || "",
         canSell: u.canSell === true || isConfiguredSuperadmin(u),
         isAdmin: isConfiguredSuperadmin(u),
-        role: isConfiguredSuperadmin(u) ? "superadmin" : (u.canSell ? "seller" : "user")
-      }));
+        role: isSuperadmin ? "superadmin" : (u.canSell ? "seller" : "user")
+      });
+      const mapped = [
+        ...dbUsers.map((u: any) => mapAccount(u, false)),
+        ...dbSuperAdmins.map((u: any) => mapAccount(u, true))
+      ];
       for (const memUser of memoryUsers) {
         if (!mapped.some((u) => u.id === memUser.id || u.username?.toLowerCase() === memUser.username?.toLowerCase())) {
           mapped.push(memUser);
