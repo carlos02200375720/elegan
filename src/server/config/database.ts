@@ -133,17 +133,11 @@ export async function connectToMongoDB(): Promise<void> {
       $or: [
         { isGuest: true },
         { guestToken: { $exists: true } },
-        { username: /^invitado/i },
         { id: /^guest_/i },
         { id: "user_guest" },
         { id: "current_user" },
         { id: "usuario_actual" },
         { id: "usuario_invitado" },
-        { username: "invitado" },
-        { username: "current_user" },
-        { username: "usuario_actual" },
-        { username: "creador" },
-        { username: "creator" },
         { id: "creator" },
         { id: "creador" },
         { name: /^creador$/i },
@@ -189,31 +183,25 @@ export async function connectToMongoDB(): Promise<void> {
     ).catch(() => {});
     console.log("🧹 Guest/anonymous profiles and test creator content purged successfully!");
 
-    // Deduplicate any duplicate users by email or username in Atlas
+    // Remove legacy username fields from account documents. Elegan identifies
+    // accounts exclusively by stable id and email.
+    const [usersWithoutUsername, adminsWithoutUsername] = await Promise.all([
+      MongoUser.updateMany({ username: { $exists: true } }, { $unset: { username: "" } }),
+      MongoSuperAdmin.updateMany({ username: { $exists: true } }, { $unset: { username: "" } }),
+    ]);
+    console.log(`🧹 Removed legacy username from ${usersWithoutUsername.modifiedCount || 0} user accounts and ${adminsWithoutUsername.modifiedCount || 0} superadmin accounts.`);
+
+    // Deduplicate registered users by email only; username is not used in Elegan.
     const allUsersInDb = await MongoUser.find();
     const seenEmails = new Set<string>();
-    const seenUsernames = new Set<string>();
     for (const u of allUsersInDb) {
       const email = (u.email || "").trim().toLowerCase();
-      const username = (u.username || "").trim().toLowerCase();
-      let isDuplicate = false;
-      if (email && email.includes("@")) {
-        if (seenEmails.has(email)) {
-          isDuplicate = true;
-        } else {
-          seenEmails.add(email);
-        }
-      }
-      if (username) {
-        if (seenUsernames.has(username)) {
-          isDuplicate = true;
-        } else {
-          seenUsernames.add(username);
-        }
-      }
-      if (isDuplicate) {
-        console.log(`🧹 Removing duplicate user from Atlas: id=${u.id}, username=@${u.username}, email=${u.email}`);
+      if (!email || !email.includes("@")) continue;
+      if (seenEmails.has(email)) {
+        console.log(`🧹 Removing duplicate user from Atlas: id=${u.id}, email=${u.email}`);
         await MongoUser.deleteOne({ _id: u._id });
+      } else {
+        seenEmails.add(email);
       }
     }
 
