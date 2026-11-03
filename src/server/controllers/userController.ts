@@ -123,7 +123,7 @@ export async function resolveAuthenticatedUser(req: any, fallbackRole = "creator
     }
     if (orClauses.length > 0) {
       try {
-        resolvedUser = await MongoUser.findOne({ $or: orClauses });
+        resolvedUser = await findAccount({ $or: orClauses });
       } catch (err) {
         console.error("Error finding user in MongoDB:", err);
       }
