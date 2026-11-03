@@ -1204,6 +1204,13 @@ export default function App() {
           case "product_deleted": {
             if (payload.productId) {
               setProducts((prev) => prev.filter((p) => p.id !== payload.productId));
+              setReels((prev) =>
+                prev.filter(
+                  (reel) =>
+                    reel.productId !== payload.productId &&
+                    reel.id !== "reel_prod_" + payload.productId
+                )
+              );
             }
             break;
           }
