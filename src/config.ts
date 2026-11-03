@@ -173,6 +173,7 @@ export const apiFetch = async (
 ): Promise<Response> => {
   const cleanPath = input.startsWith("/") ? input : `/${input}`;
   const reqMethod = (init?.method || "GET").toUpperCase();
+  const isIdempotentSafe = reqMethod === "GET" || reqMethod === "HEAD";
 
   // Web and Android must publish through the same canonical persistence routes.
   // The Android gateway already performs transactional writes to MongoReel and
@@ -241,7 +242,7 @@ export const apiFetch = async (
     clearTimeout(timeoutId);
 
     // If remote host returned 5xx server error or 429 rate limit, and we have a local dev/preview host available, try local
-    if (!res.ok && (res.status >= 500 || res.status === 429) && targetUrl !== cleanPath) {
+    if (!res.ok && isIdempotentSafe && (res.status >= 500 || res.status === 429) && targetUrl !== cleanPath) {
       if (typeof window !== "undefined" && window.location && window.location.protocol.startsWith("http")) {
         try {
           const localRes = await fetch(cleanPath, fetchOptions);
@@ -274,7 +275,6 @@ export const apiFetch = async (
 
     // Fallback: if primary URL failed, attempt alternative backend URL or dedicated Android route
     // ONLY for idempotent, safe methods (GET, HEAD). NEVER retry POST, PUT, DELETE or mutations!
-    const isIdempotentSafe = reqMethod === "GET" || reqMethod === "HEAD";
 
     if (!signal.aborted && isIdempotentSafe) {
       const backendBase = (BACKEND_URL || CLOUD_RUN_BACKEND_URL).replace(/\/$/, "");
