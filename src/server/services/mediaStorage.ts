@@ -1,9 +1,8 @@
 import { bucket, bucketName, isGcsAvailable } from "../config/storage";
-import { saveMediaToMongoGridFS } from "./mongoGridFs";
 
 const generateId = () => Math.random().toString(36).substring(2, 11);
 
-// Helper: Upload file exclusively to Cloud Storage (GCS primary, MongoDB Atlas GridFS secondary). No local storage allowed.
+// Upload media exclusively to Google Cloud Storage. MongoDB stores only media metadata and URLs.
 export const uploadToGCS = async (file: Express.Multer.File, folder: string = "publicaciones"): Promise<string> => {
   let originalName = file.originalname.replace(/\s+/g, "_");
   const mimeType = file.mimetype.toLowerCase();
@@ -19,13 +18,13 @@ export const uploadToGCS = async (file: Express.Multer.File, folder: string = "p
         const hlsRes = await transcodeVideoToHLS(file.buffer, generateId(), bucket, bucketName);
         return hlsRes.masterM3u8Url;
       } catch (hlsErr: any) {
-        console.warn(`⚠️ [Upload] Fallo en HLS a GCS (${hlsErr?.message}). Almacenando en MongoDB Atlas GridFS...`);
+        console.warn(`⚠️ [Upload] Falló la transcodificación HLS en GCS (${hlsErr?.message}).`);
+        throw new Error("No se pudo procesar el video en Google Cloud Storage.");
       }
     }
-    // GCS unavailable or failed: store directly in MongoDB Atlas remote cloud
-    console.log(`☁️ [Upload] Guardando video en la nube en MongoDB Atlas GridFS: ${originalName}`);
-    const gridRes = await saveMediaToMongoGridFS(file.buffer, originalName, file.mimetype || "video/mp4");
-    return gridRes.url;
+    throw new Error("Google Cloud Storage no está disponible para guardar el video.");
+  }
+
   } else if (mimeType.startsWith("image/")) {
     const lowerName = originalName.toLowerCase();
     const validExtensions = [".png", ".jpg", ".jpeg", ".webp", ".gif", ".svg", ".avif", ".heic", ".heif"];
@@ -69,21 +68,17 @@ export const uploadToGCS = async (file: Express.Multer.File, folder: string = "p
       });
       return gcsUrl;
     } catch (gcsErr: any) {
-      console.warn(`⚠️ [Upload] GCS upload failed (${gcsErr.message}). Falling back to MongoDB Atlas GridFS...`);
+      console.error(`❌ [Upload] Falló la subida a Google Cloud Storage: ${gcsErr.message}`);
+      throw new Error("No se pudo subir el archivo a Google Cloud Storage.");
     }
   }
-
-  // Cloud secondary: MongoDB Atlas GridFS (persistent cloud database, zero local files)
-  console.log(`☁️ [Upload] Guardando imagen en la nube en MongoDB Atlas GridFS: ${originalName}`);
-  const gridRes = await saveMediaToMongoGridFS(file.buffer, originalName, file.mimetype || "image/jpeg");
-  return gridRes.url;
+  throw new Error("Google Cloud Storage no está disponible para guardar el archivo.");
 };
 
 // Helper: Upload base64 data URL exclusively to cloud storage. No local storage allowed.
 export async function uploadBase64ToGCS(
   base64Str: string,
   folder: string = "profiles",
-  options: { fallbackToMongo?: boolean } = {}
 ): Promise<string> {
   if (!base64Str || !base64Str.startsWith("data:")) return base64Str;
 
@@ -131,34 +126,11 @@ export async function uploadBase64ToGCS(
       });
       return gcsUrl;
     } catch (err: any) {
-      const isPermissionDenied = err?.message?.includes("storage.objects.create") || err?.code === 403;
-      if (isPermissionDenied) {
-        console.warn(
-          `⚠️ [Upload Base64] Google Cloud Storage denegó el permiso 'storage.objects.create' en el bucket '${bucketName}'. ` +
-          `Para guardar directamente en GCS sin fallback, otorga el rol 'Storage Object Admin' (roles/storage.objectAdmin) a la cuenta de servicio en Google Cloud Console IAM. ` +
-          `Usando almacenamiento en la nube persistente (MongoDB Atlas GridFS)...`
-        );
-      } else {
-        console.warn(`⚠️ [Upload Base64] GCS upload failed (${err?.message}). Usando MongoDB Atlas GridFS...`);
-      }
-      if (options.fallbackToMongo === false) {
-        console.error(`❌ [Upload Base64] Fallback a MongoDB deshabilitado explícitamente: ${err?.message}`);
-        throw new Error("No se pudo subir la imagen a Google Cloud Storage.");
-      }
+      console.error(`❌ [Upload Base64] Falló la subida a Google Cloud Storage: ${err?.message}`);
+      throw new Error("No se pudo subir la imagen a Google Cloud Storage.");
     }
   }
-
-  if (options.fallbackToMongo === false) {
-    throw new Error("Google Cloud Storage no está disponible; la imagen no se guardó.");
-  }
-
-  // MongoDB Atlas GridFS cloud storage
-  try {
-    const gridRes = await saveMediaToMongoGridFS(buffer, filename, mimeType);
-    return gridRes.url;
-  } catch (error) {
-    console.error("❌ [Upload Base64] Falló el almacenamiento de la imagen en MongoDB Atlas GridFS:", error);
-    throw new Error("No se pudo almacenar la imagen en el almacenamiento permanente.");
+  throw new Error("Google Cloud Storage no está disponible; la imagen no se guardó.");
   }
 }
 
