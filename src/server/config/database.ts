@@ -16,6 +16,7 @@ import {
 
 export let lastMongoError: string | null = null;
 export let isMongoConfigured: boolean = false;
+let mongoReconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
 export function getMongoStatus() {
   return {
@@ -432,5 +433,19 @@ export async function connectToMongoDB(): Promise<void> {
   } catch (error: any) {
     lastMongoError = error?.message || String(error);
     console.error("❌ Failed to connect to MongoDB Atlas:", error);
+
+    // Retry only when the initial connection is still down. This avoids
+    // rerunning database cleanup/migrations after a successful connection.
+    if (isMongoConfigured && mongoose.connection.readyState !== 1 && !mongoReconnectTimer) {
+      mongoReconnectTimer = setTimeout(() => {
+        mongoReconnectTimer = null;
+        if (mongoose.connection.readyState !== 1) {
+          void connectToMongoDB();
+        }
+      }, 30000);
+      if (typeof mongoReconnectTimer.unref === "function") {
+        mongoReconnectTimer.unref();
+      }
+    }
   }
 }
