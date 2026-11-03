@@ -937,7 +937,7 @@ export async function toggleFollow(req: Request, res: Response): Promise<void> {
  * POST /api/users/current/update
  */
 export async function updateCurrentUser(req: Request, res: Response): Promise<void> {
-  const { name, username, bio, avatar, coverPhoto, password, privacyPolicy, userId, currentUsername, email, address, shippingAddress, city, country, phone, postalCode } = req.body;
+  const { name, username, avatar, password, userId, currentUsername, email, address, shippingAddress, city, country, phone, postalCode } = req.body;
   if (mongoose.connection.readyState !== 1) {
     res.status(503).json({ error: "MongoDB Atlas no está disponible. El perfil no se guardó." });
     return;
@@ -982,9 +982,7 @@ export async function updateCurrentUser(req: Request, res: Response): Promise<vo
   const updateFields: any = {};
   if (name !== undefined) updateFields.name = name;
   if (username !== undefined) updateFields.username = username;
-  if (bio !== undefined) updateFields.bio = bio;
   if (password !== undefined) updateFields.password = password;
-  if (privacyPolicy !== undefined) updateFields.privacyPolicy = privacyPolicy;
   if (email !== undefined) updateFields.email = String(email).trim().toLowerCase();
   if (address !== undefined) updateFields.address = address;
   if (shippingAddress !== undefined) updateFields.shippingAddress = shippingAddress;
@@ -1010,26 +1008,6 @@ export async function updateCurrentUser(req: Request, res: Response): Promise<vo
       }
     } else {
       updateFields.avatar = avatar;
-    }
-  }
-
-  if (coverPhoto !== undefined) {
-    if (coverPhoto && coverPhoto.startsWith("data:")) {
-      try {
-        console.log("📸 Base64 cover photo detected in update, uploading to GCS...");
-        const savedCover = await uploadBase64ToGCS(coverPhoto, "covers");
-        if (!savedCover || savedCover.startsWith("data:")) {
-          throw new Error("La portada no se pudo almacenar permanentemente.");
-        }
-        console.log(`✅ Base64 cover photo uploaded: ${savedCover}`);
-        updateFields.coverPhoto = savedCover;
-      } catch (uploadErr) {
-        console.error("❌ Failed to upload base64 cover photo to GCS:", uploadErr);
-        res.status(502).json({ error: "No se pudo guardar la foto de portada en el almacenamiento permanente." });
-        return;
-      }
-    } else {
-      updateFields.coverPhoto = coverPhoto;
     }
   }
 
@@ -1074,7 +1052,6 @@ export async function updateCurrentUser(req: Request, res: Response): Promise<vo
     ...(updatedUser?.toObject ? updatedUser.toObject() : updatedUser),
     id: "current_user",
     originalId: currentUserObj.id,
-    privacyPolicy: updatedUser?.privacyPolicy !== undefined ? updatedUser.privacyPolicy : (privacyPolicy || "")
   };
 
   res.json({ success: true, user: returnedUser });
@@ -1084,7 +1061,7 @@ export async function updateCurrentUser(req: Request, res: Response): Promise<vo
  * POST /api/users/register
  */
 export async function registerUser(req: Request, res: Response): Promise<void> {
-  const { name, bio, avatar, coverPhoto, password, email } = req.body;
+  const { name, avatar, password, email } = req.body;
   if (!name || !String(name).trim()) {
     res.status(400).json({ error: "El nombre completo es obligatorio." });
     return;
@@ -1145,7 +1122,6 @@ export async function registerUser(req: Request, res: Response): Promise<void> {
     }
 
     let resolvedAvatar = avatar || getCachedDefaultAvatar();
-    let resolvedCoverPhoto = coverPhoto || getCachedDefaultCoverPhoto();
 
     if (avatar && avatar.startsWith("data:")) {
       try {
@@ -1161,19 +1137,6 @@ export async function registerUser(req: Request, res: Response): Promise<void> {
       }
     }
 
-    if (coverPhoto && coverPhoto.startsWith("data:")) {
-      try {
-        console.log("📸 Base64 cover photo detected in registration, uploading to GCS...");
-        const uploadedCover = await uploadBase64ToGCS(coverPhoto, "covers");
-        resolvedCoverPhoto = (uploadedCover && !uploadedCover.startsWith("data:"))
-          ? uploadedCover
-          : `https://storage.googleapis.com/${bucketName || "elegan-bucket"}/covers/${Date.now()}-${cleanEmail.replace(/[^a-z0-9]/g, "_")}.jpg`;
-        console.log(`✅ Base64 cover photo uploaded to GCS: ${resolvedCoverPhoto}`);
-      } catch (uploadErr) {
-        console.error("❌ Failed to upload base64 cover photo during registration:", uploadErr);
-        resolvedCoverPhoto = `https://storage.googleapis.com/${bucketName || "elegan-bucket"}/covers/${Date.now()}-${cleanEmail.replace(/[^a-z0-9]/g, "_")}.jpg`;
-      }
-    }
 
     let guestSavedReels: string[] = [];
     let priorGuest: any = null;
@@ -1229,9 +1192,7 @@ export async function registerUser(req: Request, res: Response): Promise<void> {
       username: resolvedUsername,
       name: String(name).trim(),
       email: cleanEmail,
-      bio: bio || priorGuest?.bio || "Nuevo creador de contenido en la plataforma",
       avatar: resolvedAvatar,
-      coverPhoto: resolvedCoverPhoto,
       followers: 0,
       following: priorGuest?.following ?? priorGuest?.followingUserIds?.length ?? 0,
       followingUserIds: priorGuest?.followingUserIds || [],
@@ -1418,15 +1379,13 @@ export async function switchUser(req: Request, res: Response): Promise<void> {
     const isSuperadmin = isConfiguredSuperadmin(targetUser);
     const returnedUser = {
       id: "current_user", originalId: targetUser.id, username: targetUser.name || "", name: targetUser.name,
-      bio: targetUser.bio || "",
       avatar: targetUser.avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80",
-      coverPhoto: targetUser.coverPhoto || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80",
       followers: targetUser.followers || 0, following: targetUser.following || 0,
       followingUserIds: targetUser.followingUserIds || [], savedReelIds: targetUser.savedReelIds || [],
       guestToken: targetUser.guestToken || headerGuestToken || undefined, isGuest: false, password: targetUser.password || "",
       email: targetUser.email || cleanEmail, address: targetUser.address || "",
       shippingAddress: targetUser.shippingAddress || targetUser.address || "", city: targetUser.city || "",
-      country: targetUser.country || "", phone: targetUser.phone || "", postalCode: targetUser.postalCode || "", privacyPolicy: targetUser.privacyPolicy || "",
+      country: targetUser.country || "", phone: targetUser.phone || "", postalCode: targetUser.postalCode || "",
       canSell: targetUser.canSell === true || isSuperadmin, isAdmin: isSuperadmin,
       role: isSuperadmin ? "superadmin" : (targetUser.canSell ? "seller" : "user")
     };
@@ -1616,9 +1575,7 @@ export async function loginWithEmail(req: Request, res: Response): Promise<void>
       id: user.id,
       originalId: user._id ? user._id.toString() : user.id,
       name: user.name,
-      bio: user.bio || "",
       avatar: user.avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80",
-      coverPhoto: user.coverPhoto || "",
       followers: user.followers || 0,
       following: user.following || 0,
       followingUserIds: user.followingUserIds || [],
