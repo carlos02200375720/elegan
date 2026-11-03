@@ -443,9 +443,6 @@ export async function connectToMongoDB(): Promise<void> {
           void connectToMongoDB();
         }
       }, 30000);
-      if (typeof mongoReconnectTimer.unref === "function") {
-        mongoReconnectTimer.unref();
-      }
     }
   }
 }
