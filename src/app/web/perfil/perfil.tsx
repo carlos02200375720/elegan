@@ -3,9 +3,6 @@ import { User, Product, Reel, Order, isGuestUser } from "../../../types";
 import {
   MessageCircle,
   ShoppingBag,
-  ShieldCheck,
-  Shield,
-  Lock,
   FileText,
   Mail,
   Bookmark,
