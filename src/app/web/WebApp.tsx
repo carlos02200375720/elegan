@@ -156,6 +156,12 @@ export default function WebApp({
           setActiveTab("profile");
           navigateTo(getProfileSavedPath(currentUser));
         }}
+        onOpenPurchaseHistory={() => {
+          setSelectedCreatorProfileId(null);
+          setProfileInitialSubTab("orders");
+          setActiveTab("profile");
+          navigateTo(getProfileCompraPath(currentUser));
+        }}
         hideMobileHamburger={
           activeTab === 'shop' &&
           (isProductDetailOpen ||
