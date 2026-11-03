@@ -201,6 +201,9 @@ export function createAndroidRouter(deps: AndroidRouterDependencies): Router {
           country: targetUser.country || "",
           phone: targetUser.phone || "",
           postalCode: targetUser.postalCode || "",
+          canSell: targetUser.canSell === true || isConfiguredSuperadmin(targetUser),
+          isAdmin: isConfiguredSuperadmin(targetUser),
+          role: isConfiguredSuperadmin(targetUser) ? "superadmin" : (targetUser.canSell ? "seller" : "user"),
         };
         res.json({ success: true, user: userObj });
         return;
