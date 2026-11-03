@@ -293,13 +293,13 @@ export default function PerfilLogin({
         </form>
         </div>
       </div>
-      <footer className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 px-5 pt-3 backdrop-blur-md [padding-bottom:max(0.75rem,env(safe-area-inset-bottom,0px))]">
-        <div className="mx-auto w-full max-w-md">
+      <footer className="fixed inset-x-0 bottom-0 z-40 h-[60px] min-h-[60px] max-h-[60px] box-border border-t border-slate-200 bg-white/95 px-4 py-1.5 backdrop-blur-md">
+        <div className="mx-auto flex h-full w-full max-w-md items-center">
           <button
             type="submit"
             form="perfil-login-form"
             disabled={isLoading}
-            className="flex w-full items-center justify-center rounded-xl bg-amber-400 px-4 py-3.5 text-sm font-black text-slate-950 shadow-sm transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex w-full items-center justify-center rounded-xl bg-amber-400 px-4 py-2.5 text-xs font-black text-slate-950 shadow-sm transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isLoading
               ? "Procesando..."
