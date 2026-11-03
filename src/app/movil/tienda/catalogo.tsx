@@ -15,6 +15,7 @@ import CarritoTiendaView from "./carrito";
 import VerificacionTiendaView, { AndroidCheckoutForm } from "./verificacion";
 import GraciaTiendaView from "./gracia";
 import { formatPrice } from "../../../utils/currency";
+import { getProductImageUrl } from "./productMedia";
 
 export interface AndroidShopProps {
   products: Product[];
@@ -516,7 +517,7 @@ export default function Catalogo({
             name: catName,
             queryTerm: catName.toLowerCase(),
             imageUrl:
-              p.imageUrl ||
+              getProductImageUrl(p) ||
               "https://images.unsplash.com/photo-1472851294608-062f824d29cc?auto=format&fit=crop&w=150&q=80",
           });
         }
@@ -1301,7 +1302,7 @@ export default function Catalogo({
                 className="bg-white rounded-2xl overflow-hidden flex flex-col justify-between active:scale-[0.98] transition-transform cursor-pointer"
               >
                 <div className="relative w-full aspect-square overflow-hidden bg-slate-100">
-                  <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover" />
+                  <img src={getProductImageUrl(p)} alt={p.name} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
                 </div>
 
                 <div className="p-2.5">
