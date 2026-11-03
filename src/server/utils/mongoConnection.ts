@@ -11,12 +11,12 @@ export async function waitForMongoConnection(timeoutMs = 10000): Promise<boolean
 
   return new Promise<boolean>((resolve) => {
     let settled = false;
-    let timer: ReturnType<typeof setTimeout>;
+    let timer: ReturnType<typeof setTimeout> | undefined;
 
     const finish = (connected: boolean) => {
       if (settled) return;
       settled = true;
-      clearTimeout(timer);
+      if (timer) clearTimeout(timer);
       mongoose.connection.removeListener("connected", onConnected);
       resolve(connected || mongoose.connection.readyState === 1);
     };
