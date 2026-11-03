@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import mongoose from "mongoose";
 import crypto from "crypto";
 import { User, Reel } from "../../types";
-import { MongoUser, MongoSuperAdmin, MongoGuestSession, MongoReel, MongoProduct, MongoOrder, MongoCart, MongoChatMessage } from "../models";
+import { MongoUser, MongoSuperAdmin, MongoReel, MongoProduct, MongoOrder, MongoCart, MongoChatMessage } from "../models";
 import { generateId } from "../utils/helpers";
 import { uploadBase64ToGCS } from "../services/mediaStorage";
 import { bucketName } from "../config/storage";
@@ -834,20 +834,6 @@ export async function toggleSaveReel(req: Request, res: Response): Promise<void>
     (req.headers["x-guest-token"] as string)?.trim() ||
     String(req.body?.guestToken || "").trim();
 
-  if (mongoose.connection.readyState === 1 && guestToken) {
-    const anonymousSession = await MongoGuestSession.findOne({ token: guestToken }).lean();
-    if (anonymousSession) {
-      currentUserObj = {
-        id: guestToken,
-        guestToken,
-        username: "invitado",
-        savedReelIds: anonymousSession.savedReelIds || [],
-        isGuest: true,
-        _anonymousSession: true,
-      };
-    }
-  }
-
   if (mongoose.connection.readyState === 1 && !currentUserObj) {
     const candidates = [userId, username, activeOriginalUserId].filter(
       (id) => id && id !== "user_guest" && id !== "current_user" && id !== "invitado"
@@ -1190,7 +1176,6 @@ export async function registerUser(req: Request, res: Response): Promise<void> {
 
     let guestSavedReels: string[] = [];
     let priorGuest: any = null;
-    let priorGuestSession: any = null;
     const guestId = (req.body?.guestId || req.headers["x-user-id"] || "").toString().trim();
     const guestUsername = (req.body?.guestUsername || req.headers["x-user-username"] || "").toString().trim();
 
@@ -1208,13 +1193,7 @@ export async function registerUser(req: Request, res: Response): Promise<void> {
         if (guestOrConditions.length > 0) {
           priorGuest = await MongoUser.findOne({ isGuest: true, $or: guestOrConditions });
         }
-        if (headerGuestToken) {
-          priorGuestSession = await MongoGuestSession.findOne({ token: headerGuestToken }).lean();
-        }
-        guestSavedReels = Array.from(new Set([
-          ...(priorGuest?.savedReelIds || []),
-          ...(priorGuestSession?.savedReelIds || [])
-        ]));
+        guestSavedReels = Array.from(new Set(priorGuest?.savedReelIds || []));
       } catch (e) {
         console.error("Error buscando el perfil invitado para migrar:", e);
         res.status(500).json({ error: "No se pudo localizar la información de invitado para migrarla." });
@@ -1253,8 +1232,8 @@ export async function registerUser(req: Request, res: Response): Promise<void> {
       avatar: resolvedAvatar,
       coverPhoto: resolvedCoverPhoto,
       followers: 0,
-      following: priorGuestSession?.following ?? priorGuest?.followingUserIds?.length ?? 0,
-      followingUserIds: priorGuestSession?.followingUserIds || priorGuest?.followingUserIds || [],
+      following: priorGuest?.following ?? priorGuest?.followingUserIds?.length ?? 0,
+      followingUserIds: priorGuest?.followingUserIds || [],
       savedReelIds: mergedSavedReels,
       isOnline: true,
       password: password || "",
@@ -1363,9 +1342,6 @@ export async function registerUser(req: Request, res: Response): Promise<void> {
 
     if (priorGuest && priorGuest._id && priorGuest._id.toString() !== newUserId) {
       await MongoUser.deleteOne({ _id: priorGuest._id, isGuest: true });
-    }
-    if (priorGuestSession?._id) {
-      await MongoGuestSession.deleteOne({ _id: priorGuestSession._id });
     }
 
     const returnedUser = {
