@@ -24,6 +24,8 @@ import { Product, CartItem, User } from "../../../types";
 import { AndroidVideoPlayer } from "../componente/videoplay";
 import { StatusBar, Style } from "@capacitor/status-bar";
 import { formatPrice } from "../../../utils/currency";
+import { getMediaUrl } from "../../../config";
+import { getProductGalleryMedia, getProductImageUrl } from "./productMedia";
 
 export interface ShippingOptionItem {
   carrier: string;
@@ -133,7 +135,7 @@ export function ProductoIdTiendaView({
 }: AndroidProductoIdProps) {
   const [detailGalleryIndex, setDetailGalleryIndex] = useState(0);
   const [selectedProductMediaUrl, setSelectedProductMediaUrl] = useState<string>(
-    selectedProduct.imageUrl || ""
+    getProductImageUrl(selectedProduct)
   );
   const [selectedVariants, setSelectedVariants] = useState<{ [key: string]: string }>({});
   const [optionsValidationError, setOptionsValidationError] = useState<string | null>(null);
@@ -298,23 +300,10 @@ export function ProductoIdTiendaView({
     );
   };
 
-  const productGalleryMedia = useMemo(() => {
-    if (!selectedProduct) return [];
-    const seen = new Set<string>();
-    const list: string[] = [];
-    const push = (u?: string) => {
-      if (!u || seen.has(u)) return;
-      seen.add(u);
-      list.push(u);
-    };
-
-    push(selectedProduct.imageUrl);
-    (selectedProduct.images || []).forEach(push);
-    (selectedProduct.videos || []).forEach(push);
-    (selectedProduct.variantList || []).forEach((variant) => push(variant.imageUrl));
-
-    return list.length ? list : [selectedProduct.imageUrl];
-  }, [selectedProduct]);
+  const productGalleryMedia = useMemo(
+    () => getProductGalleryMedia(selectedProduct),
+    [selectedProduct]
+  );
 
   const getMissingOptions = (product: Product | null, selected: { [key: string]: string }) => {
     if (!product) return [];
@@ -386,7 +375,7 @@ export function ProductoIdTiendaView({
   useEffect(() => {
     if (selectedProduct) {
       setDetailGalleryIndex(0);
-      setSelectedProductMediaUrl(selectedProduct.imageUrl || "");
+      setSelectedProductMediaUrl(getProductImageUrl(selectedProduct));
       setSelectedVariants({});
       setOptionsValidationError(null);
       const opts = getManualShippingOptions(selectedProduct);
@@ -538,7 +527,7 @@ export function ProductoIdTiendaView({
                     <div className="w-full h-full relative flex items-center justify-center bg-black">
                       <AndroidVideoPlayer
                         hlsUrl={mediaUrl}
-                        poster={selectedProduct.imageUrl || selectedProduct.images?.[0]}
+                        poster={getProductImageUrl(selectedProduct)}
                         autoPlay={false}
                         loop={true}
                         muted={isGalleryVideoMuted}
@@ -627,8 +616,7 @@ export function ProductoIdTiendaView({
                       <div className="w-full h-full bg-slate-900 flex items-center justify-center relative overflow-hidden">
                         <img
                           src={
-                            selectedProduct.imageUrl ||
-                            selectedProduct.images?.[0] ||
+                            getProductImageUrl(selectedProduct) ||
                             "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=300&q=80"
                           }
                           className="w-full h-full object-cover opacity-75"
@@ -696,7 +684,7 @@ export function ProductoIdTiendaView({
                   swatchesMap.set(key, {
                     name: vItem.color || vItem.name || "Color",
                     color: vItem.color,
-                    imageUrl: vItem.imageUrl,
+                    imageUrl: getMediaUrl(vItem.imageUrl),
                   });
                 }
               });
@@ -767,7 +755,7 @@ export function ProductoIdTiendaView({
                                         (vItem.name && vItem.name.toLowerCase().includes(opt.toLowerCase()))
                                     )
                                   : undefined;
-                              const imgUrl = matchingSwatch?.imageUrl || fallbackVariantItem?.imageUrl;
+                              const imgUrl = matchingSwatch?.imageUrl || (fallbackVariantItem?.imageUrl ? getMediaUrl(fallbackVariantItem.imageUrl) : undefined);
                               const isSelected =
                                 selectedVariants[v.name] === opt ||
                                 Boolean(imgUrl && selectedProductMediaUrl === imgUrl && !selectedVariants[v.name]);
@@ -1054,7 +1042,7 @@ export function ProductoIdTiendaView({
                     .map(([k, v]) => `${k}: ${v}`)
                     .join(", ");
 
-                  const activeImageUrl = selectedProductMediaUrl || selectedProduct.imageUrl;
+                  const activeImageUrl = selectedProductMediaUrl || getProductImageUrl(selectedProduct);
                   const effectiveShippingFee = selectedShippingOption
                     ? selectedShippingOption.shippingCost
                     : Number(selectedProduct.shippingCost ?? 0);
