@@ -11,7 +11,8 @@ import {
   saveCanonicalReelToMongo,
   getUserCanonicalReelsFromMongo,
 } from "./services/reelService";
-import { isConfiguredSuperadmin, handleGuestSession, registerUser, switchUser, loginWithEmail } from "./controllers/userController";
+import { isConfiguredSuperadmin, handleGuestSession, registerUser, switchUser, loginWithEmail, logoutUser } from "./controllers/userController";
+import { getCart, updateCart, clearCart } from "./controllers/cartController";
 import { createPaypalOrder, getPaypalConfig } from "./controllers/paypalController";
 import { MongoCart, MongoChatMessage, MongoSuperAdmin } from "./models";
 
@@ -233,6 +234,12 @@ export function createAndroidRouter(deps: AndroidRouterDependencies): Router {
 
   // Android Auth: Switch or restore user session
   router.post("/users/current/switch", switchUser);
+  router.post("/users/current/logout", logoutUser);
+
+  // Android Cart: use the same MongoDB-backed cart handlers as the main API.
+  router.get("/cart/:userId", getCart);
+  router.post("/cart/:userId", updateCart);
+  router.delete("/cart/:userId", clearCart);
 
   // Android Auth: Login
   router.post("/auth/login", switchUser);
