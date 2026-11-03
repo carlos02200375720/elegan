@@ -15,6 +15,7 @@ import { getMediaUrl } from "../../config";
 import { getInicioShareUrl, findReelByInicioParam, navigateTo } from "../../router";
 import { getLocalGuestToken } from "../../utils/guestToken";
 import { formatPrice } from "../../utils/currency";
+import { isSuperAdmin } from "../../superAdmin";
 
 export interface AndroidInicioProps {
   reels: Reel[];
@@ -612,6 +613,8 @@ export default function Inicio({
   }, [handleNext, handlePrev, showComments, showCartPanel, showHamburgerMenu]);
 
   const handleProductSelect = onProductClick || onSelectProduct;
+  const storeProfile = users.find((user) => isSuperAdmin(user)) ||
+    (isSuperAdmin(currentUser) ? currentUser : undefined);
   const currentGuestToken = currentUser?.guestToken || getLocalGuestToken();
   const requireLoginForInteraction = (actionDescription: string) => {
     if (!isGuestUser(currentUser)) return false;
@@ -741,14 +744,12 @@ export default function Inicio({
     }
   };
 
-  const handleCreatorNav = (reelItem: Reel) => {
+  const handleCreatorNav = (_reelItem: Reel) => {
+    if (!storeProfile) return;
     if (onCreatorClick) {
-      onCreatorClick(reelItem.creatorId);
-    } else if (onSelectUser) {
-      const creator = users.find(
-        (u) => u.id === reelItem.creatorId || u.username === reelItem.creatorUsername
-      );
-      if (creator) onSelectUser(creator);
+      onCreatorClick(storeProfile.id);
+    } else {
+      onSelectUser?.(storeProfile);
     }
   };
 
@@ -930,25 +931,9 @@ export default function Inicio({
           const publicationDescription =
             taggedProduct?.description?.trim() || reelItem.description?.trim() || "";
 
-          const creatorUser = users.find(
-            (u) =>
-              (reelItem.creatorId && (u.id === reelItem.creatorId || u.originalId === reelItem.creatorId)) ||
-              (reelItem.creatorUsername && u.username?.toLowerCase() === reelItem.creatorUsername?.toLowerCase())
-          );
-          const displayUsername =
-            creatorUser?.username ||
-            reelItem.creatorUsername ||
-            (reelItem.creatorId === "current_user" ? currentUser?.username : "") ||
-            "usuario";
-          const displayName =
-            creatorUser?.name?.trim() ||
-            reelItem.creatorName?.trim() ||
-            (reelItem.creatorId === "current_user" ? currentUser?.name?.trim() : "") ||
-            displayUsername;
-          const displayAvatar =
-            creatorUser?.avatar ||
-            reelItem.creatorAvatar ||
-            "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80";
+          const displayUsername = storeProfile?.username?.trim() || "elegan";
+          const displayName = storeProfile?.name?.trim() || "Elegan";
+          const displayAvatar = storeProfile?.avatar?.trim() || "";
 
           const isLiked = Boolean(
             reelItem.likedBy?.some(
