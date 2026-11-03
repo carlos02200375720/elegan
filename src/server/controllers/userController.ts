@@ -72,7 +72,7 @@ export async function getUsers(): Promise<User[]> {
         role: isSuperadmin ? "superadmin" : (u.canSell ? "seller" : "user")
       });
       const mapped = [
-        ...dbUsers.map((u: any) => mapAccount(u, false)),
+        ...dbUsers.filter((u: any) => !isConfiguredSuperadmin(u)).map((u: any) => mapAccount(u, false)),
         ...dbSuperAdmins.map((u: any) => mapAccount(u, true))
       ];
       for (const memUser of memoryUsers) {
