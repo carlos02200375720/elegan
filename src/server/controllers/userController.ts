@@ -7,7 +7,7 @@ import { MongoUser, MongoSuperAdmin, MongoReel, MongoProduct, MongoOrder, MongoC
 import { generateId } from "../utils/helpers";
 import { uploadBase64ToGCS } from "../services/mediaStorage";
 import { bucketName } from "../config/storage";
-import { getCachedDefaultAvatar, getCachedDefaultCoverPhoto } from "./settingsController";
+import { getCachedDefaultAvatar } from "./settingsController";
 import { formatReelDTO } from "../utils/reelUtils";
 import { getUserCanonicalReelsFromMongo } from "../services/reelService";
 import {
@@ -48,13 +48,11 @@ export async function getUsers(): Promise<User[]> {
         username: u.username,
         name: u.name,
         avatar: u.avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80",
-        bio: u.bio || "Creador en la plataforma",
         isOnline: u.isOnline !== undefined ? u.isOnline : false,
         followers: u.followers || 0,
         following: u.following || 0,
         followingUserIds: u.followingUserIds || [],
         savedReelIds: u.savedReelIds || [],
-        coverPhoto: u.coverPhoto || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80",
         isGuest: u.isGuest || false,
         password: u.password || "",
         email: u.email || "",
@@ -64,7 +62,6 @@ export async function getUsers(): Promise<User[]> {
         country: u.country || "",
         phone: u.phone || "",
         postalCode: u.postalCode || "",
-        privacyPolicy: u.privacyPolicy || "",
         canSell: u.canSell === true || isConfiguredSuperadmin(u),
         isAdmin: isConfiguredSuperadmin(u),
         role: isConfiguredSuperadmin(u) ? "superadmin" : (u.canSell ? "seller" : "user")
@@ -156,13 +153,11 @@ export async function resolveAuthenticatedUser(req: any, fallbackRole = "creator
       username: preferredUsername,
       name: fallbackName,
       avatar: fallbackAvatar,
-      bio: `${fallbackRole === "seller" ? "Vendedor" : "Creador"} en la plataforma`,
       isOnline: true,
       followers: 0,
       following: 0,
       followingUserIds: [],
       savedReelIds: [],
-      coverPhoto: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80",
       isGuest: false,
       email: body.email || "",
       password: ""
@@ -230,13 +225,11 @@ export async function handleGuestSession(req: Request, res: Response): Promise<v
         username: "invitado",
         name: "Invitado",
         avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80",
-        bio: "Explorando la plataforma",
         isOnline: true,
         followers: 0,
         following: 0,
         followingUserIds: [],
         savedReelIds: [],
-        coverPhoto: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80",
         isGuest: true,
         canSell: false,
         isAdmin: false,
@@ -348,13 +341,11 @@ export async function getUserById(req: Request, res: Response): Promise<void> {
         username: activeUser.username,
         name: activeUser.name,
         avatar: activeUser.avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80",
-        bio: activeUser.bio || "Creador en la plataforma",
         isOnline: activeUser.isOnline !== undefined ? activeUser.isOnline : true,
         followers: activeUser.followers || 0,
         following: activeUser.following || 0,
         followingUserIds: activeUser.followingUserIds || [],
         savedReelIds: activeUser.savedReelIds || [],
-        coverPhoto: activeUser.coverPhoto || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80",
         isGuest: false,
         password: activeUser.password || "",
         email: activeUser.email || "",
@@ -364,7 +355,6 @@ export async function getUserById(req: Request, res: Response): Promise<void> {
         country: activeUser.country || "",
         phone: activeUser.phone || "",
         postalCode: activeUser.postalCode || "",
-        privacyPolicy: activeUser.privacyPolicy || "",
         canSell: activeUser.canSell === true || isConfiguredSuperadmin(activeUser),
         isAdmin: isConfiguredSuperadmin(activeUser),
         role: isConfiguredSuperadmin(activeUser) ? "superadmin" : (activeUser.canSell ? "seller" : "user")
@@ -375,17 +365,14 @@ export async function getUserById(req: Request, res: Response): Promise<void> {
         username: "invitado",
         name: "Invitado",
         avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80",
-        bio: "Explorando la plataforma",
         isOnline: false,
         followers: 0,
         following: 0,
         followingUserIds: [],
         savedReelIds: [],
-        coverPhoto: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80",
         isGuest: true,
         password: "",
         email: "",
-        privacyPolicy: ""
       };
     }
   } else {
@@ -410,13 +397,11 @@ export async function getUserById(req: Request, res: Response): Promise<void> {
             username: found.username,
             name: found.name,
             avatar: found.avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80",
-            bio: found.bio || "Creador en la plataforma",
             isOnline: found.isOnline !== undefined ? found.isOnline : false,
             followers: found.followers || 0,
             following: found.following || 0,
             followingUserIds: found.followingUserIds || [],
             savedReelIds: found.savedReelIds || [],
-            coverPhoto: found.coverPhoto || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=120",
             isGuest: false,
             password: found.password || "",
             email: found.email || "",
@@ -426,7 +411,6 @@ export async function getUserById(req: Request, res: Response): Promise<void> {
             country: found.country || "",
             phone: found.phone || "",
             postalCode: found.postalCode || "",
-            privacyPolicy: found.privacyPolicy || "",
             canSell: found.canSell === true || isConfiguredSuperadmin(found),
             isAdmin: isConfiguredSuperadmin(found),
             role: isConfiguredSuperadmin(found) ? "superadmin" : (found.canSell ? "seller" : "user")
@@ -502,17 +486,14 @@ export async function getUserById(req: Request, res: Response): Promise<void> {
           username: resolvedUsername,
           name: matchedOrder.buyerName || resolvedUsername,
           avatar: matchedOrder.buyerAvatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80",
-          bio: "Cliente en la plataforma",
           isOnline: true,
           followers: 0,
           following: 0,
           followingUserIds: [],
           savedReelIds: [],
-          coverPhoto: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80",
           isGuest: false,
           password: "123",
           email: resolvedEmail,
-          privacyPolicy: ""
         };
       }
     }
@@ -563,16 +544,13 @@ export async function getUserById(req: Request, res: Response): Promise<void> {
           username: sourceReel.creatorUsername || sourceReel.creatorName?.toLowerCase().replace(/\s+/g, "") || rawParam,
           name: sourceReel.creatorName || "Usuario",
           avatar: sourceReel.creatorAvatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80",
-          bio: creatorMongoUser?.bio || "Perfil en la plataforma",
           followers: creatorMongoUser?.followers || 0,
           following: creatorMongoUser?.following || 0,
           followingUserIds: creatorMongoUser?.followingUserIds || [],
           savedReelIds: creatorMongoUser?.savedReelIds || [],
-          coverPhoto: creatorMongoUser?.coverPhoto || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80",
           isGuest: false,
           password: "",
           email: "",
-          privacyPolicy: creatorMongoUser?.privacyPolicy || ""
         };
       }
     }
@@ -613,16 +591,13 @@ export async function getUserById(req: Request, res: Response): Promise<void> {
           username: sourceProd.sellerName?.toLowerCase().replace(/\s+/g, "") || "tienda",
           name: sourceProd.sellerName || "Tienda Oficial",
           avatar: sourceProd.sellerAvatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80",
-          bio: sellerMongoUser?.bio || "Tienda y vendedor verificado en la plataforma",
           followers: sellerMongoUser?.followers || 85,
           following: sellerMongoUser?.following || 15,
           followingUserIds: sellerMongoUser?.followingUserIds || [],
           savedReelIds: sellerMongoUser?.savedReelIds || [],
-          coverPhoto: sellerMongoUser?.coverPhoto || "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80",
           isGuest: false,
           password: "",
           email: "",
-          privacyPolicy: sellerMongoUser?.privacyPolicy || ""
         };
       }
     }
