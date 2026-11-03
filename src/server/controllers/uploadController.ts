@@ -63,7 +63,7 @@ export async function processUploadHlsOnly(req: any, res: any): Promise<void> {
     }
 
     // ------------------------------------------------------------
-    // VIDEO (HLS ONLY - GCS EXCLUSIVO CON FALLBACK NUBE MONGODB GRIDFS)
+    // VIDEO (HLS ONLY - GCS EXCLUSIVO)
     // ------------------------------------------------------------
     const jobId = "hls_" + generateId();
     console.log(`🎬 [Upload Video] Procesando video ${originalName}`);
