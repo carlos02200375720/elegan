@@ -435,30 +435,46 @@ export async function deleteProduct(req: any, res: any, next: any): Promise<void
       return;
     }
 
-    console.log(`🗑️ Deleting product ${id}...`);
-
-    setProducts(products.filter((p) => p.id !== id));
+    console.log(`🗑️ Deleting product ${id} and all linked reels...`);
 
     if (mongoose.connection.readyState === 1) {
-      try {
-        await MongoProduct.deleteOne({ id });
-        await MongoReel.deleteMany({ productId: id }).catch(() => null);
-        console.log(`💾 Product ${id} and companion reels deleted from MongoDB Atlas`);
-      } catch (dbErr) {
-        console.error("❌ Failed to delete product from MongoDB Atlas:", dbErr);
-      }
+      // Remove every persisted Reel linked to this product, including its
+      // deterministic companion Reel even if an older record lacks productId.
+      await MongoReel.deleteMany({
+        $or: [
+          { productId: id },
+          { id: `reel_prod_${id}` },
+        ],
+      });
+      await MongoProduct.deleteOne({ id });
+    } else {
+      res.status(503).json({ error: "La base de datos no está disponible. No se eliminó el producto." });
+      return;
     }
 
-    setReels(reels.filter((r) => r.productId !== id));
+    setProducts(products.filter((product) => product.id !== id));
+    setReels(
+      reels.filter(
+        (reel) =>
+          reel.productId !== id &&
+          reel.id !== `reel_prod_${id}`
+      )
+    );
 
     broadcastToAll({
       type: "product_deleted",
       productId: id,
     });
 
-    res.json({ success: true, message: "Producto eliminado exitosamente" });
+    res.json({
+      success: true,
+      message: "Producto y todas sus publicaciones vinculadas eliminados exitosamente",
+    });
   } catch (err: any) {
-    console.error("Error deleting product:", err);
-    res.status(500).json({ error: "Error al eliminar el producto", details: err.message });
+    console.error("Error deleting product and linked reels:", err);
+    res.status(500).json({
+      error: "No se pudo eliminar el producto y sus publicaciones vinculadas.",
+      details: err.message,
+    });
   }
 }
