@@ -291,119 +291,20 @@ export async function connectToMongoDB(): Promise<void> {
       console.log("🌱 Seeding canonical reels completed!");
     }
 
-    // Load or Seed Orders from MongoDB Atlas
-    console.log("📦 Loading orders from MongoDB...");
+    // Remove only the two legacy demo orders created by the old startup seed.
+    const removedDemoOrders = await MongoOrder.deleteMany({
+      id: { $in: ["ord_demo_compra", "ord_demo_venta"] }
+    });
+    if (removedDemoOrders.deletedCount > 0) {
+      console.log(`🧹 Removed ${removedDemoOrders.deletedCount} legacy demo orders from MongoDB.`);
+    }
+
+    // Load only real orders from MongoDB. An empty collection stays empty.
+    console.log("📦 Loading real orders from MongoDB...");
     const orderCount = await MongoOrder.countDocuments();
     if (orderCount === 0) {
-      console.log("🌱 Seeding realistic demo purchase and sale orders to MongoDB...");
-      const now = Date.now();
-      const currentProducts = getProducts();
-      const demoOrders: Order[] = [
-        {
-          id: "ord_demo_compra",
-          buyerId: "current_user",
-          buyerName: "Carlos Gómez",
-          buyerUsername: "carlosg",
-          buyerAvatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80",
-          items: [
-            {
-              productId: currentProducts[0]?.id || "prod_1",
-              name: currentProducts[0]?.name || "Auriculares Inalámbricos Pro",
-              price: currentProducts[0]?.price || 89.99,
-              quantity: 1,
-              imageUrl: currentProducts[0]?.imageUrl || "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=400&q=80",
-              sellerId: "seller_official",
-              sellerName: "Tech Store Oficial",
-              sellerUsername: "techstore",
-              carrier: "DHL Express"
-            }
-          ],
-          total: (currentProducts[0]?.price || 89.99) + 5.99,
-          shippingCost: 5.99,
-          shippingAddress: "Av. Central 742, Piso 4, Madrid, España",
-          paymentStatus: "paid",
-          status: "shipped",
-          trackingNumber: "DHL-84920184ES",
-          carrier: "DHL Express",
-          trackingUrl: "https://www.dhl.com",
-          estimatedDelivery: new Date(now + 2 * 86400000).toISOString().split("T")[0],
-          sellerNotes: "Paquete entregado a la agencia DHL en Madrid. En tránsito hacia destino.",
-          statusHistory: [
-            {
-              status: "pending",
-              label: "Pago confirmado exitosamente",
-              timestamp: new Date(now - 86400000 * 2).toISOString(),
-              note: "Transacción aprobada mediante tarjeta bancaria."
-            },
-            {
-              status: "processing",
-              label: "Empaque y preparación de producto",
-              timestamp: new Date(now - 86400000 * 1.5).toISOString(),
-              note: "Verificación de embalaje protector y precinto de seguridad."
-            },
-            {
-              status: "shipped",
-              label: "Despachado con número de guía DHL",
-              timestamp: new Date(now - 86400000 * 0.8).toISOString(),
-              note: "Guía DHL-84920184ES generada. En camino al centro de distribución.",
-              trackingNumber: "DHL-84920184ES",
-              carrier: "DHL Express"
-            }
-          ],
-          createdAt: new Date(now - 86400000 * 2).toISOString(),
-          updatedAt: new Date(now - 86400000 * 0.8).toISOString()
-        },
-        {
-          id: "ord_demo_venta",
-          buyerId: "user_maria",
-          buyerName: "María Fernández",
-          buyerUsername: "mariaf",
-          buyerAvatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80",
-          buyerEmail: "maria.fernandez@ejemplo.com",
-          items: [
-            {
-              productId: currentProducts[1]?.id || currentProducts[0]?.id || "prod_2",
-              name: currentProducts[1]?.name || currentProducts[0]?.name || "Smartwatch Deportivo Ultra",
-              price: currentProducts[1]?.price || 129.50,
-              quantity: 2,
-              imageUrl: currentProducts[1]?.imageUrl || currentProducts[0]?.imageUrl || "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=400&q=80",
-              sellerId: "current_user",
-              sellerName: "Carlos Gómez",
-              sellerUsername: "carlosg",
-              carrier: "FedEx"
-            }
-          ],
-          total: (currentProducts[1]?.price || 129.50) * 2 + 7.50,
-          shippingCost: 7.50,
-          shippingAddress: "Calle Las Flores 128, Apto 3B, Barcelona, España",
-          paymentStatus: "paid",
-          status: "processing",
-          trackingNumber: "FDX-938201948",
-          carrier: "FedEx",
-          trackingUrl: "https://www.fedex.com",
-          estimatedDelivery: new Date(now + 4 * 86400000).toISOString().split("T")[0],
-          sellerNotes: "Preparando pedido para recolección de FedEx.",
-          statusHistory: [
-            {
-              status: "pending",
-              label: "Pago recibido del cliente",
-              timestamp: new Date(now - 3600000 * 5).toISOString(),
-              note: "Pago acreditado por 2 unidades."
-            },
-            {
-              status: "processing",
-              label: "En preparación por tu negocio",
-              timestamp: new Date(now - 3600000 * 2).toISOString(),
-              note: "Asigna o confirma el número de guía para despachar."
-            }
-          ],
-          createdAt: new Date(now - 3600000 * 5).toISOString(),
-          updatedAt: new Date(now - 3600000 * 2).toISOString()
-        }
-      ];
-      await MongoOrder.insertMany(demoOrders as any);
-      setOrders(demoOrders);
-      console.log(`🌱 Seeding orders completed (${demoOrders.length} orders)!`);
+      setOrders([]);
+      console.log("📦 MongoDB orders collection is empty; no demo orders will be created.");
     } else {
       const dbOrders = await MongoOrder.find().sort({ createdAt: -1 });
       const seenOrderIds = new Set<string>();
@@ -436,7 +337,7 @@ export async function connectToMongoDB(): Promise<void> {
           updatedAt: o.updatedAt || o.createdAt || new Date().toISOString(),
         }));
       setOrders(loadedOrders);
-      console.log(`📦 Loaded ${loadedOrders.length} orders successfully from MongoDB Atlas!`);
+      console.log(`📦 Loaded ${loadedOrders.length} real orders successfully from MongoDB Atlas!`);
     }
     lastMongoError = null;
   } catch (error: any) {
