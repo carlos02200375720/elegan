@@ -301,14 +301,12 @@ export async function createOrder(req: Request, res: Response): Promise<void> {
         password: "123",
         bio: "Cliente en la plataforma",
         avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80",
-        coverPhoto: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80",
         isOnline: true,
         followers: 0,
         following: 0,
         followingUserIds: [],
         savedReelIds: [],
         isGuest: false,
-        privacyPolicy: "",
       };
 
       const memIdx = memoryUsers.findIndex(
