@@ -93,7 +93,7 @@ export async function connectToMongoDB(): Promise<void> {
     console.log("✅ Successfully connected to MongoDB Atlas!");
 
     // Remove deprecated profile fields from every regular user document.
-    const removedProfileFields = await MongoUser.updateMany(
+    const removedProfileFields = await MongoUser.collection.updateMany(
       {},
       { $unset: { bio: "", coverPhoto: "", privacyPolicy: "" } }
     );
