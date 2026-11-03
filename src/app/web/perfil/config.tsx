@@ -13,7 +13,6 @@ export interface ConfigPerfilProps {
   onRefreshUsers?: () => void;
   onBackToSelf?: () => void;
   onCancel?: () => void;
-  onPrivacyPolicyChange?: (policy: string) => void;
 }
 
 export function ConfigPerfilView({
@@ -24,22 +23,16 @@ export function ConfigPerfilView({
   onRefreshUsers,
   onBackToSelf,
   onCancel,
-  onPrivacyPolicyChange,
 }: ConfigPerfilProps) {
   // Profile edit states
   const [editName, setEditName] = useState(currentUser.name || "");
-  const [editBio, setEditBio] = useState(currentUser.bio || "");
   const [editAvatar, setEditAvatar] = useState(currentUser.avatar || "");
-  const [editCoverPhoto, setEditCoverPhoto] = useState(currentUser.coverPhoto || "");
   const [editAddress, setEditAddress] = useState(currentUser.shippingAddress || currentUser.address || "");
   const [editCity, setEditCity] = useState(currentUser.city || "");
   const [editCountry, setEditCountry] = useState(currentUser.country || "República Dominicana");
   const [editPhone, setEditPhone] = useState(currentUser.phone || "");
   const [editPostalCode, setEditPostalCode] = useState(currentUser.postalCode || "");
   const [editPassword, setEditPassword] = useState("");
-  const [editPrivacyPolicy, setEditPrivacyPolicy] = useState(
-    profileUser?.privacyPolicy || currentUser.privacyPolicy || ""
-  );
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
@@ -77,15 +70,12 @@ export function ConfigPerfilView({
   useEffect(() => {
     if (currentUser && !checkIsGuest(currentUser)) {
       setEditName(currentUser.name || "");
-      setEditBio(currentUser.bio || "");
       setEditAvatar(currentUser.avatar || "");
-      setEditCoverPhoto(currentUser.coverPhoto || "");
       setEditAddress(currentUser.shippingAddress || currentUser.address || "");
       setEditCity(currentUser.city || "");
       setEditCountry(currentUser.country || "República Dominicana");
       setEditPhone(currentUser.phone || "");
       setEditPostalCode(currentUser.postalCode || "");
-      setEditPrivacyPolicy(currentUser.privacyPolicy || profileUser?.privacyPolicy || "");
     }
   }, [currentUser, profileUser]);
 
@@ -163,9 +153,7 @@ export function ConfigPerfilView({
         body: JSON.stringify({
           name: guestRegName.trim(),
           email: emailToUse,
-          bio: "Cliente de la tienda",
           avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80",
-          coverPhoto: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80",
           password: guestRegPassword.trim(),
         }),
       });
@@ -206,18 +194,8 @@ export function ConfigPerfilView({
       setEditCountry(currentUser.country || "República Dominicana");
       setEditPhone(currentUser.phone || "");
       setEditPostalCode(currentUser.postalCode || "");
-      const resolvedPolicy =
-        profileUser?.privacyPolicy !== undefined
-          ? profileUser.privacyPolicy
-          : currentUser.privacyPolicy || "";
-      setEditPrivacyPolicy(resolvedPolicy);
     }
   }, [currentUser, profileUser?.privacyPolicy]);
-
-  const handleUpdatePrivacyPolicy = (value: string) => {
-    setEditPrivacyPolicy(value);
-    onPrivacyPolicyChange?.(value);
-  };
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -230,11 +208,8 @@ export function ConfigPerfilView({
         body: JSON.stringify({
           userId: currentUser.originalId || currentUser.id,
           name: editName,
-          bio: editBio,
           avatar: editAvatar,
-          coverPhoto: editCoverPhoto,
           password: editPassword,
-          privacyPolicy: editPrivacyPolicy,
           address: editAddress.trim(),
           shippingAddress: editAddress.trim(),
           city: editCity.trim(),
@@ -307,13 +282,9 @@ export function ConfigPerfilView({
         body: JSON.stringify({
           name: regName.trim(),
           email: cleanEmail,
-          bio: regBio.trim() || "Creador en la plataforma",
           avatar:
             regAvatar ||
             "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80",
-          coverPhoto:
-            regCoverPhoto ||
-            "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80",
           password: regPassword.trim(),
         }),
       });
@@ -329,9 +300,7 @@ export function ConfigPerfilView({
         setRegName("");
         setRegEmail("");
         setRegPassword("");
-        setRegBio("");
         setRegAvatar("");
-        setRegCoverPhoto("");
         onRefreshUsers?.();
         setTimeout(() => setRegisterSuccess(false), 3000);
 
@@ -642,20 +611,7 @@ export function ConfigPerfilView({
               />
             </div>
 
-            {/* Bio Input */}
-            <div className="space-y-1.5 md:col-span-2">
-              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
-                Biografía / Descripción del Canal
-              </label>
-              <textarea
-                value={editBio}
-                onChange={(e) => setEditBio(e.target.value)}
-                rows={3}
-                className="w-full text-xs font-semibold px-3 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none text-slate-800 resize-none"
-                placeholder="Cuéntale a tu audiencia sobre ti..."
-                required
-              />
-            </div>
+            
 
             {/* Saved delivery address */}
             <div className="md:col-span-2 space-y-3 rounded-2xl border border-slate-200 bg-white p-4">
@@ -717,58 +673,7 @@ export function ConfigPerfilView({
               </div>
             </div>
 
-            {/* Privacy Policy & Terms Input */}
-            <div className="space-y-2 md:col-span-2 bg-slate-50/90 p-4 rounded-2xl border border-slate-200/90">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <ShieldCheck className="w-4 h-4 text-amber-500" />
-                  <label className="text-[11px] font-extrabold text-slate-800 uppercase tracking-wider block">
-                    Política y Privacidad del Negocio
-                  </label>
-                </div>
-                <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200/50">
-                  Pestaña Pública
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-500 leading-relaxed font-medium">
-                Describe aquí tus políticas de compra, tiempos de entrega, condiciones de garantía, reembolsos y protección de datos para tus clientes.
-              </p>
-              <textarea
-                value={editPrivacyPolicy}
-                onChange={(e) => handleUpdatePrivacyPolicy(e.target.value)}
-                rows={5}
-                className="w-full text-xs font-medium px-3.5 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none text-slate-800 resize-none leading-relaxed"
-                placeholder="Ejemplo:&#10;• Envíos: Despachos seguros en 24 a 48 horas con número de rastreo.&#10;• Garantía: 30 días de cobertura contra defectos de fabricación.&#10;• Privacidad: Datos 100% resguardados y protegidos."
-              />
-              <div className="flex flex-wrap items-center gap-2 pt-1">
-                <span className="text-[10px] font-bold text-slate-400 uppercase">
-                  Plantillas sugeridas:
-                </span>
-                <button
-                  type="button"
-                  onClick={() =>
-                    handleUpdatePrivacyPolicy(`• Envíos y Tiempos de Entrega: Realizamos despachos seguros en 24 a 48 horas hábiles a todo el país. Recibirás tu guía de seguimiento en tiempo real.
-• Garantía y Devoluciones: Ofrecemos 30 días de garantía de satisfacción. Si el producto presenta algún desperfecto o no coincide con tu pedido, gestionamos el cambio o reembolso inmediato.
-• Privacidad y Seguridad: Tu información personal y datos bancarios están estrictamente protegidos bajo cifrado SSL. Jamás compartimos tus datos con terceros.
-• Atención y Contacto: Brindamos asesoría continua y soporte directo a través de nuestro chat de atención.`)
-                  }
-                  className="px-2.5 py-1 text-[10px] font-bold bg-white text-slate-700 hover:bg-slate-100 border border-slate-200 rounded-lg transition-all cursor-pointer shadow-2xs"
-                >
-                  📋 Plantilla Completa
-                </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    handleUpdatePrivacyPolicy(`• Garantía Directa: Cobertura total por 30 días contra fallas de fábrica.
-• Envíos Garantizados: Entregas rápidas y protegidas a nivel nacional.
-• Privacidad Total: Resguardo estricto y confidencial de todos tus datos.`)
-                  }
-                  className="px-2.5 py-1 text-[10px] font-bold bg-white text-slate-700 hover:bg-slate-100 border border-slate-200 rounded-lg transition-all cursor-pointer shadow-2xs"
-                >
-                  ⚡ Plantilla Breve
-                </button>
-              </div>
-            </div>
+            
 
             {/* Avatar Image URL Input & Presets */}
             <div className="space-y-2.5">
@@ -866,105 +771,7 @@ export function ConfigPerfilView({
               </div>
             </div>
 
-            {/* Cover Image URL Input & Presets */}
-            <div className="space-y-2.5">
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
-                  Foto de Portada / Banner
-                </label>
-                <div className="flex items-center space-x-4 bg-white p-3 border border-slate-200 rounded-xl">
-                  <div className="w-16 h-10 rounded bg-slate-100 border border-slate-200 overflow-hidden shrink-0">
-                    <img
-                      src={
-                        editCoverPhoto ||
-                        "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80"
-                      }
-                      alt="Previsualización de portada"
-                      className="w-full h-full object-cover"
-                      referrerPolicy="no-referrer"
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <input
-                      type="file"
-                      id="cover-file-input"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          const reader = new FileReader();
-                          reader.onloadend = () => {
-                            if (typeof reader.result === "string") {
-                              setEditCoverPhoto(reader.result);
-                            }
-                          };
-                          reader.readAsDataURL(file);
-                        }
-                      }}
-                    />
-                    <label
-                      htmlFor="cover-file-input"
-                      className="inline-flex items-center space-x-1.5 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg transition-all cursor-pointer border border-slate-200"
-                    >
-                      <Camera className="w-3.5 h-3.5 text-slate-500" />
-                      <span>Subir Foto de Galería</span>
-                    </label>
-                    <p className="text-[9px] text-slate-400 mt-1">
-                      Sube una imagen horizontal
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Presets */}
-              <div className="space-y-1">
-                <span className="text-[9px] font-bold text-slate-400 block uppercase">
-                  O bien, elige un estilo rápido:
-                </span>
-                <div className="flex flex-wrap gap-2">
-                  {[
-                    {
-                      name: "Abstracto Violeta",
-                      url: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80",
-                    },
-                    {
-                      name: "Neon Synth",
-                      url: "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?auto=format&fit=crop&w=800&q=80",
-                    },
-                    {
-                      name: "Cosmic Glow",
-                      url: "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=800&q=80",
-                    },
-                    {
-                      name: "Minimalist Dark",
-                      url: "https://images.unsplash.com/photo-1500485035595-cbe6f645feb1?auto=format&fit=crop&w=800&q=80",
-                    },
-                  ].map((preset, idx) => (
-                    <button
-                      key={idx}
-                      type="button"
-                      onClick={() => setEditCoverPhoto(preset.url)}
-                      className={`px-2 py-1 text-[9px] font-bold rounded-lg border transition-all flex items-center space-x-1 cursor-pointer ${
-                        editCoverPhoto === preset.url
-                          ? "bg-amber-500 text-slate-950 border-amber-500 shadow-sm"
-                          : "bg-white text-slate-600 border-slate-200 hover:border-slate-300"
-                      }`}
-                    >
-                      <div className="w-3.5 h-2 rounded bg-slate-200 overflow-hidden shrink-0">
-                        <img
-                          src={preset.url}
-                          alt=""
-                          className="w-full h-full object-cover"
-                          referrerPolicy="no-referrer"
-                        />
-                      </div>
-                      <span>{preset.name}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
+            
           </div>
 
           {/* Submit Actions Button */}
