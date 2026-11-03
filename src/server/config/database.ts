@@ -92,6 +92,15 @@ export async function connectToMongoDB(): Promise<void> {
     await mongoose.connect(mongoUri);
     console.log("✅ Successfully connected to MongoDB Atlas!");
 
+    // Remove deprecated profile fields from every regular user document.
+    const removedProfileFields = await MongoUser.updateMany(
+      {},
+      { $unset: { bio: "", coverPhoto: "", privacyPolicy: "" } }
+    );
+    if (removedProfileFields.modifiedCount > 0) {
+      console.log(`🧹 Removed deprecated bio, coverPhoto and privacyPolicy fields from ${removedProfileFields.modifiedCount} user documents.`);
+    }
+
     // Move the configured superadministrator out of the regular users collection.
     const configuredSuperadminEmail = String(
       process.env.VITE_SUPERADMIN_EMAIL || process.env.SUPERADMIN_EMAIL || "cg0220037@gmail.com"
