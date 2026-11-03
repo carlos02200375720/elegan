@@ -101,13 +101,8 @@ export async function processUploadHlsOnly(req: any, res: any): Promise<void> {
       }
     }
 
-    // If GCS was unavailable or upload to GCS failed, store video in MongoDB Atlas GridFS (persistent cloud storage, zero local disk)
     if (!hlsUrl || !hlsUrl.startsWith("https://storage.googleapis.com/")) {
-      console.log(`☁️ [Video Cloud Storage] Almacenando video en la nube en MongoDB Atlas GridFS: ${originalName}`);
-      const { saveMediaToMongoGridFS } = await import("../services/mongoGridFs");
-      const gridVideo = await saveMediaToMongoGridFS(req.file.buffer, originalName, req.file.mimetype || "video/mp4");
-      hlsUrl = gridVideo.url;
-      posterUrl = gridVideo.url;
+      throw new Error("No se pudo almacenar el video en Google Cloud Storage.");
     }
 
     console.log(`✅ [Upload Video] Video procesado y almacenado en la nube con éxito: ${hlsUrl}`);
