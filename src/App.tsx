@@ -2060,11 +2060,11 @@ export default function App() {
   return (
     <div className={`w-full ${isDarkNavActive ? "h-dvh max-h-dvh overflow-hidden bg-slate-950 text-slate-100" : "min-h-screen bg-white text-slate-900"} font-sans flex flex-col justify-between selection:bg-amber-500 selection:text-slate-950`}>
 
-      {/* Botones fijos para alternar rápidamente entre versión Web y versión Móvil / Android */}
-      {typeof window !== "undefined" && !(typeof (window as any).Capacitor !== "undefined" && (window as any).Capacitor?.isNativePlatform?.()) && (
+      {/* Selector de plataforma exclusivo del superadministrador dentro del panel admin web */}
+      {typeof window !== "undefined" && activeTab === "admin" && isSuperAdmin(currentUser) && !(typeof (window as any).Capacitor !== "undefined" && (window as any).Capacitor?.isNativePlatform?.()) && (
         <aside
           aria-label="Selector de plataforma"
-          className="fixed top-3 right-3 z-[9999] flex items-center bg-slate-950/95 backdrop-blur-md p-1 border border-slate-700/80 rounded-full shadow-2xl text-xs font-semibold text-white select-none transition-all ring-1 ring-white/10"
+          className="fixed right-5 bottom-5 z-[9999] flex items-center bg-slate-950/95 backdrop-blur-md p-1 border border-slate-700/80 rounded-full shadow-2xl text-xs font-semibold text-white select-none transition-all ring-1 ring-white/10"
           id="preview-platform-switcher"
         >
           <button
