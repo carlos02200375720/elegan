@@ -131,11 +131,20 @@ export async function uploadBase64ToGCS(
       });
       return gcsUrl;
     } catch (err: any) {
+      const isPermissionDenied = err?.message?.includes("storage.objects.create") || err?.code === 403;
+      if (isPermissionDenied) {
+        console.warn(
+          `⚠️ [Upload Base64] Google Cloud Storage denegó el permiso 'storage.objects.create' en el bucket '${bucketName}'. ` +
+          `Para guardar directamente en GCS sin fallback, otorga el rol 'Storage Object Admin' (roles/storage.objectAdmin) a la cuenta de servicio en Google Cloud Console IAM. ` +
+          `Usando almacenamiento en la nube persistente (MongoDB Atlas GridFS)...`
+        );
+      } else {
+        console.warn(`⚠️ [Upload Base64] GCS upload failed (${err?.message}). Usando MongoDB Atlas GridFS...`);
+      }
       if (options.fallbackToMongo === false) {
-        console.error(`❌ [Upload Base64] Error subiendo imagen a Google Cloud Storage: ${err?.message}`);
+        console.error(`❌ [Upload Base64] Fallback a MongoDB deshabilitado explícitamente: ${err?.message}`);
         throw new Error("No se pudo subir la imagen a Google Cloud Storage.");
       }
-      console.warn(`⚠️ [Upload Base64] GCS upload failed (${err?.message}). Usando MongoDB Atlas GridFS...`);
     }
   }
 

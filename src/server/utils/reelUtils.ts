@@ -173,10 +173,54 @@ export function formatReelDTO(r: any, userMap?: Map<string, any>): Reel {
     });
   }
 
+  function getMediaTokens(url?: string): string[] {
+    if (!url || typeof url !== "string") return [];
+    const clean = url.trim().split("?")[0];
+    const parts = clean.split("/").filter(Boolean);
+    const last = parts[parts.length - 1] || "";
+    return [clean, last].filter(Boolean);
+  }
+
+  function findProductMatch(item: any, productList?: any[]): any | undefined {
+    if (!productList || !Array.isArray(productList) || productList.length === 0) return undefined;
+    const directId =
+      item.productId ||
+      item.taggedProductId ||
+      (String(item.id || "").startsWith("reel_prod_") ? String(item.id).slice("reel_prod_".length) : undefined);
+    if (directId) {
+      const match = productList.find((p) => p.id === directId);
+      if (match) return match;
+    }
+    const itemUrls = [
+      item.thumbnailUrl,
+      item.videoUrl,
+      item.hlsUrl,
+      ...(Array.isArray(item.images) ? item.images : []),
+      ...(Array.isArray(item.media) ? item.media.map((m: any) => m?.url) : []),
+    ].filter((u: any) => typeof u === "string" && u.trim().length > 0);
+    const itemTokens = new Set(itemUrls.flatMap((u) => getMediaTokens(u)));
+
+    for (const prod of productList) {
+      const prodUrls = [
+        prod.imageUrl,
+        ...(Array.isArray(prod.images) ? prod.images : []),
+        ...(Array.isArray(prod.videos) ? prod.videos : []),
+        ...(Array.isArray(prod.variantList) ? prod.variantList.map((v: any) => v?.imageUrl) : []),
+      ].filter((u: any) => typeof u === "string" && u.trim().length > 0);
+      const prodTokens = prodUrls.flatMap((u) => getMediaTokens(u));
+      if (prodTokens.some((token) => itemTokens.has(token))) {
+        return prod;
+      }
+    }
+    return undefined;
+  }
+
+  const matchedProduct = findProductMatch(r, (userMap as any)?._products || undefined);
+
   // Infer or respect explicit Reel type
   let type = r.type;
   if (!type) {
-    if (r.productId) {
+    if (r.productId || matchedProduct) {
       type = "product";
     } else if (videoUrl) {
       type = "video";
@@ -187,15 +231,37 @@ export function formatReelDTO(r: any, userMap?: Map<string, any>): Reel {
     }
   }
 
-  const productId = r.productId || r.taggedProductId || undefined;
+  const productId = r.productId || r.taggedProductId || matchedProduct?.id || undefined;
   const isProductReel = type === "product" || Boolean(productId) || String(r.id || "").startsWith("reel_prod_");
+
+  const isDefaultDesc = (desc?: string | null): boolean => {
+    if (!desc) return true;
+    const trimmed = desc.trim();
+    if (!trimmed) return true;
+    if (/^uploaded via/i.test(trimmed)) return true;
+    if (/^publicado v[ií]a/i.test(trimmed)) return true;
+    if (/^publicaci[oó]n generada/i.test(trimmed)) return true;
+    return false;
+  };
+
+  let rawDesc = r.description || "";
+  if (isDefaultDesc(rawDesc)) {
+    rawDesc = matchedProduct?.description && !isDefaultDesc(matchedProduct.description) ? matchedProduct.description : "";
+  }
+  const cleanDescription = isDefaultDesc(rawDesc) ? "" : rawDesc;
+
+  let cleanTitle = r.title || r.name || "";
+  const isFilename = /\.(jpg|jpeg|png|webp|gif|mp4|mov|webm)$/i.test(cleanTitle.trim());
+  if ((!cleanTitle || isFilename) && matchedProduct?.name) {
+    cleanTitle = matchedProduct.name;
+  }
 
   return {
     id: r.id,
     type,
-    title: r.title || r.name || "",
-    description: r.description || "",
-    caption: r.caption || r.description || "",
+    title: cleanTitle,
+    description: cleanDescription,
+    caption: cleanDescription,
     creatorId: creatorUser ? creatorUser.id : r.creatorId || "user_anon",
     creatorName: creatorUser ? creatorUser.name : r.creatorName || "Usuario",
     creatorUsername: creatorUser ? creatorUser.username : r.creatorUsername || undefined,

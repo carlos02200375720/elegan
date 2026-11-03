@@ -175,9 +175,9 @@ export function ConfigPerfilView({
       const serverUser = resData.user;
       if (
         editAvatar.startsWith("data:") &&
-        (!serverUser.avatar || !serverUser.avatar.startsWith("https://storage.googleapis.com/"))
+        (!serverUser.avatar || serverUser.avatar.startsWith("data:"))
       ) {
-        throw new Error("La foto no se guardó en Google Cloud Storage. Intenta de nuevo.");
+        throw new Error("No se pudo procesar la foto de perfil en la nube. Intenta de nuevo.");
       }
       const updated: User = {
         ...activeUser,

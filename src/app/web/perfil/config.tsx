@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Settings, ShieldCheck, Camera, Users, Lock, LogIn, UserPlus, AlertCircle } from "lucide-react";
 import { motion } from "motion/react";
 import { User, isGuestUser as checkIsGuest } from "../../../types";
-import { apiFetch } from "../../../config";
+import { apiFetch, getMediaUrl } from "../../../config";
 import { sessionState } from "../../../utils/sessionState";
 
 export interface ConfigPerfilProps {
@@ -35,6 +35,7 @@ export function ConfigPerfilView({
   const [editPassword, setEditPassword] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [saveError, setSaveError] = useState("");
 
   // Register user states
   const [regName, setRegName] = useState("");
@@ -199,6 +200,7 @@ export function ConfigPerfilView({
     e.preventDefault();
     setIsSaving(true);
     setSaveSuccess(false);
+    setSaveError("");
     try {
       const response = await apiFetch("/api/users/current/update", {
         method: "POST",
@@ -216,15 +218,25 @@ export function ConfigPerfilView({
           postalCode: editPostalCode.trim(),
         }),
       });
-      const data = await response.json();
+      let data: any = null;
+      try {
+        data = await response.json();
+      } catch {
+        // Response was not JSON
+      }
+      if (!response.ok || !data?.success) {
+        setSaveError(data?.error || "Error al actualizar el perfil en el servidor.");
+        return;
+      }
       if (data.success && data.user) {
         onProfileSaved?.(data.user);
         onRefreshUsers?.();
         setSaveSuccess(true);
         setTimeout(() => setSaveSuccess(false), 3000);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Error updating profile:", err);
+      setSaveError(err?.message || "Error al conectar con el servidor.");
     } finally {
       setIsSaving(false);
     }
@@ -571,10 +583,17 @@ export function ConfigPerfilView({
         >
           {saveSuccess && (
             <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold px-4 py-3 rounded-xl flex items-center space-x-2 animate-pulse">
-              <ShieldCheck className="w-4 h-4 text-emerald-600" />
+              <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
               <span>
                 ¡Perfil guardado y sincronizado con éxito! Todos los cambios están activos.
               </span>
+            </div>
+          )}
+
+          {saveError && (
+            <div className="bg-rose-50 border border-rose-200 text-rose-800 text-xs font-semibold px-4 py-3 rounded-xl flex items-center space-x-2">
+              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+              <span>{saveError}</span>
             </div>
           )}
 
@@ -682,7 +701,7 @@ export function ConfigPerfilView({
                 <div className="flex items-center space-x-4 bg-white p-3 border border-slate-200 rounded-xl">
                   <img
                     src={
-                      editAvatar ||
+                      getMediaUrl(editAvatar) ||
                       "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80"
                     }
                     alt="Previsualización"

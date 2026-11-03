@@ -34,7 +34,8 @@ export default function WebSidebar({
   const isHomeActive = false;
   const isDarkNavActive = false;
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const activeProfileTab = typeof window !== "undefined" ? parseRoute(window.location.pathname)?.profileTab : undefined;
+  const currentRoute = typeof window !== "undefined" ? parseRoute(window.location.pathname) : null;
+  const activeProfileTab = currentRoute?.type === "profile" ? currentRoute.profileTab : undefined;
   const isSavedActive = activeProfileTab === "guardado";
   const isPurchaseHistoryActive = activeProfileTab === "compra";
   const isSettingsActive = activeProfileTab === "config";

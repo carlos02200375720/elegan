@@ -237,7 +237,7 @@ export default function PublishView({ currentUser, onBack, onSuccess, userProduc
       const fd = new FormData();
       fd.append("file", fileToUpload, fileToUpload.name);
       fd.append("title", fileToUpload.name);
-      fd.append("description", "Uploaded via publishing portal");
+      fd.append("description", "");
       fd.append("creatorId", currentUser.originalId || currentUser.id);
       fd.append("creatorOriginalId", currentUser.originalId || "");
       fd.append("creatorUsername", currentUser.username);

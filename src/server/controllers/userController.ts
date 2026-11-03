@@ -970,16 +970,16 @@ export async function updateCurrentUser(req: Request, res: Response): Promise<vo
   if (avatar !== undefined) {
     if (avatar && avatar.startsWith("data:")) {
       try {
-        console.log("📸 Base64 avatar detected in update, uploading to GCS...");
-        const savedAvatar = await uploadBase64ToGCS(avatar, "avatars", { fallbackToMongo: false });
-        if (!savedAvatar || !savedAvatar.startsWith("https://storage.googleapis.com/")) {
-          throw new Error("La foto de perfil no se pudo guardar en Google Cloud Storage.");
+        console.log("📸 Base64 avatar detected in update, uploading to Cloud Storage...");
+        const savedAvatar = await uploadBase64ToGCS(avatar, "avatars");
+        if (!savedAvatar) {
+          throw new Error("La foto de perfil no se pudo guardar en el almacenamiento en la nube.");
         }
-        console.log(`✅ Base64 avatar uploaded: ${savedAvatar}`);
+        console.log(`✅ Base64 avatar uploaded to cloud storage: ${savedAvatar}`);
         updateFields.avatar = savedAvatar;
-      } catch (uploadErr) {
-        console.error("❌ Failed to upload base64 avatar to GCS:", uploadErr);
-        res.status(502).json({ error: "No se pudo guardar la foto de perfil en Google Cloud Storage." });
+      } catch (uploadErr: any) {
+        console.error("❌ Failed to upload base64 avatar to Cloud Storage:", uploadErr?.message || uploadErr);
+        res.status(500).json({ error: "No se pudo guardar la foto de perfil en el almacenamiento en la nube." });
         return;
       }
     } else {

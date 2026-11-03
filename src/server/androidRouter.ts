@@ -274,8 +274,8 @@ export function createAndroidRouter(deps: AndroidRouterDependencies): Router {
       if (avatar) {
         if (typeof avatar === "string" && avatar.startsWith("data:")) {
           const savedAvatar = await uploadBase64ToGCS(avatar, "avatars");
-          if (!savedAvatar || !savedAvatar.startsWith("https://storage.googleapis.com/")) {
-            throw new Error("La foto de perfil no se pudo guardar en Google Cloud Storage.");
+          if (!savedAvatar) {
+            throw new Error("La foto de perfil no se pudo guardar en el almacenamiento en la nube.");
           }
           updateFields.avatar = savedAvatar;
         } else {

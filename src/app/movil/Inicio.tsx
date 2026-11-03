@@ -83,6 +83,73 @@ export const getPublicationFormatStyles = (format: PublicationFormat): React.CSS
   }
 };
 
+export const getMediaTokens = (url?: string): string[] => {
+  if (!url || typeof url !== "string") return [];
+  const clean = url.trim().split("?")[0];
+  const parts = clean.split("/").filter(Boolean);
+  const last = parts[parts.length - 1] || "";
+  return [clean, last].filter(Boolean);
+};
+
+export const findProductForReel = (reel: Reel, productList: Product[]): Product | undefined => {
+  if (!productList || productList.length === 0) return undefined;
+
+  // 1. Direct ID link
+  const directId =
+    reel.productId ||
+    (reel as any).taggedProductId ||
+    ((reel as any).product?.id) ||
+    (reel.id?.startsWith("reel_prod_") ? reel.id.slice("reel_prod_".length) : undefined);
+
+  if (directId) {
+    const matched = productList.find((p) => p.id === directId);
+    if (matched) return matched;
+  }
+
+  // 2. Media URL matching
+  const reelUrls = [
+    reel.thumbnailUrl,
+    reel.videoUrl,
+    reel.hlsUrl,
+    ...(Array.isArray(reel.images) ? reel.images : []),
+    ...(Array.isArray(reel.media) ? reel.media.map((m) => m?.url) : []),
+  ].filter((u): u is string => typeof u === "string" && u.trim().length > 0);
+
+  const reelTokens = new Set(reelUrls.flatMap(getMediaTokens));
+
+  for (const prod of productList) {
+    const prodUrls = [
+      prod.imageUrl,
+      ...(Array.isArray(prod.images) ? prod.images : []),
+      ...(Array.isArray(prod.videos) ? prod.videos : []),
+      ...(Array.isArray(prod.variantList) ? prod.variantList.map((v) => v.imageUrl) : []),
+    ].filter((u): u is string => typeof u === "string" && u.trim().length > 0);
+
+    const prodTokens = prodUrls.flatMap(getMediaTokens);
+    if (prodTokens.some((token) => reelTokens.has(token))) {
+      return prod;
+    }
+  }
+
+  return undefined;
+};
+
+export const isDefaultDescription = (desc?: string | null): boolean => {
+  if (!desc) return true;
+  const trimmed = desc.trim();
+  if (!trimmed) return true;
+  if (/^uploaded via/i.test(trimmed)) return true;
+  if (/^publicado v[ií]a/i.test(trimmed)) return true;
+  if (/^publicaci[oó]n generada/i.test(trimmed)) return true;
+  return false;
+};
+
+export const isFilenameTitle = (title?: string | null): boolean => {
+  if (!title) return true;
+  const trimmed = title.trim();
+  return /\.(jpg|jpeg|png|webp|gif|mp4|mov|webm)$/i.test(trimmed);
+};
+
 export default function Inicio({
   reels: publishedReels,
   currentUser,
@@ -229,13 +296,7 @@ export default function Inicio({
     if (!selectedCategory) return allReels;
     const normalizedCategory = selectedCategory.trim().toLowerCase();
     return allReels.filter((reel) => {
-      const taggedProductId =
-        reel.productId ||
-        (reel as Reel & { taggedProductId?: string }).taggedProductId ||
-        (reel.id.startsWith("reel_prod_") ? reel.id.slice("reel_prod_".length) : undefined);
-      const taggedProduct =
-        (reel as Reel & { product?: Product }).product ||
-        products.find((product) => product.id === taggedProductId);
+      const taggedProduct = findProductForReel(reel, products) || (reel as Reel & { product?: Product }).product;
       return taggedProduct?.category?.trim().toLowerCase() === normalizedCategory;
     });
   }, [allReels, products, selectedCategory]);
@@ -918,18 +979,28 @@ export default function Inicio({
           const activeMediaIdx = carouselIndices[reelItem.id] || 0;
           const currentMedia = reelMediaItems[activeMediaIdx] || reelMediaItems[0];
           const isVideo = currentMedia?.type === "video" && !!currentMedia.url;
+          const taggedProduct =
+            findProductForReel(reelItem, products) || (reelItem as any).product;
           const isProductPub = Boolean(
+            taggedProduct ||
             reelItem.type === "product" ||
             reelItem.id?.startsWith("reel_prod_") ||
             reelItem.productId ||
             (reelItem as any)?.taggedProductId
           );
 
-          const taggedProduct =
-            (reelItem as any).product ||
-            products.find((p) => p.id === (reelItem.productId || (reelItem as any).taggedProductId));
-          const publicationDescription =
-            taggedProduct?.description?.trim() || reelItem.description?.trim() || "";
+          const rawDesc =
+            (taggedProduct?.description && !isDefaultDescription(taggedProduct.description)
+              ? taggedProduct.description
+              : "") ||
+            (reelItem.description && !isDefaultDescription(reelItem.description)
+              ? reelItem.description
+              : "");
+          const publicationDescription = isDefaultDescription(rawDesc) ? "" : rawDesc.trim();
+
+          const displayTitle =
+            taggedProduct?.name ||
+            (reelItem.title && !isFilenameTitle(reelItem.title) ? reelItem.title.trim() : "");
 
           const displayUsername = storeProfile?.username?.trim() || "elegan";
           const displayName = storeProfile?.name?.trim() || "Elegan";
@@ -975,43 +1046,64 @@ export default function Inicio({
                 handleProductSelect(taggedProduct);
               }}
             >
-              {/* Información del creador sobre la publicación */}
-              <div className="mx-auto flex w-full max-w-xl shrink-0 items-center gap-3 px-1">
-                <button
-                  type="button"
-                  onClick={() => handleCreatorNav(reelItem)}
-                  className="shrink-0 rounded-full"
-                  aria-label={`Ver perfil de ${displayName}`}
-                >
-                  {displayAvatar ? (
-                    <img src={displayAvatar} alt="Elegan" className="h-10 w-10 rounded-full object-cover" />
-                  ) : (
-                    <span className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100 text-sm font-black text-slate-900">E</span>
-                  )}
-                </button>
-                <div className="min-w-0 flex-1">
+              {/* Información del creador sobre la publicación y precio en esquina superior derecha */}
+              <div className="mx-auto flex w-full max-w-xl shrink-0 items-center justify-between gap-3 px-1">
+                <div className="flex min-w-0 flex-1 items-center gap-3">
                   <button
                     type="button"
                     onClick={() => handleCreatorNav(reelItem)}
-                    className="block max-w-full truncate text-left text-sm font-bold text-slate-900"
+                    className="shrink-0 rounded-full"
+                    aria-label={`Ver perfil de ${displayName}`}
                   >
-                    {displayName}
+                    {displayAvatar ? (
+                      <img src={displayAvatar} alt="Elegan" className="h-10 w-10 rounded-full object-cover" />
+                    ) : (
+                      <span className="flex h-10 w-10 items-center justify-center rounded-full bg-amber-100 text-sm font-black text-slate-900">E</span>
+                    )}
                   </button>
+                  <div className="min-w-0 flex-1">
+                    <button
+                      type="button"
+                      onClick={() => handleCreatorNav(reelItem)}
+                      className="block max-w-full truncate text-left text-sm font-bold text-slate-900"
+                    >
+                      {displayName}
+                    </button>
+                  </div>
                 </div>
+
+                {taggedProduct && (
+                  <span className="shrink-0 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-black text-slate-900">
+                    {formatPrice(Number(taggedProduct.price) || 0)}
+                  </span>
+                )}
               </div>
+
+              {/* Título del producto cuando corresponde a un producto */}
+              {displayTitle && (
+                <div className="mx-auto w-full max-w-xl shrink-0 px-2 pt-0.5">
+                  <p
+                    onClick={(e) => {
+                      if (isProductPub && taggedProduct && handleProductSelect) {
+                        e.stopPropagation();
+                        handleProductSelect(taggedProduct);
+                      }
+                    }}
+                    className={`text-sm font-bold text-slate-900 truncate ${
+                      isProductPub && taggedProduct && handleProductSelect
+                        ? "cursor-pointer hover:text-amber-600 transition-colors"
+                        : ""
+                    }`}
+                    title={displayTitle}
+                  >
+                    {displayTitle}
+                  </p>
+                </div>
+              )}
+
               {publicationDescription && (
                 <div className="mx-auto w-full max-w-xl shrink-0 px-2">
                   <div className="relative">
-                    {taggedProduct && (
-                      <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
-                        <p className="min-w-0 flex-1 truncate text-sm font-bold text-slate-900">
-                          {taggedProduct.name}
-                        </p>
-                        <span className="shrink-0 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-black text-slate-900">
-                          {formatPrice(Number(taggedProduct.price) || 0)}
-                        </span>
-                      </div>
-                    )}
                     <p
                       ref={(element) => {
                         descriptionRefs.current[reelItem.id] = element;
@@ -1061,6 +1153,11 @@ export default function Inicio({
                   isProductPub && taggedProduct && handleProductSelect ? "cursor-pointer" : ""
                 }`}
                 style={{ ...formatStyle, touchAction: "pan-x pan-y", boxShadow: "none" }}
+                onClick={(event) => {
+                  if (!isProductPub || !taggedProduct || !handleProductSelect) return;
+                  if (event.target instanceof Element && event.target.closest("button, a, input, textarea")) return;
+                  handleProductSelect(taggedProduct);
+                }}
               >
                 {/* Horizontal Scroll Gallery Slider - exactly like productoid.tsx */}
                 <div
@@ -1085,7 +1182,14 @@ export default function Inicio({
                     return (
                       <div
                         key={`${reelItem.id}-media-${mediaIdx}`}
-                        className="w-full h-full flex-shrink-0 snap-center relative flex items-center justify-center bg-black overflow-hidden select-none"
+                        className={`w-full h-full flex-shrink-0 snap-center relative flex items-center justify-center bg-black overflow-hidden select-none ${
+                          isProductPub && taggedProduct && handleProductSelect ? "cursor-pointer" : ""
+                        }`}
+                        onClick={(event) => {
+                          if (!isProductPub || !taggedProduct || !handleProductSelect) return;
+                          if (event.target instanceof Element && event.target.closest("button, a, input, textarea")) return;
+                          handleProductSelect(taggedProduct);
+                        }}
                         onDoubleClick={() => handleDoubleTap(reelItem)}
                       >
                         {isThisVideo ? (

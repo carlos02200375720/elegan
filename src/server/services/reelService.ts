@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import { MongoReel } from "../models/Reel";
 import { MongoPublicacion } from "../models/Publicacion";
 import { MongoUser } from "../models/User";
+import { MongoProduct } from "../models/Product";
 import { formatReelDTO } from "../utils/reelUtils";
 import { Reel } from "../../types";
 
@@ -143,6 +144,9 @@ export async function getCanonicalReelsFromMongo(userMap?: Map<string, any>): Pr
   await syncLegacyPublicacionesToMongoReel(userMap);
 
   const resolvedUserMap = userMap || (await buildUserMap());
+  const dbProducts = mongoose.connection.readyState === 1 ? await MongoProduct.find().catch(() => []) : [];
+  (resolvedUserMap as any)._products = dbProducts;
+
   const dbReels = await MongoReel.find().sort({ _id: -1 });
 
   const seenReelIds = new Set<string>();
@@ -152,7 +156,22 @@ export async function getCanonicalReelsFromMongo(userMap?: Map<string, any>): Pr
     return true;
   });
 
-  return uniqueDbReels.map((r: any) => formatReelDTO(r, resolvedUserMap));
+  return uniqueDbReels.map((r: any) => {
+    const dto = formatReelDTO(r, resolvedUserMap);
+    if (!r.productId && dto.productId && r._id) {
+      MongoReel.updateOne(
+        { _id: r._id },
+        {
+          $set: {
+            productId: dto.productId,
+            ...(dto.title && dto.title !== r.title ? { title: dto.title } : {}),
+            ...(dto.description !== r.description ? { description: dto.description } : {}),
+          },
+        }
+      ).catch(() => {});
+    }
+    return dto;
+  });
 }
 
 /**
