@@ -1599,42 +1599,6 @@ export default function AdminView({
         </div>
       )}
 
-      {/* Selector de plataforma: solo superadministrador dentro del panel web */}
-      {activePlatform === 'web' && isSuperAdmin(currentUser) && (
-        <div
-          className="fixed right-5 bottom-5 z-[70] flex items-center bg-slate-900/95 p-1.5 border border-slate-700 rounded-2xl text-xs font-semibold select-none shadow-2xl"
-          id="admin-platform-switcher"
-          title="Cambiar entre modo Web y modo Android"
-        >
-          <button
-            type="button"
-            onClick={() => handlePlatformChange('web')}
-            className={`flex items-center justify-center p-2.5 rounded-xl transition-all cursor-pointer ${
-              currentPlatform === 'web'
-                ? 'bg-amber-500 text-slate-950 font-black shadow-xs'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/60 font-bold'
-            }`}
-            title="Visualizar versión Web"
-            aria-label="Visualizar versión Web"
-          >
-            <span>🌐</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => handlePlatformChange('android')}
-            className={`flex items-center justify-center p-2.5 rounded-xl transition-all cursor-pointer ${
-              currentPlatform === 'android'
-                ? 'bg-amber-500 text-slate-950 font-black shadow-xs'
-                : 'text-slate-400 hover:text-white hover:bg-slate-800/60 font-bold'
-            }`}
-            title="Visualizar versión Android"
-            aria-label="Visualizar versión Android"
-          >
-            <span>📱</span>
-          </button>
-        </div>
-      )}
-
       {/* Confirmation Modal for Deletions */}
       <AnimatePresence>
         {deletingTarget && (
