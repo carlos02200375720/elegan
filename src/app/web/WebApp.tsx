@@ -150,6 +150,12 @@ export default function WebApp({
         totalUnreads={totalUnreads}
         selectedCreatorProfileId={selectedCreatorProfileId}
         setSelectedCreatorProfileId={setSelectedCreatorProfileId}
+        onOpenSaved={() => {
+          setSelectedCreatorProfileId(null);
+          setProfileInitialSubTab("saved");
+          setActiveTab("profile");
+          navigateTo(getProfileSavedPath(currentUser));
+        }}
         hideMobileHamburger={
           activeTab === 'shop' &&
           (isProductDetailOpen ||
