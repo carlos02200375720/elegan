@@ -39,17 +39,18 @@ export function getLocalGuestToken(): string | null {
       inMemoryGuestToken = storedToken;
       return storedToken;
     }
-    const cookieToken = readGuestTokenCookie();
-    if (cookieToken) {
-      inMemoryGuestToken = cookieToken;
-      try { localStorage.setItem(GUEST_TOKEN_KEY, cookieToken); } catch {}
-      return cookieToken;
-    }
-    return inMemoryGuestToken;
   } catch (err) {
     console.warn("⚠️ No se pudo leer el token de invitado de localStorage:", err);
-    return null;
   }
+
+  // Read the cookie even when localStorage is blocked by browser privacy settings.
+  const cookieToken = readGuestTokenCookie();
+  if (cookieToken) {
+    inMemoryGuestToken = cookieToken;
+    try { localStorage.setItem(GUEST_TOKEN_KEY, cookieToken); } catch {}
+    return cookieToken;
+  }
+  return inMemoryGuestToken;
 }
 
 /**
