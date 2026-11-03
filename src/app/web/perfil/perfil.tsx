@@ -596,10 +596,6 @@ export default function Perfil({
         {/* Horizontal Menu with Icons Only */}
         {isSelf ? (
           <div className="mt-2 pt-0.5 border-t border-slate-200/80 flex items-center justify-around w-full max-w-sm sm:max-w-md mx-auto">
-            <button onClick={() => { handleSelectSubTab("orders"); fetchOrders(); }} title="Historial de Mis Compras" className="py-1.5 px-2.5 text-slate-500">
-              <ShoppingBag className="w-4.5 h-4.5 stroke-[2]" />
-              {userOrders.length > 0 && <span className="ml-1">{userOrders.length}</span>}
-            </button>
             <button onClick={() => handleSelectSubTab("edit")} title="Editar Perfil" className="py-1.5 px-2.5 text-slate-500">
               <Settings className="w-4.5 h-4.5 stroke-[2]" />
             </button>
