@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import mongoose from "mongoose";
 import { MongoInvitado, MongoUser } from "../models";
+import { waitForMongoConnection } from "../utils/mongoConnection";
 
 const ANALYTICS_TIME_ZONE = "America/Santo_Domingo";
 
@@ -89,7 +90,7 @@ function emptyDayStats(date: string) {
  */
 export async function trackDailyVisitor(req: Request, res: Response): Promise<void> {
   try {
-    if (mongoose.connection.readyState !== 1) {
+    if (!(await waitForMongoConnection())) {
       res.status(503).json({ error: "MongoDB no está disponible para registrar la visita." });
       return;
     }
@@ -184,7 +185,7 @@ export async function trackDailyVisitor(req: Request, res: Response): Promise<vo
  */
 export async function getDailyVisitorAnalytics(req: Request, res: Response): Promise<void> {
   try {
-    if (mongoose.connection.readyState !== 1) {
+    if (!(await waitForMongoConnection())) {
       res.status(503).json({ error: "MongoDB no está disponible para consultar las métricas." });
       return;
     }
