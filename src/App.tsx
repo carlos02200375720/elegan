@@ -434,7 +434,6 @@ export default function App() {
         const cleanRouteUser = decodeURIComponent(currentRoute.userId).toLowerCase().replace(/^@/, '');
         const sessionUser = sessionState.getUser();
         const sessionEmail = (sessionState.getEmail() || sessionUser?.email || '').toLowerCase();
-        const currentEmail = (currentUser?.email || '').toLowerCase();
         const currentEmail = (currentUser?.email || sessionUser?.email || '').toLowerCase();
         const isConfig = currentRoute.profileTab === 'config';
         const hasSessionOrGuest = Boolean(
