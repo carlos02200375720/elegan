@@ -396,7 +396,7 @@ export default function AndroidApp({
                 onSuccess={(user, restoredCart = []) => {
                   sessionState.setUser(user);
                   sessionState.setAuthenticated(true);
-                  sessionState.setUsername(user.username);
+                  sessionState.setEmail(user.email || "");
                   setCurrentUser(user);
                   setIsLoggedIn(true);
                   setUsers((previous) => {
@@ -471,7 +471,7 @@ export default function AndroidApp({
                       if (updatedUser.username && updatedUser.username !== "invitado" && !updatedUser.isGuest) {
                         setIsLoggedIn(true);
                         sessionState.setAuthenticated(true);
-                        sessionState.setUsername(updatedUser.username);
+                        sessionState.setEmail(updatedUser.email || "");
                         setSelectedCreatorProfileId(null);
                         setActiveTab('profile');
                         navigateTo(getProfilePath(updatedUser));
