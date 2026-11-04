@@ -194,7 +194,7 @@ export default function Inicio({
       .then(async (response) => {
         if (!response.ok) return;
         const data = await response.json();
-        if (!cancelled) setActiveBanner(data?.banner || null);
+        if (!cancelled) setActiveBanner(data?.banner?.enabled === true ? data.banner : null);
       })
       .catch((error) => console.warn("[Inicio] No se pudieron cargar las promociones:", error));
     return () => { cancelled = true; };
