@@ -5,6 +5,12 @@ export interface IAppSettings {
   defaultAvatar: string;
   defaultCoverPhoto: string;
   updatedAt: Date;
+  bannerLabel?: string;
+  bannerTitle?: string;
+  bannerDescription?: string;
+  bannerLink?: string;
+  bannerImageUrl?: string;
+  bannerEnabled?: boolean;
 }
 
 const AppSettingsSchema = new Schema<IAppSettings>(
@@ -18,7 +24,13 @@ const AppSettingsSchema = new Schema<IAppSettings>(
       type: String,
       default: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80"
     },
-    updatedAt: { type: Date, default: Date.now }
+    updatedAt: { type: Date, default: Date.now },
+    bannerLabel: { type: String, default: "Promoción" },
+    bannerTitle: { type: String, default: "" },
+    bannerDescription: { type: String, default: "" },
+    bannerLink: { type: String, default: "" },
+    bannerImageUrl: { type: String, default: "" },
+    bannerEnabled: { type: Boolean, default: false }
   },
   { timestamps: true }
 );
