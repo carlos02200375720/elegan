@@ -3,6 +3,7 @@ import { Settings, ShieldCheck, Camera, Users } from "lucide-react";
 import { motion } from "motion/react";
 import { User, isGuestUser as checkIsGuest } from "../../../types";
 import { apiFetch, getMediaUrl } from "../../../config";
+import { sessionState } from "../../../utils/sessionState";
 
 export interface ConfigPerfilProps {
   currentUser: User;
@@ -20,6 +21,7 @@ export function ConfigPerfilView({
   users = [],
   onProfileSaved,
   onRefreshUsers,
+  onBackToSelf,
   onCancel,
 }: ConfigPerfilProps) {
   // Profile edit states
