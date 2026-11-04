@@ -14,14 +14,14 @@ function getStoredUser(): User | null {
   return null;
 }
 
-function getStoredUsername(): string | null {
+function getStoredEmail(): string | null {
   if (typeof window === "undefined") return null;
   try {
     const rawUser = getStoredUser();
     if (rawUser?.email && !isGuestUser(rawUser)) {
       return rawUser.email;
     }
-    const email = localStorage.getItem("mall_username");
+    const email = localStorage.getItem("mall_email");
     if (email?.includes("@")) {
       return email.toLowerCase();
     }
@@ -44,7 +44,7 @@ function getStoredAuthenticated(): boolean {
 }
 
 let sessionUser: User | null = getStoredUser();
-let sessionUsername: string | null = getStoredUsername();
+let sessionEmail: string | null = getStoredEmail();
 let authenticated: boolean = getStoredAuthenticated();
 let platformTarget: "android" | "web" | null = null;
 
@@ -55,43 +55,43 @@ export const sessionState = {
     }
     return sessionUser;
   },
-  getUserId: (): string | null => sessionUser?.originalId || sessionUser?.id || sessionUsername || null,
+  getUserId: (): string | null => sessionUser?.originalId || sessionUser?.id || sessionEmail || null,
   setUser: (user: User | null): void => {
     sessionUser = user;
     const isGuest = !user || isGuestUser(user);
-    sessionUsername = (user && !isGuest) ? (user.email || null) : null;
+    sessionEmail = (user && !isGuest) ? (user.email || null) : null;
     authenticated = !!user && !isGuest;
     if (typeof window !== "undefined") {
       try {
         if (user && !isGuest) {
           localStorage.setItem("mall_user", JSON.stringify(user));
-          localStorage.setItem("mall_username", user.email || "");
+          localStorage.setItem("mall_email", user.email || "");
           localStorage.setItem("mall_authenticated", "true");
         } else {
           localStorage.removeItem("mall_user");
-          localStorage.removeItem("mall_username");
+          localStorage.removeItem("mall_email");
           localStorage.removeItem("mall_authenticated");
         }
       } catch {}
     }
   },
-  getUsername: (): string | null => {
+  getEmail: (): string | null => {
     if (sessionUser && isGuestUser(sessionUser)) {
       return null;
     }
-    if (!sessionUsername) {
-      sessionUsername = getStoredUsername();
+    if (!sessionEmail) {
+      sessionEmail = getStoredEmail();
     }
-    return sessionUsername;
+    return sessionEmail;
   },
-  setUsername: (username: string | null): void => {
-    sessionUsername = username && username.includes("@") ? username.trim().toLowerCase() : null;
+  setEmail: (email: string | null): void => {
+    sessionEmail = email && email.includes("@") ? email.trim().toLowerCase() : null;
     if (typeof window !== "undefined") {
       try {
-        if (sessionUsername) {
-          localStorage.setItem("mall_username", sessionUsername);
+        if (sessionEmail) {
+          localStorage.setItem("mall_email", sessionEmail);
         } else {
-          localStorage.removeItem("mall_username");
+          localStorage.removeItem("mall_email");
         }
       } catch {}
     }
@@ -135,13 +135,13 @@ export const sessionState = {
   },
   clear: (): void => {
     sessionUser = null;
-    sessionUsername = null;
+    sessionEmail = null;
     authenticated = false;
     platformTarget = null;
     if (typeof window !== "undefined") {
       try {
         localStorage.removeItem("mall_user");
-        localStorage.removeItem("mall_username");
+        localStorage.removeItem("mall_email");
         localStorage.removeItem("mall_authenticated");
       } catch {}
     }
