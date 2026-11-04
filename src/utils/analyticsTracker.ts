@@ -93,7 +93,7 @@ export function getOrCreateVisitorId(): {
   const activeUser = typeof sessionState?.getUser === "function" ? sessionState.getUser() : null;
   const activeUserId =
     activeUser?.id ||
-    (typeof sessionState?.getUsername === "function" ? sessionState.getUsername() : null) ||
+    (typeof sessionState?.getEmail === "function" ? sessionState.getEmail() : null) ||
     "";
   const isLoggedUser =
     Boolean(activeUserId) &&
