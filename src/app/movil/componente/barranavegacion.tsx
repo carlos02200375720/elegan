@@ -53,7 +53,7 @@ export default function BarraNavegacion({
           }`}
           id="android-nav-inicio"
         >
-          <Play strokeWidth={2.75} className={`w-5 h-5 transition-all ${isHomeActive ? "fill-black stroke-black" : ""}`} />
+          <Play strokeWidth={2.75} className="w-5 h-5 fill-none stroke-black" />
           <span className="text-[10px] font-medium mt-0.5 tracking-tight">Inicio</span>
         </button>
 
@@ -69,7 +69,7 @@ export default function BarraNavegacion({
           }`}
           id="android-nav-shop"
         >
-          <ShoppingBag strokeWidth={2.75} className={`w-5 h-5 transition-all ${activeTab === "shop" ? "fill-black stroke-black" : ""}`} />
+          <ShoppingBag strokeWidth={2.75} className="w-5 h-5 fill-none stroke-black" />
           <span className="text-[10px] font-medium mt-0.5 tracking-tight">Tienda</span>
         </button>
 
@@ -85,7 +85,7 @@ export default function BarraNavegacion({
           }`}
           id="android-nav-messages"
         >
-          <MessageSquare strokeWidth={2.75} className={`w-5 h-5 transition-all ${activeTab === "messages" ? "fill-black stroke-black" : ""}`} />
+          <MessageSquare strokeWidth={2.75} className="w-5 h-5 fill-none stroke-black" />
           <span className="text-[10px] font-medium mt-0.5 tracking-tight">Mensajes</span>
           {totalUnreads > 0 && (
             <span className="absolute top-0.5 right-2 w-4 h-4 bg-rose-500 text-white font-mono font-bold text-[9px] rounded-full flex items-center justify-center border border-white animate-pulse shadow-sm">
@@ -107,7 +107,7 @@ export default function BarraNavegacion({
           }`}
           id="android-nav-profile"
         >
-          <UserIcon strokeWidth={2.75} className={`w-5 h-5 transition-all ${activeTab === "profile" ? "fill-black stroke-black" : ""}`} />
+          <UserIcon strokeWidth={2.75} className="w-5 h-5 fill-none stroke-black" />
           <span className="text-[10px] font-medium mt-0.5 tracking-tight">Mi Perfil</span>
         </button>
       </div>
