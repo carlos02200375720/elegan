@@ -138,12 +138,12 @@ export default function App() {
         }
       } catch (e) {}
     }
-    const savedUsername = sessionState.getUsername();
-    if (savedUsername && !isGuestUser({ username: savedUsername })) {
+    const savedEmail = sessionState.getEmail();
+    if (savedEmail) {
       return {
         id: "current_user",
-        username: savedUsername,
-        name: savedUsername,
+        email: savedEmail,
+        name: savedEmail,
         avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80",
         bio: "",
         isOnline: true,
@@ -433,8 +433,8 @@ export default function App() {
       if (currentRoute.userId) {
         const cleanRouteUser = decodeURIComponent(currentRoute.userId).toLowerCase().replace(/^@/, '');
         const sessionUser = sessionState.getUser();
-        const sessionUsername = (sessionState.getUsername() || sessionUser?.username || '').toLowerCase().replace(/^@/, '');
-        const currentUsername = (currentUser?.username || '').toLowerCase().replace(/^@/, '');
+        const sessionEmail = (sessionState.getEmail() || sessionUser?.email || '').toLowerCase();
+        const currentEmail = (currentUser?.email || '').toLowerCase();
         const currentEmail = (currentUser?.email || sessionUser?.email || '').toLowerCase();
         const isConfig = currentRoute.profileTab === 'config';
         const hasSessionOrGuest = Boolean(
@@ -445,8 +445,8 @@ export default function App() {
         );
         const isOwnUser =
           (isConfig && hasSessionOrGuest) ||
-          cleanRouteUser === currentUsername ||
-          cleanRouteUser === sessionUsername ||
+          cleanRouteUser === currentEmail ||
+          cleanRouteUser === sessionEmail ||
           (Boolean(currentEmail) && cleanRouteUser === currentEmail) ||
           currentRoute.userId === currentUser?.id ||
           (Boolean(currentUser?.originalId) && currentRoute.userId === currentUser.originalId) ||
@@ -836,13 +836,13 @@ export default function App() {
       }
 
       // Step 3: Restore session from sessionState if logged in
-      let savedUsername = sessionState.getUsername();
+      let savedEmail = sessionState.getEmail();
       const savedPassword = "";
-      if (savedUsername?.includes("@") && !isGuestUser({ isGuest: sessionState.getUser()?.isGuest })) {
+      if (savedEmail?.includes("@") && !isGuestUser({ isGuest: sessionState.getUser()?.isGuest })) {
         apiFetch("/api/users/current/switch", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: savedUsername, password: savedPassword, isSessionRestore: true }),
+          body: JSON.stringify({ email: savedEmail, password: savedPassword, isSessionRestore: true }),
         })
           .then((res) => res.json())
           .then((data) => {
