@@ -859,14 +859,14 @@ export default function Tienda({
               <button
                 type="button"
                 onClick={openCartDrawer}
-                className="relative w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-slate-900 text-white hover:bg-slate-800 transition-colors cursor-pointer shadow-md pointer-events-auto active:scale-95 flex items-center justify-center"
+                className="relative w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-slate-900 text-white hover:bg-slate-800 transition-colors cursor-pointer shadow-md pointer-events-auto active:scale-95 flex items-center justify-center"
                 id="cart-trigger-btn"
                 aria-label={`Abrir carrito (${cartItemCount} productos)`}
                 title="Ver carrito"
               >
-                <ShoppingCart className="w-5 h-5 sm:w-6 sm:h-6" />
+                <ShoppingCart className="w-4 h-4 sm:w-5 sm:h-5" />
                 {cartItemCount > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-amber-500 text-slate-950 font-extrabold font-mono text-[9px] sm:text-[10px] w-4 h-4 sm:w-4.5 sm:h-4.5 rounded-full flex items-center justify-center border-2 border-white animate-bounce">
+                  <span className="absolute -top-1 -right-1 bg-amber-500 text-slate-950 font-extrabold font-mono text-[9px] sm:text-[10px] w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full flex items-center justify-center border-2 border-white animate-bounce">
                     {cartItemCount}
                   </span>
                 )}
