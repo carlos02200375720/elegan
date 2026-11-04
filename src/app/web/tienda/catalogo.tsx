@@ -382,45 +382,6 @@ export default function Tienda({
   // Success Order State
   const [completedOrder, setCompletedOrder] = useState<Order | null>(null);
 
-  // Scroll Header Auto-Hide / Auto-Show states
-  const [showHeader, setShowHeader] = useState(true);
-  const lastScrollY = useRef(0);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      let hideThreshold = 220;
-      const secondProductCard =
-        document.getElementById("prod-card-1") || document.querySelector("[id^='prod-card-']");
-      if (secondProductCard) {
-        const rect = secondProductCard.getBoundingClientRect();
-        const cardBottom = rect.bottom + window.scrollY;
-        if (cardBottom > 100) {
-          hideThreshold = Math.max(180, cardBottom - 80);
-        }
-      }
-
-      if (Math.abs(currentScrollY - lastScrollY.current) < 6) {
-        return;
-      }
-
-      if (currentScrollY <= hideThreshold) {
-        setShowHeader(true);
-      } else if (currentScrollY > lastScrollY.current) {
-        setShowHeader(false);
-      } else {
-        setShowHeader(true);
-      }
-
-      lastScrollY.current = currentScrollY;
-    };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-    };
-  }, []);
-
   // Notify parent component about detail/checkout view
   useEffect(() => {
     if (onToggleDetailView) {
@@ -850,15 +811,13 @@ export default function Tienda({
       ) : (
         /* 2. Regular Shop Navigation Header (Catalog / Checkout / Thankyou) */
         <header
-          className={`z-30 sticky top-0 bg-white border-b border-slate-100 shadow-2xs transition-all duration-300 ease-in-out flex flex-col ${
-            showHeader ? "translate-y-0" : "-translate-y-full"
-          }`}
+          className="relative z-30 bg-white border-b border-slate-100 shadow-2xs flex flex-col"
           style={{
             paddingTop: "0.5rem",
           }}
         >
           {/* Top Bar: Navigation / Search / Cart */}
-          <div className="px-3 sm:px-5 pb-1.5 sm:pb-2 flex items-center justify-between gap-3 w-full">
+          <div className="sticky top-0 z-30 bg-white px-3 sm:px-5 pb-1.5 sm:pb-2 flex items-center justify-between gap-3 w-full">
             <div
               className={`flex items-center space-x-2 shrink-0 ${
                 activeStep === "catalog" ? "pl-10 md:pl-0" : ""
