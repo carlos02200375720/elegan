@@ -813,11 +813,11 @@ export default function Tienda({
         <header
           className="relative z-30 bg-white border-b border-slate-100 shadow-2xs flex flex-col"
           style={{
-            paddingTop: "0.5rem",
+            paddingTop: activeStep === "catalog" ? "3.75rem" : "0.5rem",
           }}
         >
           {/* Top Bar: Navigation / Search / Cart */}
-          <div className="sticky top-0 z-30 bg-white px-3 sm:px-5 pb-1.5 sm:pb-2 flex items-center justify-between gap-3 w-full">
+          <div className={`${activeStep === "catalog" ? "fixed top-0 left-0 right-0 md:left-60 lg:left-64 z-40" : ""} bg-white px-3 sm:px-5 pb-1.5 sm:pb-2 flex items-center justify-between gap-3 w-full`}>
             <div
               className={`flex items-center space-x-2 shrink-0 ${
                 activeStep === "catalog" ? "pl-10 md:pl-0" : ""
