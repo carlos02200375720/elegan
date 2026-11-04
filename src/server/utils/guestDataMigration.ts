@@ -65,7 +65,7 @@ export function mergeGuestCartItems(
 export async function migrateGuestReelInteractions(
   MongoReel: any,
   guestIds: string[],
-  user: { id: string; username: string; avatar: string }
+  user: { id: string; name?: string; avatar: string }
 ): Promise<void> {
   if (!MongoReel || guestIds.length === 0) return;
 
@@ -106,7 +106,7 @@ export async function migrateGuestReelInteractions(
       {
         $set: {
           "comments.$[comment].userId": user.id,
-          "comments.$[comment].username": user.username,
+          "comments.$[comment].name": user.name || "Usuario",
           "comments.$[comment].avatar": user.avatar,
         },
       },

@@ -264,7 +264,6 @@ export function formatReelDTO(r: any, userMap?: Map<string, any>): Reel {
     caption: cleanDescription,
     creatorId: creatorUser ? creatorUser.id : r.creatorId || "user_anon",
     creatorName: creatorUser ? creatorUser.name : r.creatorName || "Usuario",
-    creatorUsername: creatorUser ? creatorUser.username : r.creatorUsername || undefined,
     creatorAvatar: creatorUser
       ? creatorUser.avatar
       : r.creatorAvatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80",
@@ -329,7 +328,6 @@ export function createCompanionReelForProduct(product: any, sellerUser?: any): R
     caption: description,
     creatorId: sellerUser?.id || product.sellerId || "seller",
     creatorName: sellerUser?.name || product.sellerName || "Vendedor",
-    creatorUsername: sellerUser?.username || product.sellerUsername || undefined,
     creatorAvatar: sellerUser?.avatar || product.sellerAvatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80",
     videoUrl,
     thumbnailUrl,

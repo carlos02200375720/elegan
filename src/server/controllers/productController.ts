@@ -189,7 +189,7 @@ export async function createProduct(req: any, res: any): Promise<void> {
 
     const seller = await resolveAuthenticatedUser(req, "seller");
 
-    if (!seller || seller.isGuest || seller.username === "invitado" || seller.username === "guest") {
+    if (!seller || seller.isGuest) {
       res.status(403).json({ error: "Debes iniciar sesión con una cuenta para poder registrar productos para la venta." });
       return;
     }

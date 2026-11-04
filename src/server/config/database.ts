@@ -192,6 +192,30 @@ export async function connectToMongoDB(): Promise<void> {
     ]);
     console.log(`🧹 Removed legacy username from ${usersWithoutUsername.modifiedCount || 0} user accounts and ${adminsWithoutUsername.modifiedCount || 0} superadmin accounts.`);
 
+    // Drop any legacy index on username from users and super_admins collections to prevent duplicate null key collisions (E11000)
+    try {
+      const existingIndexes = await MongoUser.collection.indexes();
+      for (const idx of existingIndexes) {
+        if (idx.name === "username_1" || (idx.key && idx.key.username)) {
+          await MongoUser.collection.dropIndex(idx.name);
+          console.log(`🧹 Dropped legacy index '${idx.name}' from users collection.`);
+        }
+      }
+    } catch (idxErr: any) {
+      console.warn("Notice: index check on users collection:", idxErr?.message);
+    }
+    try {
+      const adminIndexes = await MongoSuperAdmin.collection.indexes();
+      for (const idx of adminIndexes) {
+        if (idx.name === "username_1" || (idx.key && idx.key.username)) {
+          await MongoSuperAdmin.collection.dropIndex(idx.name);
+          console.log(`🧹 Dropped legacy index '${idx.name}' from super_admins collection.`);
+        }
+      }
+    } catch (adminIdxErr: any) {
+      console.warn("Notice: index check on super_admins collection:", adminIdxErr?.message);
+    }
+
     // Deduplicate registered users by email only; username is not used in Elegan.
     const allUsersInDb = await MongoUser.find();
     const seenEmails = new Set<string>();

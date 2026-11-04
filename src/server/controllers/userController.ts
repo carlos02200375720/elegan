@@ -40,7 +40,6 @@ export async function getUsers(): Promise<User[]> {
     if (mongoose.connection.readyState === 1) {
       const userFilter = {
         id: { $nin: ["current_user", "user_guest", "creator", "creador"] },
-        username: { $nin: ["invitado", "creador", "creator"] },
         isGuest: { $ne: true }
       };
       const [dbUsers, dbSuperAdmins] = await Promise.all([
@@ -49,7 +48,6 @@ export async function getUsers(): Promise<User[]> {
       ]);
       const mapAccount = (u: any, isSuperadmin = false) => ({
         id: u.id,
-        username: u.username,
         name: u.name,
         bio: "",
         avatar: u.avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80",
@@ -76,7 +74,7 @@ export async function getUsers(): Promise<User[]> {
         ...dbSuperAdmins.map((u: any) => mapAccount(u, true))
       ];
       for (const memUser of memoryUsers) {
-        if (!mapped.some((u) => u.id === memUser.id || u.username?.toLowerCase() === memUser.username?.toLowerCase())) {
+        if (!mapped.some((u) => u.id === memUser.id)) {
           mapped.push(memUser);
         }
       }
@@ -97,7 +95,6 @@ export async function getUsers(): Promise<User[]> {
 export async function resolveAuthenticatedUser(req: any, fallbackRole = "creator"): Promise<any> {
   const body = req.body || {};
   const headerUserId = req.headers["x-user-id"];
-  const headerUsername = req.headers["x-user-username"];
 
   const idCandidates: string[] = [
     body.creatorOriginalId,
@@ -109,13 +106,6 @@ export async function resolveAuthenticatedUser(req: any, fallbackRole = "creator
     activeOriginalUserId !== "user_guest" && activeOriginalUserId !== "current_user" ? activeOriginalUserId : undefined,
   ].filter((id): id is string => Boolean(id && id !== "user_guest" && id !== "current_user" && id !== "invitado"));
 
-  const usernameCandidates: string[] = [
-    body.creatorUsername,
-    body.sellerUsername,
-    body.username,
-    typeof headerUsername === "string" ? headerUsername : undefined,
-  ].filter((un): un is string => Boolean(un && un !== "invitado" && un !== "guest" && un !== "current_user"));
-
   let resolvedUser: any = null;
 
   // 1. Search in MongoDB Atlas
@@ -125,8 +115,8 @@ export async function resolveAuthenticatedUser(req: any, fallbackRole = "creator
       orClauses.push({ id: { $in: idCandidates } });
       orClauses.push({ originalId: { $in: idCandidates } });
     }
-    if (usernameCandidates.length > 0) {
-      orClauses.push({ username: { $in: usernameCandidates.map(u => u.toLowerCase()) } });
+    if (body.email) {
+      orClauses.push({ email: String(body.email).trim().toLowerCase() });
     }
     if (orClauses.length > 0) {
       try {
@@ -144,22 +134,20 @@ export async function resolveAuthenticatedUser(req: any, fallbackRole = "creator
       resolvedUser = currentUsers.find(u =>
         idCandidates.includes(u.id) ||
         (u.originalId && idCandidates.includes(u.originalId)) ||
-        (u.username && usernameCandidates.some(un => un.toLowerCase() === u.username.toLowerCase()))
+        (body.email && u.email && u.email.toLowerCase() === String(body.email).trim().toLowerCase())
       );
     } catch (e) {}
   }
 
   // 3. Fallback: If client supplied authenticated user profile
-  if (!resolvedUser && usernameCandidates.length > 0) {
-    const preferredUsername = usernameCandidates[0].toLowerCase();
+  if (!resolvedUser && (body.creatorName || body.sellerName || body.name || body.email)) {
     const preferredId = idCandidates[0] || ("user_" + generateId());
-    const fallbackName = body.creatorName || body.sellerName || body.name || preferredUsername;
+    const fallbackName = body.creatorName || body.sellerName || body.name || "Usuario";
     const fallbackAvatar = body.creatorAvatar || body.sellerAvatar || body.avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80";
 
     resolvedUser = {
       id: preferredId,
       originalId: preferredId,
-      username: preferredUsername,
       name: fallbackName,
       avatar: fallbackAvatar,
       isOnline: true,
@@ -249,7 +237,6 @@ export async function handleGuestSession(req: Request, res: Response): Promise<v
         id: "current_user",
         originalId: token,
         guestToken: token,
-        username: "invitado",
         name: "Invitado",
         avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80",
         isOnline: true,
@@ -279,7 +266,6 @@ export async function purgeExpiredGuestTokens(): Promise<number> {
       $or: [
         { isGuest: true },
         { guestToken: { $exists: true } },
-        { username: /^invitado/i },
         { id: /^guest_/i },
       ]
     });
@@ -316,10 +302,8 @@ export async function getUserById(req: Request, res: Response): Promise<void> {
 
   const dbUsers = await getUsers();
 
-  const headerUsername = (req.headers["x-user-username"] as string)?.trim().toLowerCase();
   const headerUserId = (req.headers["x-user-id"] as string)?.trim();
   const headerGuestToken = (req.headers["x-guest-token"] as string)?.trim();
-  const queryUsername = (req.query.username as string)?.trim().toLowerCase();
   const queryUserId = (req.query.userId as string)?.trim();
   const queryGuestToken = (req.query.guestToken as string)?.trim();
   const guestTokenCandidate = headerGuestToken || queryGuestToken;
@@ -335,13 +319,12 @@ export async function getUserById(req: Request, res: Response): Promise<void> {
     cleanParam === "guest"
   ) {
     let activeUser: any = null;
-    const targetIdentifier = headerUsername || queryUsername || headerUserId || queryUserId;
+    const targetIdentifier = headerUserId || queryUserId;
 
     if (mongoose.connection.readyState === 1) {
       if (targetIdentifier && targetIdentifier !== "invitado" && targetIdentifier !== "user_guest" && targetIdentifier !== "current_user" && targetIdentifier !== "guest") {
         activeUser = await findAccount({
           $or: [
-            { username: targetIdentifier.toLowerCase() },
             { id: targetIdentifier },
             { email: targetIdentifier.toLowerCase() }
           ]
@@ -355,17 +338,16 @@ export async function getUserById(req: Request, res: Response): Promise<void> {
 
     if (!activeUser && targetIdentifier && targetIdentifier !== "invitado" && targetIdentifier !== "user_guest" && targetIdentifier !== "guest") {
       activeUser = dbUsers.find(u =>
-        u.username?.toLowerCase() === targetIdentifier.toLowerCase() ||
         u.id === targetIdentifier ||
-        (u.originalId && u.originalId === targetIdentifier)
+        (u.originalId && u.originalId === targetIdentifier) ||
+        (u.email && u.email.toLowerCase() === targetIdentifier.toLowerCase())
       );
     }
 
-    if (activeUser && activeUser.username !== "invitado" && !activeUser.isGuest) {
+    if (activeUser && !activeUser.isGuest) {
       user = {
         id: "current_user",
         originalId: activeUser.id,
-        username: activeUser.username,
         name: activeUser.name,
         avatar: activeUser.avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80",
         isOnline: activeUser.isOnline !== undefined ? activeUser.isOnline : true,
@@ -389,7 +371,6 @@ export async function getUserById(req: Request, res: Response): Promise<void> {
     } else {
       user = {
         id: "current_user",
-        username: "invitado",
         name: "Invitado",
         avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80",
         isOnline: false,
@@ -410,8 +391,6 @@ export async function getUserById(req: Request, res: Response): Promise<void> {
           $or: [
             { id: rawParam },
             { id: cleanParam },
-            { username: cleanParam },
-            { username: rawParam },
             { email: cleanParam },
             { email: rawParam },
             { name: rawParam }
@@ -421,7 +400,6 @@ export async function getUserById(req: Request, res: Response): Promise<void> {
           user = {
             id: found.id,
             originalId: found.id,
-            username: found.username,
             name: found.name,
             avatar: found.avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80",
             isOnline: found.isOnline !== undefined ? found.isOnline : false,
@@ -463,8 +441,6 @@ export async function getUserById(req: Request, res: Response): Promise<void> {
           .replace(/[^a-z0-9._-]/g, "");
         return (
           u.id === rawParam ||
-          u.username?.toLowerCase() === cleanParam ||
-          u.username?.toLowerCase() === normalizedParamSlug ||
           uNameSlug === normalizedParamSlug ||
           u.email?.toLowerCase() === cleanParam ||
           u.id?.toLowerCase() === cleanParam ||
@@ -489,7 +465,6 @@ export async function getUserById(req: Request, res: Response): Promise<void> {
         return (
           o.buyerId === rawParam ||
           o.buyerId?.toLowerCase() === cleanParam ||
-          o.buyerUsername?.toLowerCase() === cleanParam ||
           (bNameSlug && bNameSlug === normalizedParamSlug) ||
           o.buyerEmail?.toLowerCase() === cleanParam
         );
@@ -497,21 +472,10 @@ export async function getUserById(req: Request, res: Response): Promise<void> {
       if (matchedOrder) {
         const resolvedId = matchedOrder.buyerId || rawParam;
         const resolvedEmail = matchedOrder.buyerEmail || (cleanParam.includes("@") ? cleanParam : "");
-        const fromNameSlug = (matchedOrder.buyerName || "")
-          .normalize("NFD")
-          .replace(/[\u0300-\u036f]/g, "")
-          .toLowerCase()
-          .replace(/\s+/g, "")
-          .replace(/[^a-z0-9._-]/g, "");
-        const resolvedUsername =
-          matchedOrder.buyerUsername && !matchedOrder.buyerUsername.includes("@")
-            ? matchedOrder.buyerUsername
-            : fromNameSlug || (resolvedEmail ? resolvedEmail.split("@")[0] : cleanParam);
         user = {
           id: resolvedId,
           originalId: resolvedId,
-          username: resolvedUsername,
-          name: matchedOrder.buyerName || resolvedUsername,
+          name: matchedOrder.buyerName || "Cliente",
           avatar: matchedOrder.buyerAvatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80",
           isOnline: true,
           followers: 0,
@@ -530,9 +494,7 @@ export async function getUserById(req: Request, res: Response): Promise<void> {
       const matchedReel = reels.find(
         (r) =>
           r.creatorId === rawParam ||
-          r.creatorUsername?.toLowerCase() === cleanParam ||
           r.creatorName?.toLowerCase() === cleanParam ||
-          (cleanParam && r.creatorUsername && cleanParam.includes(r.creatorUsername.toLowerCase())) ||
           (cleanParam && r.creatorId && cleanParam.includes(r.creatorId.toLowerCase()))
       );
 
@@ -541,8 +503,6 @@ export async function getUserById(req: Request, res: Response): Promise<void> {
         matchedMongoReel = await MongoReel.findOne({
           $or: [
             { creatorId: rawParam },
-            { creatorUsername: cleanParam },
-            { creatorUsername: rawParam },
             { creatorName: rawParam }
           ]
         }).catch(() => null);
@@ -552,23 +512,17 @@ export async function getUserById(req: Request, res: Response): Promise<void> {
       if (
         sourceReel &&
         sourceReel.creatorId !== "creator" &&
-        sourceReel.creatorId !== "creador" &&
-        sourceReel.creatorUsername !== "creador" &&
-        sourceReel.creatorUsername !== "creator"
+        sourceReel.creatorId !== "creador"
       ) {
         let creatorMongoUser = null;
         if (mongoose.connection.readyState === 1) {
           creatorMongoUser = await MongoUser.findOne({
-            $or: [
-              { id: sourceReel.creatorId },
-              { username: sourceReel.creatorUsername }
-            ]
+            id: sourceReel.creatorId
           }).catch(() => null);
         }
         user = {
           id: sourceReel.creatorId || rawParam,
           originalId: sourceReel.creatorId || rawParam,
-          username: sourceReel.creatorUsername || sourceReel.creatorName?.toLowerCase().replace(/\s+/g, "") || rawParam,
           name: sourceReel.creatorName || "Usuario",
           avatar: sourceReel.creatorAvatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80",
           followers: creatorMongoUser?.followers || 0,
@@ -606,16 +560,12 @@ export async function getUserById(req: Request, res: Response): Promise<void> {
         let sellerMongoUser = null;
         if (mongoose.connection.readyState === 1) {
           sellerMongoUser = await MongoUser.findOne({
-            $or: [
-              { id: sourceProd.sellerId },
-              { username: sourceProd.sellerName?.toLowerCase().replace(/\s+/g, "") }
-            ]
+            id: sourceProd.sellerId
           }).catch(() => null);
         }
         user = {
           id: sourceProd.sellerId || rawParam,
           originalId: sourceProd.sellerId || rawParam,
-          username: sourceProd.sellerName?.toLowerCase().replace(/\s+/g, "") || "tienda",
           name: sourceProd.sellerName || "Tienda Oficial",
           avatar: sourceProd.sellerAvatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80",
           followers: sellerMongoUser?.followers || 85,
@@ -638,10 +588,6 @@ export async function getUserById(req: Request, res: Response): Promise<void> {
   const userIdentifiers = new Set<string>();
   if (user.id) userIdentifiers.add(user.id);
   if (user.originalId) userIdentifiers.add(user.originalId);
-  if (user.username) {
-    userIdentifiers.add(user.username);
-    userIdentifiers.add(user.username.toLowerCase());
-  }
   if (user.email) {
     userIdentifiers.add(user.email);
     userIdentifiers.add(user.email.toLowerCase());
@@ -679,7 +625,6 @@ export async function getUserById(req: Request, res: Response): Promise<void> {
     userReels = reels
       .filter((r) =>
         userIdentifiers.has(r.creatorId) ||
-        (r.creatorUsername && userIdentifiers.has(r.creatorUsername.toLowerCase())) ||
         (user.id === "current_user" && r.creatorId === activeOriginalUserId)
       )
       .filter((r) => {
@@ -696,14 +641,12 @@ export async function getUserById(req: Request, res: Response): Promise<void> {
         o.buyerId === "current_user" ||
         (activeOriginalUserId && o.buyerId === activeOriginalUserId) ||
         userIdentifiers.has(o.buyerId || "") ||
-        (o.buyerUsername && userIdentifiers.has(o.buyerUsername.toLowerCase())) ||
         (o.buyerEmail && userIdentifiers.has(o.buyerEmail.toLowerCase())) ||
         !o.buyerId
       );
     }
     return (
       userIdentifiers.has(o.buyerId || "") ||
-      (o.buyerUsername && userIdentifiers.has(o.buyerUsername.toLowerCase())) ||
       (o.buyerEmail && userIdentifiers.has(o.buyerEmail.toLowerCase()))
     );
   });
@@ -714,10 +657,7 @@ export async function getUserById(req: Request, res: Response): Promise<void> {
       if (user.id === "current_user") {
         return it.sellerId === "current_user" || (activeOriginalUserId && it.sellerId === activeOriginalUserId) || !it.sellerId;
       }
-      return (
-        userIdentifiers.has(it.sellerId || "") ||
-        (it.sellerUsername && userIdentifiers.has(it.sellerUsername.toLowerCase()))
-      );
+      return userIdentifiers.has(it.sellerId || "");
     });
   });
 
@@ -767,20 +707,11 @@ export async function getUserPublications(req: Request, res: Response): Promise<
     // during transient DB/query failures. Always fall back to the in-memory feed.
     if (mongoose.connection.readyState === 1) {
       try {
-        const userDoc = await MongoUser.findOne({
-          $or: [
-            { id: targetId },
-            { username: targetId.toLowerCase() },
-          ],
-        });
+        const userDoc = await MongoUser.findOne({ id: targetId });
         if (userDoc) {
           if (userDoc.id) userIdentifiers.add(userDoc.id);
           if (userDoc.originalId) userIdentifiers.add(userDoc.originalId);
           if (userDoc._id) userIdentifiers.add(userDoc._id.toString());
-          if (userDoc.username) {
-            userIdentifiers.add(userDoc.username);
-            userIdentifiers.add(userDoc.username.toLowerCase());
-          }
         }
       } catch (dbErr: any) {
         console.warn("⚠️ Publication user lookup failed; using fallback identifiers:", dbErr?.message || dbErr);
@@ -800,9 +731,7 @@ export async function getUserPublications(req: Request, res: Response): Promise<
       const seenReelIds = new Set<string>();
       userReels = reels
         .filter(
-          (r) =>
-            userIdentifiers.has(r.creatorId) ||
-            (r.creatorUsername && userIdentifiers.has(r.creatorUsername.toLowerCase()))
+          (r) => userIdentifiers.has(r.creatorId)
         )
         .filter((r) => {
           if (!r.id || seenReelIds.has(r.id)) return false;
@@ -825,7 +754,7 @@ export async function getUserPublications(req: Request, res: Response): Promise<
  * POST /api/users/current/save
  */
 export async function toggleSaveReel(req: Request, res: Response): Promise<void> {
-  const { reelId, productId, id, userId, username } = req.body;
+  const { reelId, productId, id, userId } = req.body;
   const targetItemId = reelId || productId || id;
   if (!targetItemId) {
     res.status(400).json({ error: "ID de publicación o producto requerido." });
@@ -838,16 +767,12 @@ export async function toggleSaveReel(req: Request, res: Response): Promise<void>
     String(req.body?.guestToken || "").trim();
 
   if (mongoose.connection.readyState === 1 && !currentUserObj) {
-    const candidates = [userId, username, activeOriginalUserId].filter(
+    const candidates = [userId, activeOriginalUserId].filter(
       (id) => id && id !== "user_guest" && id !== "current_user" && id !== "invitado"
     );
     if (candidates.length > 0) {
       currentUserObj = await MongoUser.findOne({
-        $or: candidates.flatMap((id) => [
-          { id },
-          { username: id },
-          { username: typeof id === "string" ? id.toLowerCase() : id }
-        ])
+        $or: candidates.map((id) => ({ id }))
       });
     }
 
@@ -855,7 +780,6 @@ export async function toggleSaveReel(req: Request, res: Response): Promise<void>
       currentUserObj = {
         id: guestToken,
         guestToken,
-        username: "invitado",
         name: "Invitado",
         savedReelIds: [],
         followingUserIds: [],
@@ -939,34 +863,23 @@ export async function toggleFollow(req: Request, res: Response): Promise<void> {
  * POST /api/users/current/update
  */
 export async function updateCurrentUser(req: Request, res: Response): Promise<void> {
-  const { name, username, avatar, password, userId, currentUsername, email, address, shippingAddress, city, country, phone, postalCode } = req.body;
+  const { name, avatar, password, userId, email, address, shippingAddress, city, country, phone, postalCode } = req.body;
   if (mongoose.connection.readyState !== 1) {
     res.status(503).json({ error: "MongoDB Atlas no está disponible. El perfil no se guardó." });
     return;
   }
 
-  const headerUsername = (req.headers["x-user-username"] as string)?.trim().toLowerCase();
   const headerUserId = (req.headers["x-user-id"] as string)?.trim();
   let currentUserObj: any = null;
 
   const idCandidates = [activeOriginalUserId, userId, headerUserId].filter(
     id => id && id !== "user_guest" && id !== "current_user" && id !== "invitado" && id !== "guest"
   );
-  const usernameCandidates = [currentUsername, headerUsername].filter(
-    u => u && u !== "invitado" && u !== "user_guest" && u !== "guest"
-  );
 
   try {
     for (const cid of idCandidates) {
       currentUserObj = await findAccount({ id: cid });
       if (currentUserObj) break;
-    }
-
-    if (!currentUserObj) {
-      for (const un of usernameCandidates) {
-        currentUserObj = await findAccount({ username: un.toLowerCase() });
-        if (currentUserObj) break;
-      }
     }
   } catch (err) {
     console.error("Failed to find profile in MongoDB Atlas:", err);
@@ -983,7 +896,6 @@ export async function updateCurrentUser(req: Request, res: Response): Promise<vo
 
   const updateFields: any = {};
   if (name !== undefined) updateFields.name = name;
-  if (username !== undefined && !isConfiguredSuperadmin(currentUserObj)) updateFields.username = username;
   if (password !== undefined) updateFields.password = password;
   if (email !== undefined) updateFields.email = String(email).trim().toLowerCase();
   if (address !== undefined) updateFields.address = address;
@@ -1034,7 +946,7 @@ export async function updateCurrentUser(req: Request, res: Response): Promise<vo
     res.status(404).json({ error: "No se encontró la cuenta en MongoDB Atlas. El perfil no se guardó." });
     return;
   }
-  console.log(`💾 User profile updated directly in MongoDB Atlas for ${updatedUser.username}.`);
+  console.log(`💾 User profile updated directly in MongoDB Atlas for ${updatedUser.name || updatedUser.email}.`);
 
   // Update in memory items that reference this user
   reels.forEach(r => {
@@ -1043,8 +955,8 @@ export async function updateCurrentUser(req: Request, res: Response): Promise<vo
       if (avatar !== undefined) r.creatorAvatar = updatedUser.avatar;
     }
     r.comments.forEach(c => {
-      if (c.username === "cg0220037" || c.username === (updatedUser?.username || "")) {
-        if (username !== undefined) c.username = username;
+      if (c.userId === currentUserObj.id) {
+        if (name !== undefined) c.name = name;
         if (avatar !== undefined) c.avatar = updatedUser.avatar;
       }
     });
@@ -1143,7 +1055,6 @@ export async function registerUser(req: Request, res: Response): Promise<void> {
     let guestSavedReels: string[] = [];
     let priorGuest: any = null;
     const guestId = (req.body?.guestId || req.headers["x-user-id"] || "").toString().trim();
-    const guestUsername = (req.body?.guestUsername || req.headers["x-user-username"] || "").toString().trim();
 
     if (mongoose.connection.readyState === 1) {
       try {
@@ -1152,9 +1063,6 @@ export async function registerUser(req: Request, res: Response): Promise<void> {
         if (guestId && guestId !== "current_user" && guestId !== "user_guest") {
           guestOrConditions.push({ id: guestId });
           if (mongoose.isValidObjectId(guestId)) guestOrConditions.push({ _id: guestId });
-        }
-        if (guestUsername && guestUsername !== "invitado" && guestUsername !== "guest") {
-          guestOrConditions.push({ username: guestUsername.toLowerCase() });
         }
         if (guestOrConditions.length > 0) {
           priorGuest = await MongoUser.findOne({ isGuest: true, $or: guestOrConditions });
@@ -1179,19 +1087,10 @@ export async function registerUser(req: Request, res: Response): Promise<void> {
       Boolean(id && id.trim() && !["current_user", "user_guest", "usuario_invitado", "usuario_actual"].includes(id))
     );
 
-    const guestUsernameCandidates = Array.from(new Set([
-      guestUsername,
-      priorGuest?.username
-    ])).filter((username): username is string =>
-      Boolean(username && username.trim() && !["invitado", "guest", "current_user", "usuario_actual"].includes(username.toLowerCase()))
-    );
-
-    const resolvedUsername = (req.body?.username || cleanEmail.split("@")[0] || "usuario").toLowerCase();
     const newUserId = "user_" + generateId();
     const newUser: User & { registeredAt: Date; registrationPlatform: "web" | "android"; platform: "web" | "android" } = {
       id: newUserId,
       originalId: newUserId,
-      username: resolvedUsername,
       name: String(name).trim(),
       bio: "",
       email: cleanEmail,
@@ -1227,9 +1126,27 @@ export async function registerUser(req: Request, res: Response): Promise<void> {
     const isNewSuperadmin = isConfiguredSuperadmin(newUser);
     const AccountModel = isNewSuperadmin ? MongoSuperAdmin : MongoUser;
     const accountData: any = { ...newUser, canSell: isNewSuperadmin || newUser.canSell, isAdmin: isNewSuperadmin, role: isNewSuperadmin ? "superadmin" : "user" };
-    if (isNewSuperadmin) delete accountData.username;
     const mongoUser = new AccountModel(accountData);
-    await mongoUser.save();
+    try {
+      await mongoUser.save();
+    } catch (saveErr: any) {
+      if (saveErr?.code === 11000 && (saveErr?.message?.includes("username") || saveErr?.keyPattern?.username)) {
+        console.warn("⚠️ Legacy username index collision detected during save, dropping index and retrying...", saveErr.message);
+        try {
+          await MongoUser.collection.dropIndex("username_1").catch(() => {});
+          const indexes = await MongoUser.collection.indexes().catch(() => []);
+          for (const idx of indexes) {
+            if (idx.name === "username_1" || (idx.key && idx.key.username)) {
+              await MongoUser.collection.dropIndex(idx.name).catch(() => {});
+            }
+          }
+        } catch {}
+        await mongoUser.save();
+        console.log(`✅ User registration recovered and saved successfully for ${newUser.email}`);
+      } else {
+        throw saveErr;
+      }
+    }
     console.log(`Cuenta registrada para ${newUser.email} con id=${newUser.id} en MongoDB Atlas.`);
     setActiveOriginalUserId(newUser.id);
 
@@ -1240,10 +1157,6 @@ export async function registerUser(req: Request, res: Response): Promise<void> {
         const orderOrQueries: any[] = [
           { buyerId: { $in: guestIdCandidates } },
           { userId: { $in: guestIdCandidates } },
-          { buyerUsername: { $in: guestUsernameCandidates } },
-          ...guestUsernameCandidates.map((guestName) => ({
-            buyerUsername: { $regex: new RegExp(`^${guestName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, "i") },
-          })),
         ];
         if (cleanEmail) {
           const escapedEmail = cleanEmail.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -1269,7 +1182,7 @@ export async function registerUser(req: Request, res: Response): Promise<void> {
             ...(cleanEmail ? [{ buyerEmail: cleanEmail }] : [])
           ]
         }).sort({ createdAt: -1 }).lean();
-        console.log(`📦 [Server Register] Migrados ${migratedOrders.length} pedidos a @${newUser.name}`);
+        console.log(`📦 [Server Register] Migrados ${migratedOrders.length} pedidos a ${newUser.name}`);
       } catch (ordErr) {
         console.error("Error migrando pedidos en registerUser:", ordErr);
         throw ordErr;
@@ -1316,7 +1229,9 @@ export async function registerUser(req: Request, res: Response): Promise<void> {
       id: newUser.id,
       originalId: newUser.id,
       isGuest: false,
-      username: newUser.name,
+      isAdmin: isConfiguredSuperadmin(newUser),
+      role: isConfiguredSuperadmin(newUser) ? "superadmin" : (newUser.canSell ? "seller" : "user")
+    };
       isAdmin: isConfiguredSuperadmin(newUser),
       role: isConfiguredSuperadmin(newUser) ? "superadmin" : (newUser.canSell ? "seller" : "user")
     };
@@ -1332,7 +1247,11 @@ export async function registerUser(req: Request, res: Response): Promise<void> {
   } catch (err: any) {
     if (err.code === 11000) {
       console.warn("⚠️ Duplicate key collision caught in MongoDB registration:", err.message);
-      res.status(409).json({ error: "⚠️ Este usuario o correo electrónico ya existe en la base de datos." });
+      if (err.keyPattern?.email || err.message?.includes("email")) {
+        res.status(409).json({ error: "Este correo electrónico ya está registrado." });
+        return;
+      }
+      res.status(409).json({ error: "Esta cuenta ya existe en la base de datos." });
       return;
     }
     console.error("❌ Error registering user:", err);

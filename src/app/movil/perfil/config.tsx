@@ -142,7 +142,6 @@ export function ConfigPerfilView({
 
     const payload = {
       userId: targetUserId,
-      email: currentEmail,
       name: editName.trim(),
       avatar: editAvatar.trim(),
       email: editEmail.trim(),

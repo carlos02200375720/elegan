@@ -84,11 +84,10 @@ export async function broadcastPresence(getUsersFn?: () => Promise<User[]>): Pro
     } else if (mongoose.connection.readyState === 1) {
       const docs = await MongoUser.find({
         id: { $nin: ["current_user", "user_guest", "creator", "creador"] },
-        username: { $nin: ["invitado", "creador", "creator"] },
+        name: { $nin: ["invitado", "creador", "creator"] },
       });
       dbUsers = docs.map((u: any) => ({
         id: u.id,
-        username: u.username,
         name: u.name,
         avatar: u.avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80",
         bio: u.bio || "Creador en la plataforma",
@@ -109,7 +108,7 @@ export async function broadcastPresence(getUsersFn?: () => Promise<User[]>): Pro
     const presenceData = dbUsers.map((u) => {
       let cleanAvatar = u.avatar;
       if (cleanAvatar && cleanAvatar.startsWith("data:")) {
-        const fallbackGcsUrl = `https://storage.googleapis.com/${bucketName || "elegan-bucket"}/avatars/${Date.now()}-${u.username || u.id}.png`;
+        const fallbackGcsUrl = `https://storage.googleapis.com/${bucketName || "elegan-bucket"}/avatars/${Date.now()}-${u.id}.png`;
         cleanAvatar = fallbackGcsUrl;
 
         // Asynchronously migrate to GCS and update in MongoDB Atlas
@@ -117,16 +116,15 @@ export async function broadcastPresence(getUsersFn?: () => Promise<User[]>): Pro
           uploadBase64ToGCS(u.avatar, "avatars").then(async (uploadedUrl) => {
             const finalUrl = (uploadedUrl && !uploadedUrl.startsWith("data:")) ? uploadedUrl : fallbackGcsUrl;
             await MongoUser.updateOne({ id: u.id }, { $set: { avatar: finalUrl } });
-            console.log(`💾 [WebSocket Presence] Avatar de @${u.username} migrado a GCS: ${finalUrl}`);
+            console.log(`💾 [WebSocket Presence] Avatar de ${u.name} migrado a GCS: ${finalUrl}`);
           }).catch((err) => {
-            console.warn(`⚠️ [WebSocket Presence] Error migrando avatar de @${u.username}:`, err?.message);
+            console.warn(`⚠️ [WebSocket Presence] Error migrando avatar de ${u.name}:`, err?.message);
           });
         }
       }
 
       return {
         id: u.id,
-        username: u.username || u.name,
         name: u.name,
         avatar: cleanAvatar,
         isOnline: u.isOnline,
@@ -154,12 +152,12 @@ export async function sanitizeBase64AvatarsInMongo(): Promise<void> {
   try {
     const usersWithBase64 = await MongoUser.find({ avatar: { $regex: "^data:" } });
     for (const user of usersWithBase64) {
-      const gcsUrl = `https://storage.googleapis.com/${bucketName || "elegan-bucket"}/avatars/${Date.now()}-${user.username || user.id}.png`;
+      const gcsUrl = `https://storage.googleapis.com/${bucketName || "elegan-bucket"}/avatars/${Date.now()}-${user.id}.png`;
       try {
         const uploaded = await uploadBase64ToGCS(user.avatar, "avatars");
         const finalUrl = (uploaded && !uploaded.startsWith("data:")) ? uploaded : gcsUrl;
         await MongoUser.updateOne({ _id: user._id }, { $set: { avatar: finalUrl } });
-        console.log(`✅ [Migration] Avatar Base64 de @${user.username} migrado a GCS en MongoDB: ${finalUrl}`);
+        console.log(`✅ [Migration] Avatar Base64 de ${user.name} migrado a GCS en MongoDB: ${finalUrl}`);
       } catch {
         await MongoUser.updateOne({ _id: user._id }, { $set: { avatar: gcsUrl } });
       }

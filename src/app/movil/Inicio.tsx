@@ -269,7 +269,7 @@ export default function Inicio({
           videoUrl: "",
           thumbnailUrl: imageUrl,
           images: [imageUrl],
-          media: [{ type: "image", url: imageUrl, order: 0 }],
+          media: [{ type: "image", url: imageUrl }],
           likes: override?.likes ?? 0,
           likedBy: override?.likedBy ?? [],
           comments: override?.comments ?? [],
@@ -951,19 +951,29 @@ export default function Inicio({
         }}
         id="android-reels-scroll-container"
       >
-        {/* Cabecera fija dentro del área de scroll para que solo se reserve espacio una vez */}
+        {/* Cabecera fija dentro del área de scroll respetando la barra de estado nativa (50px a partir de ella) */}
         <header
-          className="sticky top-0 inset-x-0 z-40 flex h-[50px] min-h-[50px] max-h-[50px] shrink-0 box-border justify-center bg-white border-b border-slate-200 shadow-2xs pointer-events-auto"
+          className="sticky top-0 inset-x-0 z-40 flex flex-col shrink-0 box-border justify-end bg-white border-t-0 border-b border-slate-200/80 pointer-events-auto"
           style={{
-            height: "50px",
-            minHeight: "50px",
-            maxHeight: "50px",
-            paddingTop: 0,
+            height: "calc(50px + env(safe-area-inset-top, 0px))",
+            minHeight: "calc(50px + env(safe-area-inset-top, 0px))",
+            maxHeight: "calc(50px + env(safe-area-inset-top, 0px))",
+            paddingTop: "env(safe-area-inset-top, 0px)",
+            paddingLeft: "env(safe-area-inset-left, 0px)",
+            paddingRight: "env(safe-area-inset-right, 0px)",
             backgroundColor: "#ffffff",
           }}
           id="android-reels-fixed-header"
         >
-          <div className="relative mx-auto flex h-[49px] w-full max-w-md shrink-0 items-center justify-between px-5">
+          <div
+            className="relative mx-auto flex h-[50px] min-h-[50px] max-h-[50px] w-full max-w-md shrink-0 items-center justify-between px-5 bg-white border-t-0"
+            style={{
+              height: "50px",
+              minHeight: "50px",
+              maxHeight: "50px",
+              backgroundColor: "#ffffff",
+            }}
+          >
             <h1
               className="pointer-events-none absolute left-1/2 top-1/2 max-w-[calc(100%-10rem)] -translate-x-1/2 -translate-y-1/2 truncate text-center text-base font-bold text-slate-900"
               title={currentUser?.name && !isGuestUser(currentUser) ? currentUser.name : "Inicio"}

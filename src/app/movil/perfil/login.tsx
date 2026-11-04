@@ -179,13 +179,7 @@ export default function PerfilLogin({
       </header>
       <div className="relative z-10 -mx-5 mt-[210px] flex min-h-[calc(100vh-282px)] w-[calc(100%+2.5rem)] flex-col bg-gradient-to-b from-slate-50 via-white to-white px-5 pt-5">
         <div className="mx-auto w-full max-w-md">
-        <p className="mt-2 text-sm leading-6 text-slate-600">
-          {mode === "register"
-            ? "Al registrarte conservaremos tus compras, productos del carrito y elementos guardados como invitado."
-            : "Accede a tu cuenta para recuperar tus compras, carrito y datos de perfil."}
-        </p>
-
-        <div className="mt-6 grid grid-cols-2 rounded-2xl border border-slate-200 bg-white p-1">
+          <div className="mt-2 grid grid-cols-2 rounded-2xl border border-slate-200 bg-white p-1">
           {(["register", "login"] as const).map((authMode) => (
             <button
               key={authMode}
@@ -293,13 +287,22 @@ export default function PerfilLogin({
         </form>
         </div>
       </div>
-      <footer className="fixed inset-x-0 bottom-0 z-40 h-[60px] min-h-[60px] max-h-[60px] box-border border-t border-slate-200 bg-white/95 px-4 py-1.5 backdrop-blur-md">
-        <div className="mx-auto flex h-full w-full max-w-md items-center">
+      <footer
+        className="fixed inset-x-0 bottom-0 z-40 flex flex-col justify-start box-border border-t border-slate-200 bg-white px-4"
+        style={{
+          height: "calc(60px + env(safe-area-inset-bottom, 0px))",
+          minHeight: "calc(60px + env(safe-area-inset-bottom, 0px))",
+          maxHeight: "calc(60px + env(safe-area-inset-bottom, 0px))",
+          paddingBottom: "env(safe-area-inset-bottom, 0px)",
+          backgroundColor: "#ffffff",
+        }}
+      >
+        <div className="mx-auto flex h-[60px] min-h-[60px] max-h-[60px] w-full max-w-md items-center">
           <button
             type="submit"
             form="perfil-login-form"
             disabled={isLoading}
-            className="flex w-full items-center justify-center rounded-xl bg-amber-400 px-4 py-2.5 text-xs font-black text-slate-950 shadow-sm transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex w-full items-center justify-center rounded-xl bg-amber-400 px-4 py-2.5 text-xs font-black text-slate-950 shadow-sm transition hover:bg-amber-300 disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
           >
             {isLoading
               ? "Procesando..."

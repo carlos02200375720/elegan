@@ -138,7 +138,7 @@ export function setupWebSocket(httpServer: HttpServer): WebSocketServer {
           }
 
           case "live_join": {
-            const { streamId, username, isHost } = payload;
+            const { streamId, name, isHost } = payload;
 
             if (currentStreamId && currentStreamId !== streamId) {
               handleStreamLeave(ws, currentStreamId);
@@ -166,9 +166,9 @@ export function setupWebSocket(httpServer: HttpServer): WebSocketServer {
               if (isNewViewer && !(ws as any).isHostStream) {
                 const systemMsg = {
                   id: "lc_" + generateId(),
-                  username: "System 🤖",
+                  name: "System 🤖",
                   avatar: "",
-                  text: `👋 ${username || "Un espectador"} se unió a la transmisión.`,
+                  text: `👋 ${name || "Un espectador"} se unió a la transmisión.`,
                   createdAt: new Date().toISOString()
                 };
 
@@ -197,7 +197,7 @@ export function setupWebSocket(httpServer: HttpServer): WebSocketServer {
             if (session && text) {
               const liveMsg = {
                 id: "lc_" + generateId(),
-                username: senderName,
+                name: senderName,
                 avatar: avatar,
                 text: text,
                 createdAt: new Date().toISOString()

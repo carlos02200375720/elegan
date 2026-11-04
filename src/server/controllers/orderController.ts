@@ -29,7 +29,6 @@ export async function createOrder(req: Request, res: Response): Promise<void> {
     guestToken,
     platform,
     buyerName,
-    buyerUsername,
     buyerAvatar,
     buyerEmail,
     buyerPhone,
@@ -107,7 +106,6 @@ export async function createOrder(req: Request, res: Response): Promise<void> {
       imageUrl: product.imageUrl,
       sellerId: product.sellerId || "current_user",
       sellerName: sellerUser ? sellerUser.name : product.sellerName || "Vendedor",
-      sellerUsername: sellerUser ? sellerUser.username : undefined,
       carrier: item.selectedCarrier || product.selectedCarrier || "DHL Express",
     });
   }
@@ -123,37 +121,15 @@ export async function createOrder(req: Request, res: Response): Promise<void> {
 
   let assignedBuyerId = isAnonymousWebCheckout ? String(guestToken) : (userId || (activeOriginalUserId !== "user_guest" ? activeOriginalUserId : "current_user"));
   let assignedBuyerName = buyerName || (buyerUser ? buyerUser.name : "Cliente");
-  let assignedBuyerUsername = buyerUsername || (buyerUser ? buyerUser.username : undefined);
   let assignedBuyerAvatar = buyerAvatar || (buyerUser ? buyerUser.avatar : undefined);
   let assignedBuyerEmail = buyerEmail || (buyerUser ? buyerUser.email : undefined);
 
   let autoCreatedUserSummary: any = null;
 
-  const cleanNameForUsername = (rawName?: string, fallbackEmail?: string): string => {
-    const validName =
-      rawName &&
-      rawName.trim() &&
-      rawName.trim().toLowerCase() !== "invitado" &&
-      rawName.trim().toLowerCase() !== "cliente"
-        ? rawName.trim()
-        : fallbackEmail
-        ? fallbackEmail.split("@")[0]
-        : "cliente";
-    const normalized = validName
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .toLowerCase()
-      .replace(/\s+/g, "")
-      .replace(/[^a-z0-9._-]/g, "");
-    return normalized || "cliente";
-  };
-
   const cleanBuyerEmail = buyerEmail ? String(buyerEmail).trim().toLowerCase() : "";
-  const derivedUsername = cleanNameForUsername(buyerName, cleanBuyerEmail);
 
   const isRequesterGuest =
-    (!userId || userId === "current_user" || userId === "user_guest" || userId === "invitado") &&
-    (!buyerUsername || buyerUsername === "invitado" || buyerUsername === "guest");
+    !userId || userId === "current_user" || userId === "user_guest" || userId === "invitado";
 
   if (!isAnonymousWebCheckout && !isRequesterGuest) {
     // Buyer is already logged into a registered account — never show auto-created account message
@@ -161,7 +137,6 @@ export async function createOrder(req: Request, res: Response): Promise<void> {
     if (!loggedInUser && mongoose.connection.readyState === 1) {
       const orLookup: any[] = [];
       if (userId && userId !== "current_user") orLookup.push({ id: userId });
-      if (buyerUsername && buyerUsername !== "invitado") orLookup.push({ username: String(buyerUsername).toLowerCase() });
       if (cleanBuyerEmail) orLookup.push({ email: cleanBuyerEmail });
       if (orLookup.length > 0) {
         loggedInUser = await MongoUser.findOne({ $or: orLookup, id: { $ne: "current_user" } }).catch(() => null);
@@ -169,7 +144,6 @@ export async function createOrder(req: Request, res: Response): Promise<void> {
     }
     if (loggedInUser) {
       assignedBuyerId = loggedInUser.id;
-      assignedBuyerUsername = loggedInUser.username || assignedBuyerUsername;
       assignedBuyerName = buyerName?.trim() || loggedInUser.name || assignedBuyerName;
       assignedBuyerEmail = cleanBuyerEmail || loggedInUser.email || assignedBuyerEmail;
       assignedBuyerAvatar = loggedInUser.avatar || assignedBuyerAvatar;
@@ -180,47 +154,31 @@ export async function createOrder(req: Request, res: Response): Promise<void> {
     if (mongoose.connection.readyState === 1) {
       await MongoUser.deleteMany({ id: "current_user" }).catch(() => {});
       const escapedEmail = cleanBuyerEmail ? cleanBuyerEmail.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") : "";
-      const escapedUsername = derivedUsername.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      const orConditions: any[] = [
-        { username: derivedUsername },
-        { username: { $regex: new RegExp(`^${escapedUsername}$`, "i") } },
-      ];
       if (cleanBuyerEmail) {
-        orConditions.unshift(
-          { email: cleanBuyerEmail },
-          { username: cleanBuyerEmail },
-          { email: { $regex: new RegExp(`^${escapedEmail}$`, "i") } },
-          { username: { $regex: new RegExp(`^${escapedEmail}$`, "i") } }
-        );
+        existingUser = await MongoUser.findOne({
+          $or: [
+            { email: cleanBuyerEmail },
+            { email: { $regex: new RegExp(`^${escapedEmail}$`, "i") } },
+          ],
+          id: { $ne: "current_user" },
+        });
       }
-      existingUser = await MongoUser.findOne({
-        $or: orConditions,
-        id: { $ne: "current_user" },
-      });
     }
-    if (!existingUser) {
+    if (!existingUser && cleanBuyerEmail) {
       existingUser = memoryUsers.find(
-        (u) =>
-          (cleanBuyerEmail && u.email && u.email.toLowerCase() === cleanBuyerEmail) ||
-          (cleanBuyerEmail && u.username && u.username.toLowerCase() === cleanBuyerEmail) ||
-          (u.username && u.username.toLowerCase() === derivedUsername)
+        (u) => u.email && u.email.toLowerCase() === cleanBuyerEmail
       );
     }
 
     if (existingUser) {
       // User ALREADY has an account in the database: link order & session, but created = false (do not show new-user message)
-      const cleanExistingUsername =
-        existingUser.username && !existingUser.username.includes("@")
-          ? existingUser.username
-          : derivedUsername;
       const cleanExistingName =
         existingUser.name && !existingUser.name.includes("@")
           ? existingUser.name
           : buyerName && String(buyerName).trim() && String(buyerName).trim().toLowerCase() !== "invitado"
           ? String(buyerName).trim()
-          : cleanExistingUsername;
+          : existingUser.name || "Cliente";
 
-      existingUser.username = cleanExistingUsername;
       existingUser.name = cleanExistingName;
       if (cleanBuyerEmail && !existingUser.email) {
         existingUser.email = cleanBuyerEmail;
@@ -234,7 +192,6 @@ export async function createOrder(req: Request, res: Response): Promise<void> {
           { id: existingUser.id },
           {
             $set: {
-              username: cleanExistingUsername,
               name: cleanExistingName,
               email: existingUser.email || cleanBuyerEmail,
               password: existingUser.password || "123",
@@ -244,7 +201,6 @@ export async function createOrder(req: Request, res: Response): Promise<void> {
       }
 
       assignedBuyerId = existingUser.id;
-      assignedBuyerUsername = cleanExistingUsername;
       assignedBuyerName = cleanExistingName;
       assignedBuyerEmail = existingUser.email || cleanBuyerEmail;
       assignedBuyerAvatar = existingUser.avatar || assignedBuyerAvatar;
@@ -254,15 +210,12 @@ export async function createOrder(req: Request, res: Response): Promise<void> {
         ...existingObj,
         id: existingUser.id,
         originalId: existingUser.id,
-        username: cleanExistingUsername,
         name: cleanExistingName,
         email: assignedBuyerEmail,
         password: existingUser.password || "123",
         isGuest: false,
       };
-      const memIdx = memoryUsers.findIndex(
-        (u) => u.id === existingUser.id || u.username?.toLowerCase() === cleanExistingUsername.toLowerCase()
-      );
+      const memIdx = memoryUsers.findIndex((u) => u.id === existingUser.id);
       if (memIdx >= 0) {
         memoryUsers[memIdx] = syncedUser;
       } else {
@@ -273,7 +226,6 @@ export async function createOrder(req: Request, res: Response): Promise<void> {
       autoCreatedUserSummary = {
         created: false,
         email: assignedBuyerEmail,
-        username: cleanExistingUsername,
         name: cleanExistingName,
         tempPassword: existingUser.password || "123",
         user: {
@@ -286,18 +238,16 @@ export async function createOrder(req: Request, res: Response): Promise<void> {
           "Tu pedido ha sido vinculado automáticamente a tu perfil registrado.",
       };
     } else {
-      const chosenUsername = derivedUsername;
       const newUserId = "user_" + generateId();
       const resolvedFullName =
         buyerName && String(buyerName).trim() && String(buyerName).trim().toLowerCase() !== "invitado"
           ? String(buyerName).trim()
-          : chosenUsername;
+          : "Cliente";
       const createdUserDoc = {
         id: newUserId,
         originalId: newUserId,
-        username: chosenUsername,
         name: resolvedFullName,
-        email: cleanBuyerEmail || `${chosenUsername}@mallsocial.app`,
+        email: cleanBuyerEmail || `cliente_${newUserId}@mallsocial.app`,
         password: "123",
         bio: "Cliente en la plataforma",
         avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80",
@@ -309,9 +259,7 @@ export async function createOrder(req: Request, res: Response): Promise<void> {
         isGuest: false,
       };
 
-      const memIdx = memoryUsers.findIndex(
-        (u) => u.id === newUserId || u.username.toLowerCase() === chosenUsername.toLowerCase()
-      );
+      const memIdx = memoryUsers.findIndex((u) => u.id === newUserId);
       if (memIdx >= 0) {
         memoryUsers[memIdx] = createdUserDoc;
       } else {
@@ -321,11 +269,11 @@ export async function createOrder(req: Request, res: Response): Promise<void> {
       if (mongoose.connection.readyState === 1) {
         try {
           await MongoUser.findOneAndUpdate(
-            { $or: [{ email: createdUserDoc.email }, { username: chosenUsername }] },
+            { email: createdUserDoc.email },
             { $set: createdUserDoc },
             { upsert: true, new: true }
           );
-          console.log(`👤 Automatically created profile for guest buyer: @${chosenUsername} (${createdUserDoc.email}) with password "123"`);
+          console.log(`👤 Automatically created profile for guest buyer: ${createdUserDoc.name} (${createdUserDoc.email}) with password "123"`);
         } catch (createErr) {
           console.error("Error creating auto-user in Mongo:", createErr);
         }
@@ -334,14 +282,12 @@ export async function createOrder(req: Request, res: Response): Promise<void> {
       setActiveOriginalUserId(newUserId);
 
       assignedBuyerId = newUserId;
-      assignedBuyerUsername = chosenUsername;
       assignedBuyerName = createdUserDoc.name;
       assignedBuyerEmail = createdUserDoc.email;
 
       autoCreatedUserSummary = {
         created: true,
         email: createdUserDoc.email,
-        username: chosenUsername,
         name: createdUserDoc.name,
         tempPassword: "123",
         user: {
@@ -351,7 +297,7 @@ export async function createOrder(req: Request, res: Response): Promise<void> {
           isGuest: false,
         },
         message:
-          "Hemos creado tu perfil en la app con tu nombre completo como usuario y contraseña por defecto 123.",
+          "Hemos creado tu perfil en la app con tu correo y contraseña por defecto 123.",
       };
     }
   }
@@ -381,7 +327,6 @@ export async function createOrder(req: Request, res: Response): Promise<void> {
     receiptVerified: Boolean(receiptVerified),
     buyerId: assignedBuyerId,
     buyerName: assignedBuyerName,
-    buyerUsername: assignedBuyerUsername,
     buyerAvatar: assignedBuyerAvatar,
     buyerEmail: assignedBuyerEmail,
     buyerPhone: buyerPhone || undefined,
@@ -515,7 +460,6 @@ export async function getOrders(req: Request, res: Response): Promise<void> {
     (o) =>
       o.buyerId === userId ||
       (o.buyerId && o.buyerId.toLowerCase() === cleanId) ||
-      (o.buyerUsername && o.buyerUsername.toLowerCase() === cleanId) ||
       (o.buyerEmail && o.buyerEmail.toLowerCase() === cleanId) ||
       (userId === "current_user" && (o.buyerId === activeOriginalUserId || o.buyerId === "current_user" || !o.buyerId))
   );
@@ -525,7 +469,6 @@ export async function getOrders(req: Request, res: Response): Promise<void> {
       (it: any) =>
         it.sellerId === userId ||
         (it.sellerId && it.sellerId.toLowerCase() === cleanId) ||
-        (it.sellerUsername && it.sellerUsername.toLowerCase() === cleanId) ||
         (userId === "current_user" && (it.sellerId === activeOriginalUserId || it.sellerId === "current_user" || !it.sellerId))
     )
   );

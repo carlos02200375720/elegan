@@ -3,7 +3,7 @@
 export const SUPERADMIN_EMAIL: string =
   String((import.meta as any).env?.VITE_SUPERADMIN_EMAIL || "cg0220037@gmail.com").trim().toLowerCase();
 
-export const isSuperAdmin = (user?: { email?: string; username?: string; id?: string; role?: string; isAdmin?: boolean } | null): boolean => {
+export const isSuperAdmin = (user?: { email?: string; id?: string; role?: string; isAdmin?: boolean } | null): boolean => {
   if (!user) return false;
   const email = String(user.email || "").trim().toLowerCase();
 

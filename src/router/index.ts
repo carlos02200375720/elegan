@@ -602,7 +602,7 @@ export function routeToPath(route: AppRoute): string {
  * for a registered or guest active user, ensuring the user's ID is always included.
  */
 export function getProfilePath(
-  usernameOrUser?: string | { id?: string; originalId?: string; username?: string; name?: string; isGuest?: boolean; guestToken?: string } | null,
+  userOrId?: string | { id?: string; originalId?: string; name?: string; isGuest?: boolean; guestToken?: string } | null,
   platform?: 'android' | 'web'
 ): string {
   // Mobile and Web profiles share the clean canonical route: dominio/perfil/id
@@ -610,36 +610,30 @@ export function getProfilePath(
 
   let rawId: string | null = null;
 
-  if (typeof usernameOrUser === 'string') {
-    let clean = usernameOrUser.trim().replace(/^@/, '');
+  if (typeof userOrId === 'string') {
+    let clean = userOrId.trim().replace(/^@/, '');
     if (clean && !isGenericProfileUser(clean)) {
       rawId = clean;
     }
-  } else if (usernameOrUser && typeof usernameOrUser === 'object') {
+  } else if (userOrId && typeof userOrId === 'object') {
     // 1. Check valid persistent originalId (e.g. database persistent id "usr_xxx" or "guest_tok_xxx")
     const validOriginalId =
-      usernameOrUser.originalId && !isGenericProfileUser(usernameOrUser.originalId)
-        ? usernameOrUser.originalId
+      userOrId.originalId && !isGenericProfileUser(userOrId.originalId)
+        ? userOrId.originalId
         : null;
 
     // 2. Check id
     const validId =
-      usernameOrUser.id && !isGenericProfileUser(usernameOrUser.id)
-        ? usernameOrUser.id
+      userOrId.id && !isGenericProfileUser(userOrId.id)
+        ? userOrId.id
         : null;
 
     // 3. Check guestToken
     const validToken =
-      usernameOrUser.guestToken &&
-      typeof usernameOrUser.guestToken === 'string' &&
-      !isGenericProfileUser(usernameOrUser.guestToken)
-        ? usernameOrUser.guestToken.trim()
-        : null;
-
-    // 4. Check username
-    const validUsername =
-      usernameOrUser.username && !isGenericProfileUser(usernameOrUser.username)
-        ? usernameOrUser.username.trim().replace(/^@/, '')
+      userOrId.guestToken &&
+      typeof userOrId.guestToken === 'string' &&
+      !isGenericProfileUser(userOrId.guestToken)
+        ? userOrId.guestToken.trim()
         : null;
 
     if (validId) {
@@ -648,8 +642,6 @@ export function getProfilePath(
       rawId = validOriginalId;
     } else if (validToken) {
       rawId = validToken;
-    } else if (validUsername) {
-      rawId = validUsername;
     }
   }
 
@@ -666,8 +658,6 @@ export function getProfilePath(
               ? sessionUser.originalId
               : sessionUser.guestToken && !isGenericProfileUser(sessionUser.guestToken)
               ? sessionUser.guestToken
-              : sessionUser.username && !isGenericProfileUser(sessionUser.username)
-              ? sessionUser.username
               : null;
           if (sid) rawId = sid;
         }
@@ -694,10 +684,10 @@ export function getProfilePath(
  * Returns the saved publications URL path `/perfil/:id/guardado` (or `/app/movil/perfil/:id/guardado`)
  */
 export function getProfileSavedPath(
-  usernameOrUser?: string | { id?: string; originalId?: string; username?: string; name?: string; isGuest?: boolean; guestToken?: string } | null,
+  userOrId?: string | { id?: string; originalId?: string; name?: string; isGuest?: boolean; guestToken?: string } | null,
   platform?: 'android' | 'web'
 ): string {
-  const basePath = getProfilePath(usernameOrUser, platform).replace(/\/+$/, '');
+  const basePath = getProfilePath(userOrId, platform).replace(/\/+$/, '');
   return `${basePath}/guardado`;
 }
 
@@ -705,10 +695,10 @@ export function getProfileSavedPath(
  * Returns the purchases URL path `/perfil/:id/compra` (or `/app/movil/perfil/:id/compra`)
  */
 export function getProfileCompraPath(
-  usernameOrUser?: string | { id?: string; originalId?: string; username?: string; name?: string; isGuest?: boolean; guestToken?: string } | null,
+  userOrId?: string | { id?: string; originalId?: string; name?: string; isGuest?: boolean; guestToken?: string } | null,
   platform?: 'android' | 'web'
 ): string {
-  const basePath = getProfilePath(usernameOrUser, platform).replace(/\/+$/, '');
+  const basePath = getProfilePath(userOrId, platform).replace(/\/+$/, '');
   return `${basePath}/compra`;
 }
 
@@ -716,10 +706,10 @@ export function getProfileCompraPath(
  * Returns the profile configuration URL path `/perfil/:id/config` (or `/app/movil/perfil/:id/config`)
  */
 export function getProfileConfigPath(
-  usernameOrUser?: string | { id?: string; originalId?: string; username?: string; name?: string; isGuest?: boolean; guestToken?: string } | null,
+  userOrId?: string | { id?: string; originalId?: string; name?: string; isGuest?: boolean; guestToken?: string } | null,
   platform?: 'android' | 'web'
 ): string {
-  const basePath = getProfilePath(usernameOrUser, platform).replace(/\/+$/, '');
+  const basePath = getProfilePath(userOrId, platform).replace(/\/+$/, '');
   return `${basePath}/config`;
 }
 
@@ -727,10 +717,10 @@ export function getProfileConfigPath(
  * Returns the profile products URL path `/perfil/:id/producto` (or `/app/movil/perfil/:id/producto`)
  */
 export function getProfileProductoPath(
-  usernameOrUser?: string | { id?: string; originalId?: string; username?: string; name?: string; isGuest?: boolean; guestToken?: string } | null,
+  userOrId?: string | { id?: string; originalId?: string; name?: string; isGuest?: boolean; guestToken?: string } | null,
   platform?: 'android' | 'web'
 ): string {
-  const basePath = getProfilePath(usernameOrUser, platform).replace(/\/+$/, '');
+  const basePath = getProfilePath(userOrId, platform).replace(/\/+$/, '');
   return `${basePath}/producto`;
 }
 
@@ -738,10 +728,10 @@ export function getProfileProductoPath(
  * Returns the profile incoming sales URL path `/perfil/:id/venta` (or `/app/movil/perfil/:id/venta`)
  */
 export function getProfileVentaPath(
-  usernameOrUser?: string | { id?: string; originalId?: string; username?: string; name?: string; isGuest?: boolean; guestToken?: string } | null,
+  userOrId?: string | { id?: string; originalId?: string; name?: string; isGuest?: boolean; guestToken?: string } | null,
   platform?: 'android' | 'web'
 ): string {
-  const basePath = getProfilePath(usernameOrUser, platform).replace(/\/+$/, '');
+  const basePath = getProfilePath(userOrId, platform).replace(/\/+$/, '');
   return `${basePath}/venta`;
 }
 
@@ -749,10 +739,10 @@ export function getProfileVentaPath(
  * Returns the profile publications URL path `/perfil/:id/publicaciones` (or `/app/movil/perfil/:id/publicaciones`)
  */
 export function getProfilePublicacionesPath(
-  usernameOrUser?: string | { id?: string; originalId?: string; username?: string; name?: string; isGuest?: boolean; guestToken?: string } | null,
+  userOrId?: string | { id?: string; originalId?: string; name?: string; isGuest?: boolean; guestToken?: string } | null,
   platform?: 'android' | 'web'
 ): string {
-  const basePath = getProfilePath(usernameOrUser, platform).replace(/\/+$/, '');
+  const basePath = getProfilePath(userOrId, platform).replace(/\/+$/, '');
   return `${basePath}/publicaciones`;
 }
 
@@ -760,10 +750,10 @@ export function getProfilePublicacionesPath(
  * Returns the profile publish URL path `/perfil/:id/publicar` (or `/app/movil/perfil/:id/publicar`)
  */
 export function getProfilePublicarPath(
-  usernameOrUser?: string | { id?: string; originalId?: string; username?: string; name?: string; isGuest?: boolean; guestToken?: string } | null,
+  userOrId?: string | { id?: string; originalId?: string; name?: string; isGuest?: boolean; guestToken?: string } | null,
   platform?: 'android' | 'web'
 ): string {
-  const basePath = getProfilePath(usernameOrUser, platform).replace(/\/+$/, '');
+  const basePath = getProfilePath(userOrId, platform).replace(/\/+$/, '');
   return `${basePath}/publicar`;
 }
 
@@ -771,10 +761,10 @@ export function getProfilePublicarPath(
  * Returns the profile performance URL path `/perfil/:id/rendimiento` (or `/app/movil/perfil/:id/rendimiento`)
  */
 export function getProfileRendimientoPath(
-  usernameOrUser?: string | { id?: string; originalId?: string; username?: string; name?: string; isGuest?: boolean; guestToken?: string } | null,
+  userOrId?: string | { id?: string; originalId?: string; name?: string; isGuest?: boolean; guestToken?: string } | null,
   platform?: 'android' | 'web'
 ): string {
-  const basePath = getProfilePath(usernameOrUser, platform).replace(/\/+$/, '');
+  const basePath = getProfilePath(userOrId, platform).replace(/\/+$/, '');
   return `${basePath}/rendimiento`;
 }
 
@@ -807,7 +797,7 @@ export function getProductShareUrl(
 }
 
 /**
- * Get full public shareable URL for a creator profile/store (/perfil/:username)
+ * Get full public shareable URL for a creator profile/store (/perfil/:id)
  */
 export function getStoreShareUrl(sellerId: string): string {
   const path = getProfilePath(sellerId);
@@ -815,8 +805,8 @@ export function getStoreShareUrl(sellerId: string): string {
   return `${window.location.origin}${path}`;
 }
 
-export function getProfileShareUrl(username: string): string {
-  return getStoreShareUrl(username);
+export function getProfileShareUrl(userIdOrProfile: string): string {
+  return getStoreShareUrl(userIdOrProfile);
 }
 
 /**

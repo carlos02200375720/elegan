@@ -158,7 +158,6 @@ export default function App() {
       id: "current_user",
       originalId: savedGuestToken || undefined,
       guestToken: savedGuestToken || undefined,
-      username: "invitado",
       name: "Invitado",
       avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80",
       bio: "Explorando la plataforma",
@@ -491,8 +490,7 @@ export default function App() {
       const matchedCreator = users.find(
         (u) =>
           u.id === selectedCreatorProfileId ||
-          (u.originalId && u.originalId === selectedCreatorProfileId) ||
-          (u.username && u.username.toLowerCase() === selectedCreatorProfileId.toLowerCase())
+          (u.originalId && u.originalId === selectedCreatorProfileId)
       );
       const targetUser = matchedCreator || selectedCreatorProfileId;
       const expectedPath = isSavedSubRoute
@@ -537,7 +535,7 @@ export default function App() {
         navigateTo(expectedPath, { replace: true });
       }
     }
-  }, [activeTab, selectedCreatorProfileId, currentUser.id, currentUser.username, activePlatform, isLoggedIn]);
+  }, [activeTab, selectedCreatorProfileId, currentUser.id, activePlatform, isLoggedIn]);
 
   // Android permanece en la pantalla nativa con fondo blanco hasta que la app/catálogo cargue.
   const [isInitialLoading, setIsInitialLoading] = useState(false);
@@ -996,8 +994,7 @@ export default function App() {
                   if (
                     existing.isOnline !== user.isOnline ||
                     existing.avatar !== user.avatar ||
-                    existing.name !== user.name ||
-                    existing.username !== user.username
+                    existing.name !== user.name
                   ) {
                     hasChanges = true;
                   }
@@ -1277,7 +1274,6 @@ export default function App() {
       body: JSON.stringify({
         userId: userIdentifier,
         guestToken,
-        username: currentUser.username,
       }),
     })
       .then((res) => res.json())
@@ -1311,7 +1307,6 @@ export default function App() {
                   caption: p.description || "",
                   creatorId: p.sellerId || "seller",
                   creatorName: p.sellerName || "Vendedor",
-                  creatorUsername: p.sellerUsername,
                   creatorAvatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80",
                   videoUrl: productVideos[0] || "",
                   thumbnailUrl: p.imageUrl || productImages[0] || "",
@@ -1352,7 +1347,7 @@ export default function App() {
     const commenterName =
       currentUser.name && currentUser.name !== "Invitado"
         ? currentUser.name
-        : currentUser.username || "Invitado";
+        : "Invitado";
 
     apiFetch(`/api/reels/${reelId}/comment`, {
       method: "POST",
@@ -1360,7 +1355,7 @@ export default function App() {
       body: JSON.stringify({
         userId: userIdentifier,
         guestToken,
-        username: commenterName,
+        name: commenterName,
         avatar: currentUser.avatar,
         text: text.trim(),
       }),
@@ -1525,7 +1520,6 @@ export default function App() {
         id: reelId,
         userId: userIdentifier,
         guestToken,
-        username: currentUser.username,
       }),
     })
       .then((res) => res.json())
@@ -1559,9 +1553,9 @@ export default function App() {
   // Cart persistence is anchored by registered userId or guest token
   const getCartUserId = (userObj?: User): string | null => {
     const target = userObj || currentUser;
-    // 1. If user is authenticated and registered, use their persistent account ID or username
+    // 1. If user is authenticated and registered, use their persistent account ID
     if (target && !isGuestUser(target)) {
-      return target.originalId || (target.id !== "current_user" ? target.id : null) || target.username;
+      return target.originalId || (target.id !== "current_user" ? target.id : null);
     }
     // 2. For guest users, their guest token is their persistent identifier
     const guestToken =
@@ -1649,7 +1643,7 @@ export default function App() {
       isCancelled = true;
       if (retryTimer) clearTimeout(retryTimer);
     };
-  }, [currentUser?.id, currentUser?.username, currentUser?.guestToken]);
+  }, [currentUser?.id, currentUser?.guestToken]);
 
   const handleAddToCart = (product: Product) => {
     // Record step 3 (Capa 3: Carrito) into the sales funnel for this visitor token
@@ -1737,7 +1731,6 @@ export default function App() {
         shippingAddress: address,
         shippingCost: shippingCost,
         buyerName: buyerInfo?.buyerName || currentUser.name,
-        buyerUsername: currentUser.username,
         buyerAvatar: currentUser.avatar,
         buyerEmail: buyerInfo?.buyerEmail || currentUser.email,
         buyerPhone: buyerInfo?.buyerPhone,
@@ -1771,7 +1764,7 @@ export default function App() {
               const existingIdx = prev.findIndex(
                 (u) =>
                   u.id === listUser.id ||
-                  (u.username && registeredUser.username && u.username.toLowerCase() === registeredUser.username.toLowerCase())
+                  (u.email && registeredUser.email && u.email.toLowerCase() === registeredUser.email.toLowerCase())
               );
               if (existingIdx >= 0) {
                 const next = [...prev];
@@ -1919,16 +1912,14 @@ export default function App() {
     const matchedCreator = users.find(
       (u) =>
         u.id === creatorId ||
-        (u.originalId && u.originalId === creatorId) ||
-        (u.username && u.username.toLowerCase() === creatorId.toLowerCase())
+        (u.originalId && u.originalId === creatorId)
     );
     const targetUser = matchedCreator || creatorId;
     const isOwn =
-      (creatorId === currentUser?.id ||
-        (Boolean(currentUser?.originalId) && creatorId === currentUser.originalId) ||
-        (Boolean(currentUser?.guestToken) && creatorId === currentUser.guestToken) ||
-        (matchedCreator && (matchedCreator.id === currentUser?.id || (Boolean(currentUser?.originalId) && matchedCreator.originalId === currentUser.originalId))) ||
-        (Boolean(currentUser?.username) && (matchedCreator?.username?.toLowerCase() === currentUser.username.toLowerCase())));
+      creatorId === currentUser?.id ||
+      (Boolean(currentUser?.originalId) && creatorId === currentUser.originalId) ||
+      (Boolean(currentUser?.guestToken) && creatorId === currentUser.guestToken) ||
+      Boolean(matchedCreator && (matchedCreator.id === currentUser?.id || (Boolean(currentUser?.originalId) && matchedCreator.originalId === currentUser.originalId)));
     setSelectedCreatorProfileId(isOwn ? null : (matchedCreator?.id || creatorId));
     setActiveTab('profile');
     const platform = activePlatform === 'android' ? 'android' : 'web';
@@ -2010,7 +2001,6 @@ export default function App() {
       id: "current_user",
       originalId: guestToken,
       guestToken,
-      username: "invitado",
       name: "Invitado",
       avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80",
       bio: "Explorando la plataforma",
@@ -2105,7 +2095,7 @@ export default function App() {
       {/* Main Target Routing: Android vs Web */}
       {activePlatform === "android" ? (
         <div className="flex flex-1 w-full min-h-screen justify-center bg-slate-950" id="app-android-container">
-          <div className="w-full sm:max-w-[430px] min-h-screen flex flex-col relative sm:border-x sm:border-slate-800 sm:shadow-2xl bg-black">
+          <div className="w-full sm:max-w-[430px] min-h-screen flex flex-col relative sm:border-x sm:border-slate-800 sm:shadow-2xl bg-white">
             <AndroidApp
               activeTab={activeTab}
               setActiveTab={setActiveTab}
@@ -2233,7 +2223,7 @@ export default function App() {
             saveCartToMongo(cart, loggedUser);
           }
           setUsers((prev) => {
-            const idx = prev.findIndex((u) => u.id === loggedUser.id || u.username === loggedUser.username);
+            const idx = prev.findIndex((u) => u.id === loggedUser.id || (u.email && loggedUser.email && u.email.toLowerCase() === loggedUser.email.toLowerCase()));
             if (idx >= 0) {
               const next = [...prev];
               next[idx] = loggedUser;

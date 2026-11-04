@@ -18,7 +18,6 @@ export function isSupportAlias(id?: string | null): boolean {
 export const DEFAULT_SUPPORT_USER: User = {
   id: SUPPORT_USER_ID,
   name: "Soporte al Cliente",
-  username: "soporte",
   email: SUPPORT_EMAIL,
   avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80",
   bio: "Atención y soporte oficial de Mall Social. Escríbenos aquí para cualquier duda.",
@@ -35,7 +34,6 @@ export function resolveSupportUser(users: User[] = []): User {
     (u) =>
       (u.email && u.email.toLowerCase() === SUPPORT_EMAIL) ||
       u.id === SUPPORT_USER_ID ||
-      (u.username && u.username.toLowerCase() === "carlos") ||
       isSuperAdmin(u)
   );
 

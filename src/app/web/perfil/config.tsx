@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Settings, ShieldCheck, Camera, Users } from "lucide-react";
+import { Settings, ShieldCheck, Camera, Users, AlertCircle } from "lucide-react";
 import { motion } from "motion/react";
 import { User, isGuestUser as checkIsGuest } from "../../../types";
 import { apiFetch, getMediaUrl } from "../../../config";

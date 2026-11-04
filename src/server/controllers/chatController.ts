@@ -150,7 +150,7 @@ export async function getSupportConversations(req: Request, res: Response): Prom
     const clientIds = Array.from(clientMap.keys());
     let clientUsers: any[] = [];
     if (mongoose.connection.readyState === 1 && clientIds.length > 0) {
-      clientUsers = await MongoUser.find({ id: { $in: clientIds } }, "id username name avatar email isOnline").lean();
+      clientUsers = await MongoUser.find({ id: { $in: clientIds } }, "id name avatar email isOnline").lean();
     }
 
     const conversations = clientIds.map((clientId) => {
@@ -161,7 +161,6 @@ export async function getSupportConversations(req: Request, res: Response): Prom
         user: matchedUser || {
           id: clientId,
           name: clientId.startsWith("guest_") ? "Cliente Invitado" : "Cliente",
-          username: clientId,
           avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80",
         },
         lastMessage: info.lastMessage,

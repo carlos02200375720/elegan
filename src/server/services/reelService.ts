@@ -10,7 +10,7 @@ import { Reel } from "../../types";
 let migrationRan = false;
 
 /**
- * Builds a fast lookup map for MongoDB users by id, username, and _id string.
+ * Builds a fast lookup map for MongoDB users by id, email, and _id string.
  */
 export async function buildUserMap(): Promise<Map<string, any>> {
   const userMap = new Map<string, any>();
@@ -105,7 +105,6 @@ export async function syncLegacyPublicacionesToMongoReel(userMap?: Map<string, a
         images: !isVideo && pubUrl ? [pubUrl] : [],
         creatorId: creator ? creator.id : (pub.creatorId || "user_anon"),
         creatorName: creator ? creator.name : "Usuario",
-        creatorUsername: creator ? creator.username : undefined,
         creatorAvatar: creator?.avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80",
         likes: pub.likes || 0,
         views: pub.views || 0,

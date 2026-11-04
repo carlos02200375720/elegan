@@ -129,7 +129,6 @@ export async function syncGuestSession(
     id: "current_user",
     originalId: existingToken,
     guestToken: existingToken,
-    username: "invitado",
     name: "Invitado",
     avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80",
     bio: "Explorando la plataforma",

@@ -492,8 +492,7 @@ export async function createPost(req: Request, res: Response): Promise<void> {
     const createdAt = new Date();
 
     let resolvedCreatorId = creatorId || (req.headers["x-user-id"] as string) || "current_user";
-    let resolvedCreatorUsername = creatorUsername || (req.headers["x-user-username"] as string) || "usuario";
-    let resolvedCreatorName = creatorName || resolvedCreatorUsername;
+    let resolvedCreatorName = creatorName || (req.headers["x-user-name"] as string) || "Usuario";
     let resolvedCreatorAvatar = creatorAvatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80";
 
     // Attempt to lookup creator in Mongo if possible
@@ -502,8 +501,7 @@ export async function createPost(req: Request, res: Response): Promise<void> {
         // El superadministrador se consulta exclusivamente en super_admins.
         const foundUser =
           await MongoSuperAdmin.findOne({ id: resolvedCreatorId }) ||
-          await MongoUser.findOne({ id: resolvedCreatorId }) ||
-          await MongoUser.findOne({ username: resolvedCreatorUsername });
+          await MongoUser.findOne({ id: resolvedCreatorId });
         if (foundUser) {
           resolvedCreatorId = foundUser.id;
           resolvedCreatorName = foundUser.name || resolvedCreatorName;
@@ -547,7 +545,6 @@ export async function createPost(req: Request, res: Response): Promise<void> {
       videoUrl: resolvedType === "video" ? media_url : "",
       thumbnailUrl: thumbnailUrl || (resolvedType === "image" ? media_url : ""),
       creatorId: resolvedCreatorId,
-      creatorUsername: resolvedCreatorUsername,
       creatorName: resolvedCreatorName,
       creatorAvatar: resolvedCreatorAvatar,
       type: resolvedType,
@@ -645,7 +642,6 @@ export async function getFeed(req: Request, res: Response): Promise<void> {
         media_type: r.type === "image" || r.type === "carousel" ? "image" : "video",
         created_at: (r as any).createdAt || new Date(),
         creatorId: r.creatorId,
-        creatorUsername: r.creatorUsername,
         creatorAvatar: r.creatorAvatar,
         thumbnailUrl: r.thumbnailUrl,
         hlsUrl: r.hlsUrl,

@@ -53,12 +53,12 @@ async function findOrCreateReel(reelId: string): Promise<Reel | null> {
 
     if (product) {
       let seller: any = null;
-      if (mongoose.connection.readyState === 1 && (product.sellerId || product.sellerUsername)) {
+      if (mongoose.connection.readyState === 1 && product.sellerId) {
         try {
           seller = await MongoUser.findOne({
             $or: [
-              ...(product.sellerId ? [{ id: product.sellerId }, { _id: mongoose.isValidObjectId(product.sellerId) ? product.sellerId : undefined }] : []),
-              ...(product.sellerUsername ? [{ username: product.sellerUsername }] : []),
+              { id: product.sellerId },
+              ...(mongoose.isValidObjectId(product.sellerId) ? [{ _id: product.sellerId }] : []),
             ],
           });
         } catch (e) {}
@@ -134,7 +134,6 @@ export async function likeReel(req: Request, res: Response): Promise<void> {
     reel.likedBy = [];
   }
 
-  const username = req.body?.username;
   let userId = req.body?.userId;
   const headerGuestToken = (req.headers["x-guest-token"] as string)?.trim();
   const guestToken = (req.body?.guestToken || headerGuestToken || "").trim();
@@ -142,8 +141,6 @@ export async function likeReel(req: Request, res: Response): Promise<void> {
   if (!userId || userId === "current_user") {
     if (activeOriginalUserId && activeOriginalUserId !== "user_guest" && activeOriginalUserId !== "current_user") {
       userId = activeOriginalUserId;
-    } else if (username && username !== "invitado") {
-      userId = username;
     } else if (guestToken) {
       userId = guestToken;
     } else {
@@ -154,7 +151,6 @@ export async function likeReel(req: Request, res: Response): Promise<void> {
   const userIdentifiers = new Set<string>();
   if (userId && userId !== "current_user") userIdentifiers.add(userId);
   if (guestToken) userIdentifiers.add(guestToken);
-  if (username && username !== "invitado") userIdentifiers.add(username);
   if (activeOriginalUserId && activeOriginalUserId !== "user_guest" && activeOriginalUserId !== "current_user") {
     userIdentifiers.add(activeOriginalUserId);
   }
@@ -172,8 +168,6 @@ export async function likeReel(req: Request, res: Response): Promise<void> {
     const primaryIdentifier =
       activeOriginalUserId && activeOriginalUserId !== "user_guest" && activeOriginalUserId !== "current_user"
         ? activeOriginalUserId
-        : username && username !== "invitado"
-        ? username
         : guestToken
         ? guestToken
         : userId || "current_user";
@@ -214,21 +208,21 @@ export async function commentReel(req: Request, res: Response): Promise<void> {
     return;
   }
 
-  const { userId, username, avatar, text } = req.body;
+  const { userId, name, avatar, text } = req.body;
   if (!text) {
     res.status(400).json({ error: "Comment text is required" });
     return;
   }
 
-  const headerUsername = (req.headers["x-user-username"] as string)?.trim();
-  const resolvedUsername = username || headerUsername || "usuario";
+  const headerName = (req.headers["x-user-name"] as string)?.trim();
+  const resolvedName = name || headerName || "Usuario";
   const resolvedAvatar =
     avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80";
 
   const newComment: Comment = {
     id: "c_" + generateId(),
-    userId: userId || req.headers["x-user-id"] as string || req.headers["x-guest-token"] as string,
-    username: resolvedUsername,
+    userId: userId || (req.headers["x-user-id"] as string) || (req.headers["x-guest-token"] as string),
+    name: resolvedName,
     avatar: resolvedAvatar,
     text,
     createdAt: new Date().toISOString(),
@@ -323,7 +317,7 @@ export async function createReel(req: any, res: any): Promise<void> {
 
     const creator = await resolveAuthenticatedUser(req, "creator");
 
-    if (!creator || creator.isGuest || creator.username === "invitado" || creator.username === "guest") {
+    if (!creator || creator.isGuest) {
       res.status(403).json({ error: "Debes iniciar sesión con una cuenta para poder realizar publicaciones." });
       return;
     }
@@ -342,8 +336,7 @@ export async function createReel(req: any, res: any): Promise<void> {
       thumbnailUrl: thumbnailUrl && !thumbnailUrl.includes("1618005182384") ? thumbnailUrl : "",
       description: description || "",
       creatorId: creator.id,
-      creatorName: creator.name || creator.username,
-      creatorUsername: creator.username,
+      creatorName: creator.name || "Usuario",
       creatorAvatar:
         creator.avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80",
       productId: productId || taggedProductId || undefined,

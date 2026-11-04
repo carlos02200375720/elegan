@@ -3,7 +3,6 @@ export type NavigationTab = 'inicio' | 'reels' | 'shop' | 'messages' | 'profile'
 export interface User {
   id: string;
   originalId?: string;
-  username: string;
   name: string;
   avatar: string;
   bio: string;
@@ -34,7 +33,7 @@ export interface User {
 
 /**
  * Returns true if a user object or partial identity represents an unregistered guest.
- * Considers isGuest flag, lack of email, and app-generated guest usernames (e.g. invitado, invitado_123456).
+ * Considers isGuest flag, lack of email, and app-generated guest IDs.
  */
 export function isGuestUser(user?: Partial<User> | null): boolean {
   if (!user) return true;
@@ -43,17 +42,16 @@ export function isGuestUser(user?: Partial<User> | null): boolean {
     user.isGuest === true ||
     user.id === "guest" ||
     user.id === "current_user" ||
-    user.id?.startsWith("guest_") ||
-    user.username === "invitado" ||
-    user.username === "guest" ||
-    user.username?.startsWith("invitado_")
+    user.id?.startsWith("guest_")
   );
 }
 
 export interface Comment {
   id: string;
   userId?: string;
-  username: string;
+  name?: string;
+  userName?: string;
+  username?: string;
   avatar: string;
   text: string;
   createdAt: string;
@@ -83,7 +81,6 @@ export interface Reel {
   caption?: string; // Optional alias for description
   creatorId: string;
   creatorName: string;
-  creatorUsername?: string;
   creatorAvatar: string;
   likes: number;
   likedBy?: string[];
@@ -126,7 +123,6 @@ export interface Product {
   stock: number;
   sellerId: string;
   sellerName?: string;
-  sellerUsername?: string;
   sellerAvatar?: string;
   rating: number;
   shippingCost?: number;
@@ -165,7 +161,6 @@ export interface OrderItem {
   imageUrl: string;
   sellerId?: string;
   sellerName?: string;
-  sellerUsername?: string;
   carrier?: string;
 }
 
@@ -181,7 +176,6 @@ export interface OrderStatusHistoryItem {
 export interface AutoCreatedUserSummary {
   created: boolean;
   email: string;
-  username: string;
   name: string;
   tempPassword: string;
   user?: User;
@@ -193,7 +187,6 @@ export interface Order {
   paypalOrderId?: string;
   buyerId?: string;
   buyerName?: string;
-  buyerUsername?: string;
   buyerAvatar?: string;
   buyerEmail?: string;
   buyerPhone?: string;
@@ -237,7 +230,7 @@ export interface LiveSession {
   isLive: boolean;
   chatMessages: {
     id: string;
-    username: string;
+    name: string;
     avatar: string;
     text: string;
     createdAt: string;
