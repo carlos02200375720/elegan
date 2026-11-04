@@ -508,6 +508,7 @@ export function VerificasionTiendaView({
             </div>
           </div>
         </div>
+      </div>
 
       <AnimatePresence>
         {activeModal && (
