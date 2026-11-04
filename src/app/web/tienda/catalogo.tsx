@@ -1011,7 +1011,7 @@ export default function Tienda({
                     initial={{ opacity: 0, y: 15 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -15 }}
-                    className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 bg-white"
+                    className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 bg-white"
                   >
                     {displayedProducts.map((product, index) => {
                       const seller = getSellerInfo(product.sellerId);
