@@ -684,19 +684,15 @@ export function VerificacionTiendaView({
 
       {/* 4. PIE DE PÁGINA FIJO CON BOTÓN "CONFIRMAR EL PAGO" */}
       <div
-        className="fixed bottom-0 inset-x-0 z-40 h-[60px] min-h-[60px] max-h-[60px] bg-white/95 backdrop-blur-md border-t border-slate-200 px-3 py-1.5 shadow-lg box-border"
-        style={{ height: "60px", minHeight: "60px", maxHeight: "60px", paddingBottom: "6px" }}
+        className="fixed inset-x-0 z-40 h-[60px] min-h-[60px] max-h-[60px] bg-white border-t border-slate-200 px-3 py-1.5 shadow-lg box-border"
+        style={{
+          bottom: "env(safe-area-inset-bottom, 0px)",
+          height: "60px",
+          minHeight: "60px",
+          maxHeight: "60px",
+        }}
       >
-        <div className="max-w-md mx-auto flex h-full items-center justify-between gap-3">
-          <div className="min-w-0">
-            <span className="text-[10px] uppercase font-bold tracking-wider text-slate-400 block">
-              Total a pagar
-            </span>
-            <span className="text-base font-black text-slate-900 font-mono leading-none">
-              {formatPrice(cartTotal)}
-            </span>
-          </div>
-
+        <div className="max-w-md mx-auto flex h-full items-center">
           <button
             type="button"
             id="android-checkout-fixed-confirm-btn"
