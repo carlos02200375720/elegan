@@ -48,12 +48,12 @@ export default function BarraNavegacion({
           }}
           className={`flex h-full min-w-0 flex-col items-center justify-center rounded-2xl px-1 transition-all active:bg-amber-500/10 cursor-pointer ${
             isHomeActive
-              ? "text-amber-600 scale-105 font-bold"
+              ? "text-black scale-105 font-bold"
               : "text-slate-400 hover:text-slate-800"
           }`}
           id="android-nav-inicio"
         >
-          <Play className={`w-5 h-5 transition-all ${isHomeActive ? "fill-amber-600 stroke-amber-600" : ""}`} />
+          <Play strokeWidth={2.75} className={`w-5 h-5 transition-all ${isHomeActive ? "fill-black stroke-black" : ""}`} />
           <span className="text-[10px] font-medium mt-0.5 tracking-tight">Inicio</span>
         </button>
 
@@ -64,12 +64,12 @@ export default function BarraNavegacion({
           }}
           className={`relative flex h-full min-w-0 flex-col items-center justify-center rounded-2xl px-1 transition-all active:bg-amber-500/10 cursor-pointer ${
             activeTab === "shop"
-              ? "text-amber-600 scale-105 font-bold"
+              ? "text-black scale-105 font-bold"
               : "text-slate-400 hover:text-slate-800"
           }`}
           id="android-nav-shop"
         >
-          <ShoppingBag className={`w-5 h-5 transition-all ${activeTab === "shop" ? "fill-amber-600 stroke-amber-600" : ""}`} />
+          <ShoppingBag strokeWidth={2.75} className={`w-5 h-5 transition-all ${activeTab === "shop" ? "fill-black stroke-black" : ""}`} />
           <span className="text-[10px] font-medium mt-0.5 tracking-tight">Tienda</span>
         </button>
 
@@ -80,12 +80,12 @@ export default function BarraNavegacion({
           }}
           className={`relative flex h-full min-w-0 flex-col items-center justify-center rounded-2xl px-1 transition-all active:bg-amber-500/10 cursor-pointer ${
             activeTab === "messages"
-              ? "text-amber-600 scale-105 font-bold"
+              ? "text-black scale-105 font-bold"
               : "text-slate-400 hover:text-slate-800"
           }`}
           id="android-nav-messages"
         >
-          <MessageSquare className={`w-5 h-5 transition-all ${activeTab === "messages" ? "fill-amber-600 stroke-amber-600" : ""}`} />
+          <MessageSquare strokeWidth={2.75} className={`w-5 h-5 transition-all ${activeTab === "messages" ? "fill-black stroke-black" : ""}`} />
           <span className="text-[10px] font-medium mt-0.5 tracking-tight">Mensajes</span>
           {totalUnreads > 0 && (
             <span className="absolute top-0.5 right-2 w-4 h-4 bg-rose-500 text-white font-mono font-bold text-[9px] rounded-full flex items-center justify-center border border-white animate-pulse shadow-sm">
@@ -102,12 +102,12 @@ export default function BarraNavegacion({
           }}
           className={`flex h-full min-w-0 flex-col items-center justify-center rounded-2xl px-1 transition-all active:bg-amber-500/10 cursor-pointer ${
             activeTab === "profile"
-              ? "text-amber-600 scale-105 font-bold"
+              ? "text-black scale-105 font-bold"
               : "text-slate-400 hover:text-slate-800"
           }`}
           id="android-nav-profile"
         >
-          <UserIcon className={`w-5 h-5 transition-all ${activeTab === "profile" ? "fill-amber-600 stroke-amber-600" : ""}`} />
+          <UserIcon strokeWidth={2.75} className={`w-5 h-5 transition-all ${activeTab === "profile" ? "fill-black stroke-black" : ""}`} />
           <span className="text-[10px] font-medium mt-0.5 tracking-tight">Mi Perfil</span>
         </button>
       </div>
