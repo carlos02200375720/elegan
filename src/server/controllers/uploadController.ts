@@ -499,13 +499,14 @@ export async function createPost(req: Request, res: Response): Promise<void> {
     // Attempt to lookup creator in Mongo if possible
     if (mongoose.connection.readyState === 1 && resolvedCreatorId) {
       try {
-        const foundUser = await MongoUser.findOne({
-          $or: [{ id: resolvedCreatorId }, { username: resolvedCreatorUsername }],
-        });
+        // El superadministrador se consulta exclusivamente en super_admins.
+        const foundUser =
+          await MongoSuperAdmin.findOne({ id: resolvedCreatorId }) ||
+          await MongoUser.findOne({ id: resolvedCreatorId }) ||
+          await MongoUser.findOne({ username: resolvedCreatorUsername });
         if (foundUser) {
           resolvedCreatorId = foundUser.id;
-          resolvedCreatorUsername = foundUser.username;
-          resolvedCreatorName = foundUser.name || foundUser.username;
+          resolvedCreatorName = foundUser.name || resolvedCreatorName;
           if (foundUser.avatar) resolvedCreatorAvatar = foundUser.avatar;
         }
       } catch {}
@@ -523,6 +524,8 @@ export async function createPost(req: Request, res: Response): Promise<void> {
           title: title || resolvedCaption,
           description: resolvedCaption,
           creatorId: resolvedCreatorId,
+          creatorName: resolvedCreatorName,
+          creatorAvatar: resolvedCreatorAvatar,
           createdAt: createdAt,
           caption: resolvedCaption,
           media_url: media_url,
@@ -621,6 +624,8 @@ export async function getFeed(req: Request, res: Response): Promise<void> {
             media_type: doc.media_type || (doc.url?.endsWith(".m3u8") || doc.url?.includes("video") ? "video" : "image"),
             created_at: doc.createdAt || new Date(),
             creatorId: doc.creatorId,
+            creatorName: doc.creatorName,
+            creatorAvatar: doc.creatorAvatar,
             thumbnailUrl: doc.thumbnailUrl,
             hlsUrl: doc.hlsUrl,
           }));
