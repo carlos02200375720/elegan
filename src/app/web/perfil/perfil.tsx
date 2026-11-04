@@ -455,7 +455,6 @@ export default function Perfil({
 
   const isGuestMode =
     isGuestUser(currentUser) &&
-    activeSubTab !== "edit" &&
     (isSelf || !selectedCreatorId || selectedCreatorId === currentUser.id || selectedCreatorId === currentUser.username || selectedCreatorId?.toLowerCase().startsWith("invitado") || selectedCreatorId === "usuario" || selectedCreatorId === "guest");
 
   if (isGuestMode) {
