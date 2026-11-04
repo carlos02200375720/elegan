@@ -184,7 +184,7 @@ export async function getPublicBanner(req: Request, res: Response): Promise<void
       return;
     }
     const settings = await MongoAppSettings.findOne({ key: "global" }).lean();
-    if (!settings || settings.bannerEnabled !== true || !settings.bannerTitle) {
+    if (!settings || !settings.bannerTitle) {
       res.json({ success: true, banner: null });
       return;
     }
@@ -194,7 +194,8 @@ export async function getPublicBanner(req: Request, res: Response): Promise<void
       title: settings.bannerTitle || "",
       description: settings.bannerDescription || "",
       link: settings.bannerLink || "",
-      imageUrl: settings.bannerImageUrl || ""
+      imageUrl: settings.bannerImageUrl || "",
+      enabled: settings.bannerEnabled === true
     }});
   } catch (err: any) {
     res.status(500).json({ success: false, error: "No se pudo obtener la promoción" });
