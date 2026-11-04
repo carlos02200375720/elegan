@@ -813,7 +813,7 @@ export default function Tienda({
         <header
           className="sticky top-0 z-40 bg-white border-b border-slate-100 shadow-2xs flex flex-col"
           style={{
-            paddingTop: activeStep === "catalog" ? "0" : "0.5rem",
+            paddingTop: activeStep === "catalog" ? "4px" : "0.5rem",
           }}
         >
           {/* Top Bar: Navigation / Search / Cart */}
