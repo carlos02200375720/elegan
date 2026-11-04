@@ -528,8 +528,14 @@ export default function PublishView({ currentUser, onBack, onSuccess, userProduc
     setErrorMessage(null);
     setSuccessMessage(null);
 
-    // Validate authenticated user
-    if (currentUser.isGuest || !currentUser.username || currentUser.username === "invitado" || currentUser.username === "guest") {
+    // Validate authenticated user by stable account ID, not username.
+    if (
+      !currentUser?.id ||
+      currentUser.isGuest === true ||
+      currentUser.id === "guest" ||
+      currentUser.id === "current_user" ||
+      currentUser.id.startsWith("guest_")
+    ) {
       setErrorMessage("Debes iniciar sesión con una cuenta para poder publicar contenido o registrar productos.");
       return;
     }
