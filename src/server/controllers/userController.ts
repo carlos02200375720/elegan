@@ -983,7 +983,7 @@ export async function updateCurrentUser(req: Request, res: Response): Promise<vo
 
   const updateFields: any = {};
   if (name !== undefined) updateFields.name = name;
-  if (username !== undefined) updateFields.username = username;
+  if (username !== undefined && !isConfiguredSuperadmin(currentUserObj)) updateFields.username = username;
   if (password !== undefined) updateFields.password = password;
   if (email !== undefined) updateFields.email = String(email).trim().toLowerCase();
   if (address !== undefined) updateFields.address = address;
@@ -1226,7 +1226,9 @@ export async function registerUser(req: Request, res: Response): Promise<void> {
 
     const isNewSuperadmin = isConfiguredSuperadmin(newUser);
     const AccountModel = isNewSuperadmin ? MongoSuperAdmin : MongoUser;
-    const mongoUser = new AccountModel({ ...newUser, canSell: isNewSuperadmin || newUser.canSell, isAdmin: isNewSuperadmin, role: isNewSuperadmin ? "superadmin" : "user" });
+    const accountData: any = { ...newUser, canSell: isNewSuperadmin || newUser.canSell, isAdmin: isNewSuperadmin, role: isNewSuperadmin ? "superadmin" : "user" };
+    if (isNewSuperadmin) delete accountData.username;
+    const mongoUser = new AccountModel(accountData);
     await mongoUser.save();
     console.log(`Cuenta registrada para ${newUser.email} con id=${newUser.id} en MongoDB Atlas.`);
     setActiveOriginalUserId(newUser.id);
