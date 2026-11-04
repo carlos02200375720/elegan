@@ -227,7 +227,7 @@ export default function WebApp({
                   setCurrentUser(normalizedUser);
                   setIsLoggedIn(true);
                   sessionState.setAuthenticated(true);
-                  sessionState.setUsername(normalizedUser.email || "");
+                  sessionState.setEmail(normalizedUser.email || "");
                   sessionState.setUser(normalizedUser);
                   setSelectedCreatorProfileId(null);
                   setActiveTab('shop');
@@ -291,7 +291,7 @@ export default function WebApp({
                     if (!isGuestUser(updatedUser)) {
                       setIsLoggedIn(true);
                       sessionState.setAuthenticated(true);
-                      sessionState.setUsername(updatedUser.email || "");
+                      sessionState.setEmail(updatedUser.email || "");
                       const parsed = typeof window !== 'undefined' ? parseRoute(window.location.pathname) : null;
                       if (parsed?.type === 'profile' && parsed.profileTab === 'config') {
                         setActiveTab('profile');
