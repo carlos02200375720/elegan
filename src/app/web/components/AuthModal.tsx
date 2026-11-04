@@ -81,7 +81,7 @@ export function AuthModal({
       const data = await response.json();
       if (response.ok && data.success) {
         sessionState.setAuthenticated(true);
-        sessionState.setUsername(data.user?.email || regEmail.trim().toLowerCase());
+        sessionState.setEmail(data.user?.email || regEmail.trim().toLowerCase());
         
         sessionState.setUser(data.user);
 
@@ -129,7 +129,7 @@ export function AuthModal({
       const data = await response.json();
       if (response.ok && data.success) {
         sessionState.setAuthenticated(true);
-        sessionState.setUsername(data.user.name || data.user.email || "");
+        sessionState.setEmail(data.user.name || data.user.email || "");
         
         sessionState.setUser(data.user);
 
