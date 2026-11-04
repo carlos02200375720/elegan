@@ -1048,8 +1048,8 @@ export default function Inicio({
           const displayUsername = storeProfile?.username?.trim() || "elegan";
           const displayName = storeProfile?.name?.trim() || "Elegan";
           const displayAvatar =
-            reelItem.creatorAvatar?.trim() ||
             storeProfile?.avatar?.trim() ||
+            reelItem.creatorAvatar?.trim() ||
             taggedProduct?.sellerAvatar?.trim() ||
             "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80";
 
