@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import { MongoReel } from "../models/Reel";
 import { MongoPublicacion } from "../models/Publicacion";
 import { MongoUser } from "../models/User";
+import { MongoSuperAdmin } from "../models/SuperAdmin";
 import { MongoProduct } from "../models/Product";
 import { formatReelDTO } from "../utils/reelUtils";
 import { Reel } from "../../types";
@@ -17,10 +18,15 @@ export async function buildUserMap(): Promise<Map<string, any>> {
     return userMap;
   }
   try {
-    const dbUsers = await MongoUser.find();
-    dbUsers.forEach((u: any) => {
+    // Las cuentas normales y el superadministrador viven en colecciones separadas.
+    // Consultar ambas sin mezclar ni copiar cuentas entre colecciones.
+    const [dbUsers, dbSuperAdmins] = await Promise.all([
+      MongoUser.find(),
+      MongoSuperAdmin.find(),
+    ]);
+    [...dbUsers, ...dbSuperAdmins].forEach((u: any) => {
       if (u.id) userMap.set(u.id, u);
-      if (u.username) userMap.set(u.username.toLowerCase(), u);
+      if (u.email) userMap.set(u.email.toLowerCase(), u);
       if (u._id) userMap.set(u._id.toString(), u);
     });
   } catch (err) {
