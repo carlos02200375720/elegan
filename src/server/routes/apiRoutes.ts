@@ -121,6 +121,8 @@ export function createApiRouter(): Router {
   router.post("/live/:id/end", liveController.endLiveSession);
 
   // App Settings & Default Assets routes (Admin controlled)
+  router.get("/admin/banner", settingsController.getPublicBanner);
+  router.post("/admin/banner", settingsController.saveBanner);
   router.get("/admin/default-assets", settingsController.getDefaultAssets);
   router.get("/app-settings/defaults", settingsController.getDefaultAssets);
   router.post("/admin/default-assets", settingsController.updateDefaultAssets);
