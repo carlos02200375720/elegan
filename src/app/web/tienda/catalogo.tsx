@@ -811,13 +811,13 @@ export default function Tienda({
       ) : (
         /* 2. Regular Shop Navigation Header (Catalog / Checkout / Thankyou) */
         <header
-          className="relative z-30 bg-white border-b border-slate-100 shadow-2xs flex flex-col"
+          className="sticky top-0 z-40 bg-white border-b border-slate-100 shadow-2xs flex flex-col"
           style={{
-            paddingTop: activeStep === "catalog" ? "3.75rem" : "0.5rem",
+            paddingTop: activeStep === "catalog" ? "0" : "0.5rem",
           }}
         >
           {/* Top Bar: Navigation / Search / Cart */}
-          <div className={`${activeStep === "catalog" ? "fixed top-0 left-0 right-0 md:left-60 lg:left-64 z-40 grid grid-cols-[1fr_minmax(0,28rem)_1fr]" : "flex justify-between"} relative items-center gap-3 bg-white px-3 sm:px-5 pb-1.5 sm:pb-2 w-full`}>
+          <div className={`${activeStep === "catalog" ? "relative grid grid-cols-[1fr_minmax(0,28rem)_1fr]" : "flex justify-between"} relative items-center gap-3 bg-white px-3 sm:px-5 pb-1.5 sm:pb-2 w-full`}>
             <div
               className="flex items-center space-x-2 min-w-0"
             >
