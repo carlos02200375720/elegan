@@ -49,7 +49,7 @@ export default function BarraNavegacion({
           className={`flex h-full min-w-0 flex-col items-center justify-center rounded-2xl px-1 transition-all active:bg-amber-500/10 cursor-pointer ${
             isHomeActive
               ? "text-black scale-105 font-bold"
-              : "text-slate-400 hover:text-slate-800"
+              : "text-black hover:text-black"
           }`}
           id="android-nav-inicio"
         >
@@ -65,7 +65,7 @@ export default function BarraNavegacion({
           className={`relative flex h-full min-w-0 flex-col items-center justify-center rounded-2xl px-1 transition-all active:bg-amber-500/10 cursor-pointer ${
             activeTab === "shop"
               ? "text-black scale-105 font-bold"
-              : "text-slate-400 hover:text-slate-800"
+              : "text-black hover:text-black"
           }`}
           id="android-nav-shop"
         >
@@ -81,7 +81,7 @@ export default function BarraNavegacion({
           className={`relative flex h-full min-w-0 flex-col items-center justify-center rounded-2xl px-1 transition-all active:bg-amber-500/10 cursor-pointer ${
             activeTab === "messages"
               ? "text-black scale-105 font-bold"
-              : "text-slate-400 hover:text-slate-800"
+              : "text-black hover:text-black"
           }`}
           id="android-nav-messages"
         >
@@ -103,7 +103,7 @@ export default function BarraNavegacion({
           className={`flex h-full min-w-0 flex-col items-center justify-center rounded-2xl px-1 transition-all active:bg-amber-500/10 cursor-pointer ${
             activeTab === "profile"
               ? "text-black scale-105 font-bold"
-              : "text-slate-400 hover:text-slate-800"
+              : "text-black hover:text-black"
           }`}
           id="android-nav-profile"
         >
