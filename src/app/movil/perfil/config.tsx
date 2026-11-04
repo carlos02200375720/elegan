@@ -138,11 +138,11 @@ export function ConfigPerfilView({
     setStatusMessage(null);
 
     const targetUserId = activeUser.originalId || activeUser.id || currentUser.originalId || currentUser.id;
-    const currentUsername = activeUser.username || currentUser.username || sessionState.getUsername();
+    const currentEmail = activeUser.email || currentUser.email || sessionState.getEmail();
 
     const payload = {
       userId: targetUserId,
-      currentUsername,
+      email: currentEmail,
       name: editName.trim(),
       avatar: editAvatar.trim(),
       email: editEmail.trim(),
