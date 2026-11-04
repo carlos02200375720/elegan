@@ -116,8 +116,15 @@ export interface ShopProps {
     shippingCost: number,
     onComplete: (newOrder: Order) => void,
     itemsToCheckout?: CartItem[],
-    buyerInfo?: { buyerName?: string; buyerEmail?: string; buyerPhone?: string }
-  ) => void;
+    buyerInfo?: { buyerName?: string; buyerEmail?: string; buyerPhone?: string },
+    paypalOrderId?: string,
+    extraPaymentDetails?: {
+      paymentMethod?: "transferencia" | "tarjeta" | "contra_entrega";
+      paymentReceiptUrl?: string | null;
+      receiptFileName?: string;
+      bankName?: string;
+    }
+  ) => Promise<boolean> | boolean | void;
   onCreatorClick: (creatorId: string) => void;
   selectedProductDirectly: Product | null;
   clearDirectProduct: () => void;
@@ -344,9 +351,6 @@ export default function Tienda({
   const [country, setCountry] = useState("República Dominicana 🇩🇴");
   const [city, setCity] = useState(currentUser?.city || "");
   const [postalCode, setPostalCode] = useState(currentUser?.postalCode || "");
-  const [cardNumber, setCardNumber] = useState("4152 8391 0023 9482");
-  const [expiry, setExpiry] = useState("09/29");
-  const [cvv, setCvv] = useState("384");
   const [isFormValid, setIsFormValid] = useState(true);
 
   useEffect(() => {
@@ -358,9 +362,6 @@ export default function Tienda({
       setCountry("República Dominicana 🇩🇴");
       setCity("");
       setPostalCode("");
-      setCardNumber("");
-      setExpiry("");
-      setCvv("");
       return;
     }
 
@@ -589,50 +590,49 @@ export default function Tienda({
     onStepChange?.("checkout");
   };
 
-  const executePayment = () => {
-    if (
-      !name.trim() ||
-      !email.trim() ||
-      !phone.trim() ||
-      !address.trim() ||
-      !city.trim() ||
-      !cardNumber.trim()
-    ) {
+  const executePayment = async (
+    paypalOrderId: string,
+    extraPaymentDetails: {
+      paymentMethod?: "transferencia" | "tarjeta" | "contra_entrega";
+      paymentReceiptUrl?: string | null;
+      receiptFileName?: string;
+      bankName?: string;
+    }
+  ): Promise<boolean> => {
+    if (!name.trim() || !email.trim() || !phone.trim() || !address.trim() ||
+        !city.trim() || !country.trim() || !postalCode.trim()) {
       setIsFormValid(false);
-      return;
+      return false;
     }
     setIsFormValid(true);
-    setActiveStep("payment");
-
-    setTimeout(() => {
-      const fullShippingAddress = `${address}, ${city}, ${country}${postalCode ? `, C.P. ${postalCode}` : ""} (Tel: ${phone}, Email: ${email})`;
-      const totalShippingCost = effectiveCheckoutItems.reduce((acc, item) => {
-        const shippingFee =
-          item.selectedShippingCost !== undefined
-            ? item.selectedShippingCost
-            : item.product.shippingCost !== undefined
-            ? item.product.shippingCost
-            : 0;
-        return acc + (shippingFee || 0) * item.quantity;
-      }, 0);
-      onCheckout(
-        fullShippingAddress,
-        totalShippingCost,
-        (newOrder) => {
-          setCompletedOrder(newOrder);
-          setActiveStep("thankyou");
-          const targetUrl = getThankYouPath(newOrder.id);
-          navigateTo(targetUrl);
-          onStepChange?.("thankyou", newOrder.id);
-        },
-        effectiveCheckoutItems,
-        {
-          buyerName: name.trim(),
-          buyerEmail: email.trim().toLowerCase(),
-          buyerPhone: phone.trim(),
-        }
-      );
-    }, 2500);
+    const fullShippingAddress = `${address}, ${city}, ${country}${postalCode ? `, C.P. ${postalCode}` : ""} (Tel: ${phone}, Email: ${email})`;
+    const totalShippingCost = effectiveCheckoutItems.reduce((acc, item) => {
+      const shippingFee = item.selectedShippingCost !== undefined
+        ? item.selectedShippingCost
+        : item.product.shippingCost !== undefined
+        ? item.product.shippingCost
+        : 0;
+      return acc + (shippingFee || 0) * item.quantity;
+    }, 0);
+    const result = await onCheckout(
+      fullShippingAddress,
+      totalShippingCost,
+      (newOrder) => {
+        setCompletedOrder(newOrder);
+        setActiveStep("thankyou");
+        navigateTo(getThankYouPath(newOrder.id));
+        onStepChange?.("thankyou", newOrder.id);
+      },
+      effectiveCheckoutItems,
+      {
+        buyerName: name.trim(),
+        buyerEmail: email.trim().toLowerCase(),
+        buyerPhone: phone.trim(),
+      },
+      paypalOrderId,
+      extraPaymentDetails
+    );
+    return result !== false;
   };
 
   const getSellerInfo = (sellerId: string) => {
@@ -1156,12 +1156,6 @@ export default function Tienda({
               setCity={setCity}
               postalCode={postalCode}
               setPostalCode={setPostalCode}
-              cardNumber={cardNumber}
-              setCardNumber={setCardNumber}
-              expiry={expiry}
-              setExpiry={setExpiry}
-              cvv={cvv}
-              setCvv={setCvv}
               isFormValid={isFormValid}
               effectiveCheckoutItems={effectiveCheckoutItems}
               cartSubtotal={cartSubtotal}
