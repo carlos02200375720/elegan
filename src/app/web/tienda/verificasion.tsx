@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Truck, CreditCard, ShoppingBag, ShieldCheck, Building2, Copy, Check, Upload, X, AlertCircle, FileCheck, MapPin, CheckCircle2 } from "lucide-react";
+import { Truck, CreditCard, ShoppingBag, ShieldCheck, Building2, Check, Upload, X, MapPin } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { CartItem } from "../../../types";
 import { apiFetch } from "../../../config";
@@ -20,7 +20,6 @@ interface WebPaypalSdk {
     onError: (error: unknown) => void;
   }) => { render: (container: HTMLElement) => Promise<void> };
 }
-declare global { interface Window { paypal?: WebPaypalSdk; } }
 
 export const DEST_COUNTRIES = [
   { code: "US", name: "Estados Unidos 🇺🇸" },
@@ -205,7 +204,7 @@ export function VerificasionTiendaView({
         const currency = config.currency || "USD";
         if (!clientId) throw new Error(config.message || "PayPal no está configurado.");
         setPaypalCurrency(currency);
-        if (!window.paypal) {
+        if (!(window as any).paypal) {
           let script = document.getElementById("paypal-checkout-sdk-web") as HTMLScriptElement | null;
           if (!script) {
             script = document.createElement("script");
@@ -215,14 +214,14 @@ export function VerificasionTiendaView({
             document.body.appendChild(script);
           }
           await new Promise<void>((resolve, reject) => {
-            if (window.paypal) return resolve();
+            if ((window as any).paypal) return resolve();
             script?.addEventListener("load", () => resolve(), { once: true });
             script?.addEventListener("error", () => reject(new Error("No se pudo cargar PayPal.")), { once: true });
           });
         }
-        if (cancelled || !window.paypal || !paypalButtonsRef.current) return;
+        if (cancelled || !(window as any).paypal || !paypalButtonsRef.current) return;
         paypalButtonsRef.current.replaceChildren();
-        const buttons = window.paypal.Buttons({
+        const buttons = ((window as any).paypal as WebPaypalSdk).Buttons({
           style: { layout: "vertical", shape: "rect", borderRadius: 14 },
           createOrder: async () => {
             if (!validateCheckout()) throw new Error("Completa tus datos de envío.");
@@ -519,7 +518,12 @@ export function VerificasionTiendaView({
           )}
           <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 px-3 pt-1.5 pb-[1px] shadow-[0_-4px_16px_rgba(0,0,0,0.08)] md:static md:z-auto md:bg-transparent md:backdrop-blur-none md:border-0 md:p-0 md:shadow-none">
             <button
-              onClick={executePayment}
+              onClick={() => {
+                if (validateCheckout()) {
+                  setPaymentError("");
+                  setActiveModal(selectedPaymentMethod);
+                }
+              }}
               className="w-full bg-amber-500 hover:bg-amber-400 active:scale-[0.98] text-slate-950 font-extrabold py-3.5 px-6 rounded-xl text-sm transition-all flex items-center justify-center space-x-2 cursor-pointer shadow-lg shadow-amber-500/25 border border-amber-400"
               id="pay-now-desktop-btn"
             >
