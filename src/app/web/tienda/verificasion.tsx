@@ -509,37 +509,6 @@ export function VerificasionTiendaView({
           </div>
         </div>
 
-        {/* Integrated Pay Button inside the Order Summary (fixed bottom on mobile, inline on desktop) */}
-        <div className="flex flex-col space-y-3 pt-2">
-          {!isFormValid && (
-            <span className="text-[11px] text-rose-500 font-bold animate-pulse text-center bg-rose-50/70 border border-rose-100 py-1.5 px-2 rounded-lg">
-              Por favor complete los datos de envío y pago
-            </span>
-          )}
-          <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 px-3 pt-1.5 pb-[1px] shadow-[0_-4px_16px_rgba(0,0,0,0.08)] md:static md:z-auto md:bg-transparent md:backdrop-blur-none md:border-0 md:p-0 md:shadow-none">
-            <button
-              onClick={() => {
-                if (validateCheckout()) {
-                  setPaymentError("");
-                  setActiveModal(selectedPaymentMethod);
-                }
-              }}
-              className="w-full bg-amber-500 hover:bg-amber-400 active:scale-[0.98] text-slate-950 font-extrabold py-3.5 px-6 rounded-xl text-sm transition-all flex items-center justify-center space-x-2 cursor-pointer shadow-lg shadow-amber-500/25 border border-amber-400"
-              id="pay-now-desktop-btn"
-            >
-              <ShieldCheck className="w-5 h-5 text-slate-950 shrink-0" />
-              <span>Pagar (${cartTotal.toFixed(2)})</span>
-            </button>
-          </div>
-        </div>
-
-        <div className="p-3 bg-amber-50/80 rounded-xl border border-amber-200/60 text-center">
-          <p className="text-[11px] text-amber-900 font-semibold flex items-center justify-center space-x-1.5">
-            <ShieldCheck className="w-4 h-4 text-amber-600 shrink-0" />
-            <span>Pago 100% seguro con encriptación SSL 256-bit</span>
-          </p>
-        </div>
-      </div>
       <AnimatePresence>
         {activeModal && (
           <div className="fixed inset-0 z-[80] flex items-end justify-center">
