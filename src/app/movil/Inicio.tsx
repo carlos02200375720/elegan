@@ -1005,6 +1005,27 @@ export default function Inicio({
             </div>
           </div>
         </header>
+        {/* Espacio publicitario para cupones, promociones y campañas de Elegan */}
+        <section
+          aria-label="Publicidad y promociones"
+          className="mx-auto w-full max-w-md px-3 pt-3 pb-1"
+        >
+          <div className="relative min-h-[112px] overflow-hidden rounded-2xl bg-gradient-to-r from-slate-950 via-slate-800 to-amber-700 px-4 py-3 shadow-sm">
+            <div className="pointer-events-none absolute -right-5 -top-8 h-32 w-32 rounded-full border-[18px] border-white/10" />
+            <div className="pointer-events-none absolute -right-1 -bottom-12 h-28 w-28 rounded-full bg-amber-300/20 blur-xl" />
+            <div className="relative z-10 flex min-h-[88px] flex-col justify-center">
+              <span className="mb-1 w-fit rounded-full bg-amber-400 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-slate-950">
+                Promociones Elegan
+              </span>
+              <h2 className="text-base font-extrabold leading-tight text-white">
+                Ofertas que no te puedes perder
+              </h2>
+              <p className="mt-1 max-w-[85%] text-[11px] leading-snug text-white/85">
+                Cupones, descuentos y novedades especiales para ti.
+              </p>
+            </div>
+          </div>
+        </section>
         {selectedCategory && reels.length === 0 && (
           <div className="px-5 py-12 text-center">
             <p className="text-base font-bold text-slate-800">
