@@ -1232,9 +1232,6 @@ export async function registerUser(req: Request, res: Response): Promise<void> {
       isAdmin: isConfiguredSuperadmin(newUser),
       role: isConfiguredSuperadmin(newUser) ? "superadmin" : (newUser.canSell ? "seller" : "user")
     };
-      isAdmin: isConfiguredSuperadmin(newUser),
-      role: isConfiguredSuperadmin(newUser) ? "superadmin" : (newUser.canSell ? "seller" : "user")
-    };
 
     res.status(201).json({
       success: true,
