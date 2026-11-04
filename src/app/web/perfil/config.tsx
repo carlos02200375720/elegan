@@ -20,7 +20,6 @@ export function ConfigPerfilView({
   users = [],
   onProfileSaved,
   onRefreshUsers,
-  onBackToSelf,
   onCancel,
 }: ConfigPerfilProps) {
   // Profile edit states
