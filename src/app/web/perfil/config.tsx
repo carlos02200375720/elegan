@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Settings, ShieldCheck, Camera, Users, Lock, LogIn, UserPlus, AlertCircle } from "lucide-react";
+import { Settings, ShieldCheck, Camera, Users } from "lucide-react";
 import { motion } from "motion/react";
 import { User, isGuestUser as checkIsGuest } from "../../../types";
 import { apiFetch, getMediaUrl } from "../../../config";
-import { sessionState } from "../../../utils/sessionState";
 
 export interface ConfigPerfilProps {
   currentUser: User;
@@ -54,19 +53,6 @@ export function ConfigPerfilView({
   const [switchPassword, setSwitchPassword] = useState("");
   const [switchError, setSwitchError] = useState("");
 
-  // Guest authentication gate states
-  const [guestAuthTab, setGuestAuthTab] = useState<"login" | "register">("login");
-  const [guestLoginUsername, setGuestLoginUsername] = useState("");
-  const [guestLoginPassword, setGuestLoginPassword] = useState("");
-  const [guestLoginError, setGuestLoginError] = useState("");
-  const [isGuestLoggingIn, setIsGuestLoggingIn] = useState(false);
-
-  const [guestRegName, setGuestRegName] = useState("");
-  const [guestRegEmail, setGuestRegEmail] = useState("");
-  const [guestRegPassword, setGuestRegPassword] = useState("");
-  const [guestRegError, setGuestRegError] = useState("");
-  const [isGuestRegistering, setIsGuestRegistering] = useState(false);
-
   // Synchronize form values whenever currentUser or profileUser changes
   useEffect(() => {
     if (currentUser && !checkIsGuest(currentUser)) {
@@ -79,107 +65,6 @@ export function ConfigPerfilView({
       setEditPostalCode(currentUser.postalCode || "");
     }
   }, [currentUser, profileUser]);
-
-  const isUserAuthenticated = Boolean(
-    sessionState.isAuthenticated() ||
-    (currentUser && !checkIsGuest(currentUser))
-  );
-  const isGuestUser = !isUserAuthenticated;
-
-  const handleGuestLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (isGuestLoggingIn) return;
-    setGuestLoginError("");
-
-    const cleanEmail = guestLoginUsername.trim().toLowerCase();
-    if (!cleanEmail || !cleanEmail.includes("@")) {
-      setGuestLoginError("Por favor ingresa un correo electrónico válido.");
-      return;
-    }
-
-    if (!guestLoginPassword.trim()) {
-      setGuestLoginError("Por favor ingresa tu contraseña.");
-      return;
-    }
-
-    try {
-      setIsGuestLoggingIn(true);
-      const res = await apiFetch("/api/users/current/switch", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: cleanEmail,
-          password: guestLoginPassword.trim(),
-        }),
-      });
-
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        setGuestLoginError(data.error || "Credenciales incorrectas o usuario no encontrado.");
-        return;
-      }
-
-      if (data.user) {
-        sessionState.setAuthenticated(true);
-        sessionState.setUsername(data.user.email || "");
-        sessionState.setUser(data.user);
-        onProfileSaved?.(data.user);
-        onRefreshUsers?.();
-        onBackToSelf?.();
-      }
-    } catch (err) {
-      console.error("Error during guest login:", err);
-      setGuestLoginError("Error de conexión al iniciar sesión.");
-    } finally {
-      setIsGuestLoggingIn(false);
-    }
-  };
-
-  const handleGuestRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (isGuestRegistering) return;
-    setGuestRegError("");
-
-    const emailToUse = guestRegEmail.trim().toLowerCase();
-    if (!guestRegName.trim() || !emailToUse || !emailToUse.includes("@") || !guestRegPassword.trim()) {
-      setGuestRegError("Completa tu nombre, correo electrónico y contraseña.");
-      return;
-    }
-
-    try {
-      setIsGuestRegistering(true);
-      const res = await apiFetch("/api/users/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: guestRegName.trim(),
-          email: emailToUse,
-          avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80",
-          password: guestRegPassword.trim(),
-        }),
-      });
-
-      const data = await res.json();
-      if (!res.ok || !data.success) {
-        setGuestRegError(data.error || "Error al registrar la cuenta.");
-        return;
-      }
-
-      if (data.user) {
-        sessionState.setAuthenticated(true);
-        sessionState.setUsername(data.user.email || "");
-        sessionState.setUser(data.user);
-        onProfileSaved?.(data.user);
-        onRefreshUsers?.();
-        onBackToSelf?.();
-      }
-    } catch (err) {
-      console.error("Error during guest register:", err);
-      setGuestRegError("Error de conexión al registrar cuenta.");
-    } finally {
-      setIsGuestRegistering(false);
-    }
-  };
 
   useEffect(() => {
     if (
@@ -327,9 +212,7 @@ export function ConfigPerfilView({
     }
   };
 
-  // Si el usuario es invitado, requerir registro o inicio de sesión antes de acceder a la configuración
-  if (isGuestUser) {
-    return (
+  return (
       <motion.div
         key="guest-config-gate"
         initial={{ opacity: 0, y: 10 }}
