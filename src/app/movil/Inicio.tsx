@@ -1047,11 +1047,7 @@ export default function Inicio({
 
           const displayUsername = storeProfile?.username?.trim() || "elegan";
           const displayName = storeProfile?.name?.trim() || "Elegan";
-          const displayAvatar =
-            storeProfile?.avatar?.trim() ||
-            reelItem.creatorAvatar?.trim() ||
-            taggedProduct?.sellerAvatar?.trim() ||
-            "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80";
+          const displayAvatar = storeProfile?.avatar?.trim() || "";
 
           const isLiked = Boolean(
             reelItem.likedBy?.some(
@@ -1106,12 +1102,6 @@ export default function Inicio({
                       src={displayAvatar}
                       alt={reelItem.creatorName || displayName}
                       className="h-10 w-10 rounded-full object-cover"
-                      onError={(event) => {
-                        const fallbackAvatar = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80";
-                        if (event.currentTarget.src !== fallbackAvatar) {
-                          event.currentTarget.src = fallbackAvatar;
-                        }
-                      }}
                     />
                   </button>
                   <div className="min-w-0 flex-1">
