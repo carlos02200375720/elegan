@@ -44,7 +44,7 @@ export default function PerfilLogin({
   ) => {
     sessionState.setUser(user);
     sessionState.setAuthenticated(true);
-    sessionState.setUsername(user.email || "");
+    sessionState.setEmail(user.email || "");
 
     const savedIds = restoredSavedReels || user.savedReelIds || [];
     try {
