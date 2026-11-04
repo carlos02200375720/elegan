@@ -111,6 +111,7 @@ export async function connectToMongoDB(): Promise<void> {
       if (!existingSuperadmin && legacySuperadmin) {
         const adminData = legacySuperadmin.toObject ? legacySuperadmin.toObject() : { ...legacySuperadmin };
         delete adminData._id;
+        delete adminData.username;
         await MongoSuperAdmin.create({
           ...adminData,
           email: configuredSuperadminEmail,
