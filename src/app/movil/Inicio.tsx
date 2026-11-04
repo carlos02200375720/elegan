@@ -11,7 +11,7 @@ import { GuardadoButton } from "./componente/guardado";
 import { ConpartilButton } from "./componente/conpartil";
 import { CATEGORIES_WITH_IMAGES } from "./tienda/catalogo";
 import { CarritoTiendaView } from "./tienda/carrito";
-import { getMediaUrl } from "../../config";
+import { getMediaUrl, apiFetch } from "../../config";
 import { getInicioShareUrl, findReelByInicioParam, navigateTo } from "../../router";
 import { getLocalGuestToken } from "../../utils/guestToken";
 import { formatPrice } from "../../utils/currency";
@@ -184,6 +184,22 @@ export default function Inicio({
   initialReelId,
   onActiveReelChange,
 }: AndroidInicioProps) {
+  const [activeBanner, setActiveBanner] = useState<{
+    label: string; title: string; description: string; link: string; imageUrl: string;
+  } | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    apiFetch("/api/admin/banner")
+      .then(async (response) => {
+        if (!response.ok) return;
+        const data = await response.json();
+        if (!cancelled) setActiveBanner(data?.banner || null);
+      })
+      .catch((error) => console.warn("[Inicio] No se pudieron cargar las promociones:", error));
+    return () => { cancelled = true; };
+  }, []);
+
   const [localReelOverrides, setLocalReelOverrides] = useState<
     Record<string, { likes?: number; likedBy?: string[]; comments?: Comment[]; saves?: number; shares?: number }>
   >({});
@@ -1005,27 +1021,32 @@ export default function Inicio({
             </div>
           </div>
         </header>
-        {/* Espacio publicitario para cupones, promociones y campañas de Elegan */}
-        <section
-          aria-label="Publicidad y promociones"
-          className="mx-auto w-full max-w-md px-3 pt-3 pb-1"
-        >
-          <div className="relative min-h-[112px] overflow-hidden rounded-2xl bg-gradient-to-r from-slate-950 via-slate-800 to-amber-700 px-4 py-3 shadow-sm">
-            <div className="pointer-events-none absolute -right-5 -top-8 h-32 w-32 rounded-full border-[18px] border-white/10" />
-            <div className="pointer-events-none absolute -right-1 -bottom-12 h-28 w-28 rounded-full bg-amber-300/20 blur-xl" />
-            <div className="relative z-10 flex min-h-[88px] flex-col justify-center">
-              <span className="mb-1 w-fit rounded-full bg-amber-400 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-slate-950">
-                Promociones Elegan
-              </span>
-              <h2 className="text-base font-extrabold leading-tight text-white">
-                Ofertas que no te puedes perder
-              </h2>
-              <p className="mt-1 max-w-[85%] text-[11px] leading-snug text-white/85">
-                Cupones, descuentos y novedades especiales para ti.
-              </p>
-            </div>
-          </div>
-        </section>
+        {activeBanner && (
+          <section aria-label="Publicidad y promociones" className="mx-auto w-full max-w-md px-3 pt-3 pb-1">
+            <a
+              href={activeBanner.link || undefined}
+              onClick={(event) => { if (!activeBanner.link) event.preventDefault(); }}
+              target={activeBanner.link ? "_blank" : undefined}
+              rel={activeBanner.link ? "noopener noreferrer" : undefined}
+              className={`relative block min-h-[112px] overflow-hidden rounded-2xl bg-gradient-to-r from-slate-950 via-slate-800 to-amber-700 px-4 py-3 shadow-sm ${activeBanner.link ? "cursor-pointer" : "cursor-default"}`}
+              aria-label={activeBanner.title}
+            >
+              {activeBanner.imageUrl && (
+                <img src={getMediaUrl(activeBanner.imageUrl)} alt="" className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
+              )}
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black/80 via-black/45 to-black/10" />
+              <div className="relative z-10 flex min-h-[88px] flex-col justify-center">
+                <span className="mb-1 w-fit rounded-full bg-amber-400 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-slate-950">
+                  {activeBanner.label || "Promoción"}
+                </span>
+                <h2 className="text-base font-extrabold leading-tight text-white">{activeBanner.title}</h2>
+                {activeBanner.description && (
+                  <p className="mt-1 max-w-[85%] text-[11px] leading-snug text-white/90">{activeBanner.description}</p>
+                )}
+              </div>
+            </a>
+          </section>
+        )}
         {selectedCategory && reels.length === 0 && (
           <div className="px-5 py-12 text-center">
             <p className="text-base font-bold text-slate-800">
