@@ -1051,9 +1051,6 @@ export default function Tienda({
                               <h3 className="font-display font-bold text-xs sm:text-sm text-slate-900 group-hover:text-amber-500 transition-colors line-clamp-2 min-h-[32px] sm:min-h-[40px] leading-tight">
                                 {product.name}
                               </h3>
-                              <p className="text-[10px] sm:text-xs text-slate-500 mt-1 line-clamp-1 sm:line-clamp-2 leading-relaxed">
-                                {product.description}
-                              </p>
                             </div>
 
                             <div className="mt-3 pt-2 border-t border-slate-100 flex flex-col items-start gap-0.5">
