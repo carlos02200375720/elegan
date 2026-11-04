@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { User, Product, Reel, ProductVariantItem, ProductShippingOption } from "../../types";
 import { 
   ArrowLeft, 
@@ -45,9 +45,67 @@ export default function PublishView({ currentUser, onBack, onSuccess, userProduc
   const [bannerImageFile, setBannerImageFile] = useState<File | null>(null);
   const [bannerImagePreview, setBannerImagePreview] = useState("");
   const [bannerEnabled, setBannerEnabled] = useState(true);
+  const [bannerSaving, setBannerSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!showBannerSection) return;
+    let cancelled = false;
+    apiFetch("/api/admin/banner").then(async (response) => {
+      if (!response.ok) return;
+      const data = await response.json();
+      if (cancelled || !data?.banner) return;
+      setBannerLabel(data.banner.label || "Promoción");
+      setBannerTitle(data.banner.title || "");
+      setBannerDescription(data.banner.description || "");
+      setBannerLink(data.banner.link || "");
+      setBannerImagePreview(data.banner.imageUrl || "");
+      setBannerEnabled(data.banner.enabled !== false);
+    }).catch((error) => console.warn("[Banner] No se pudo cargar la configuración:", error));
+    return () => { cancelled = true; };
+  }, [showBannerSection]);
+
+  const handleSaveBanner = async () => {
+    setBannerSaving(true);
+    setErrorMessage(null);
+    setSuccessMessage(null);
+    try {
+      let imageUrl = bannerImagePreview.startsWith("blob:") ? "" : bannerImagePreview;
+      if (bannerImageFile) {
+        const mime = bannerImageFile.type || "image/jpeg";
+        const signedResponse = await fetch(getApiUrl(`/api/v1/media/upload-url?folder=promociones&file_type=${encodeURIComponent(mime)}&file_name=${encodeURIComponent(bannerImageFile.name)}`));
+        if (!signedResponse.ok) throw new Error("No se pudo preparar la subida de la imagen.");
+        const signed = await signedResponse.json();
+        if (!signed.upload_url || !signed.public_url) throw new Error("El servidor no devolvió la URL de subida.");
+        const uploadResponse = await fetch(signed.upload_url, { method: "PUT", headers: { "Content-Type": mime }, body: bannerImageFile });
+        if (!uploadResponse.ok) throw new Error("No se pudo subir la imagen publicitaria.");
+        imageUrl = signed.public_url;
+      }
+      const response = await apiFetch("/api/admin/banner", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          label: bannerLabel,
+          title: bannerTitle,
+          description: bannerDescription,
+          link: bannerLink,
+          imageUrl,
+          enabled: bannerEnabled
+        })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || !data.success) throw new Error(data.error || "No se pudo guardar la promoción.");
+      setBannerImagePreview(imageUrl);
+      setBannerImageFile(null);
+      setSuccessMessage("Promoción guardada correctamente.");
+    } catch (error: any) {
+      setErrorMessage(error?.message || "Error al guardar la promoción.");
+    } finally {
+      setBannerSaving(false);
+    }
+  };
 
   // General publication states
   const [title, setTitle] = useState("");
@@ -1066,8 +1124,13 @@ export default function PublishView({ currentUser, onBack, onSuccess, userProduc
               {bannerImageFile && <button type="button" onClick={() => { setBannerImageFile(null); setBannerImagePreview(""); }} className="inline-flex items-center gap-1.5 text-[11px] font-bold text-rose-600"><Trash2 className="h-3.5 w-3.5" />Quitar imagen</button>}
             </div>
           </div>
-          <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-[11px] leading-relaxed text-amber-900">
-            Esta sección prepara la configuración del anuncio. La publicación permanente y la sincronización con el banner de Inicio requieren conectar el guardado con el backend.
+          {errorMessage && <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-[11px] text-rose-700">{errorMessage}</div>}
+          {successMessage && <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-[11px] text-emerald-700">{successMessage}</div>}
+          <div className="flex justify-end">
+            <button type="button" onClick={handleSaveBanner} disabled={bannerSaving || (!bannerTitle.trim() && bannerEnabled)} className="inline-flex items-center gap-2 rounded-xl bg-slate-950 px-5 py-3 text-xs font-extrabold text-white disabled:cursor-not-allowed disabled:opacity-50">
+              {bannerSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+              {bannerSaving ? "Guardando promoción..." : "Guardar y publicar promoción"}
+            </button>
           </div>
         </div>
       ) : (
