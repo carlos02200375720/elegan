@@ -1064,21 +1064,6 @@ export default function PublishView({ currentUser, onBack, onSuccess, userProduc
         </div>
       </div>
 
-      {/* Acceso independiente a la administración del banner */}
-      <div className="border-b border-slate-100 bg-amber-50/50 px-4 py-3">
-        <button
-          type="button"
-          onClick={() => setShowBannerSection((value) => !value)}
-          className={`flex w-full items-center justify-between rounded-xl border px-4 py-3 text-left transition-colors ${showBannerSection ? "border-amber-400 bg-amber-100" : "border-amber-200 bg-white hover:bg-amber-50"}`}
-        >
-          <span className="flex items-center gap-2.5">
-            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-500 text-slate-950"><Sparkles className="h-4 w-4" /></span>
-            <span><span className="block text-xs font-extrabold text-slate-900">Banner publicitario</span><span className="mt-0.5 block text-[10px] text-slate-500">Gestiona cupones, promociones y campañas</span></span>
-          </span>
-          <span className="text-xs font-bold text-amber-700">{showBannerSection ? "Cerrar" : "Abrir sección"}</span>
-        </button>
-      </div>
-
       {showBannerSection ? (
         <div className="space-y-5 p-5 sm:p-6">
           <div>
@@ -1136,7 +1121,7 @@ export default function PublishView({ currentUser, onBack, onSuccess, userProduc
       ) : (
       <>
       {/* Tabs / Content types selector */}
-      <div className="grid grid-cols-4 border-b border-slate-100 p-2 gap-1 bg-slate-50/20">
+      <div className="grid grid-cols-5 border-b border-slate-100 p-2 gap-1 bg-slate-50/20">
         <button
           type="button"
           onClick={() => { setPublishType("video"); setErrorMessage(null); }}
@@ -1187,6 +1172,18 @@ export default function PublishView({ currentUser, onBack, onSuccess, userProduc
         >
           <ShoppingBag className="w-3.5 h-3.5" />
           <span>Vender</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setShowBannerSection((value) => !value)}
+          aria-pressed={showBannerSection}
+          className={`flex flex-col sm:flex-row items-center justify-center space-y-1 sm:space-y-0 sm:space-x-1.5 py-2.5 px-2 rounded-xl text-[11px] font-bold font-sans transition-all cursor-pointer ${
+            showBannerSection ? "bg-amber-500 text-slate-950 shadow-sm" : "text-slate-600 hover:bg-amber-50"
+          }`}
+        >
+          <Sparkles className="w-3.5 h-3.5" />
+          <span>Banner</span>
         </button>
       </div>
 
