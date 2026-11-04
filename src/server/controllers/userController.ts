@@ -183,6 +183,24 @@ export async function resolveAuthenticatedUser(req: any, fallbackRole = "creator
 
 async function findAccount(filter: any): Promise<any> {
   if (mongoose.connection.readyState !== 1) return null;
+
+  const configuredSuperadminEmail = String(
+    process.env.VITE_SUPERADMIN_EMAIL || process.env.SUPERADMIN_EMAIL || "cg0220037@gmail.com"
+  ).trim().toLowerCase();
+
+  // The configured superadmin is strictly isolated in super_admins.
+  // Never fall back to the user collection when resolving this account.
+  const filterEmail = String(filter?.email || "").trim().toLowerCase();
+  const orEmail = Array.isArray(filter?.$or)
+    ? filter.$or.some((condition: any) =>
+        String(condition?.email || "").trim().toLowerCase() === configuredSuperadminEmail
+      )
+    : false;
+
+  if (filterEmail === configuredSuperadminEmail || orEmail) {
+    return MongoSuperAdmin.findOne(filter);
+  }
+
   const admin = await MongoSuperAdmin.findOne(filter);
   return admin || MongoUser.findOne(filter);
 }
