@@ -1,20 +1,16 @@
 import React, { useEffect } from "react";
-import { StatusBar, Style } from "@capacitor/status-bar";
-import { Capacitor } from "@capacitor/core";
 import { User, Reel, Product, Order } from "../../../types";
 
 
-import AndroidUserPublicationsFeed from "../componente/Feedperfil";
-import AndroidPublishView from "../publicasion";
 import { isSuperAdmin } from "../../../superAdmin";
 import { navigateTo, getProfilePath, getProfileConfigPath } from "../../../router";
 import usePerfilData from "./usePerfilData";
+import usePerfilEffects from "./usePerfilEffects";
+import ModalesPerfil from "./ModalesPerfil";
 
 // Sub-components inside src/app/movil/perfil/
-import ConfigPerfilView from "./config";
 import EncabezadoPerfil from "./EncabezadoPerfil";
 import NavegacionPerfil from "./NavegacionPerfil";
-import ModalEliminarPublicacion from "./ModalEliminarPublicacion";
 import PresentacionPerfil from "./PresentacionPerfil";
 import ContenidoPestanaPerfil from "./ContenidoPestanaPerfil";
 
@@ -103,86 +99,7 @@ export default function Perfil({
   const isSellerOrAdmin = Boolean(activeUser.canSell === true || isSuperAdmin(activeUser));
   const canDelete = isMe || isAdmin || !selectedCreatorId;
 
-  // Configuración de la barra de estado nativa en celulares para la página de perfil:
-  // Fondo blanco sólido (#ffffff, sin transparencia) y texto/iconos oscuros legibles
-  useEffect(() => {
-    const applyProfileStatusBar = async () => {
-      try {
-        if (typeof window !== "undefined" && Capacitor.isPluginAvailable("StatusBar")) {
-          await StatusBar.setOverlaysWebView({ overlay: false });
-          await StatusBar.setBackgroundColor({ color: "#ffffff" });
-          await StatusBar.setStyle({ style: Style.Light });
-        }
-      } catch (e) {
-        console.warn("StatusBar setup in Perfil:", e);
-      }
-
-      // Sincronizar theme-color en el DOM para la barra de estado nativa
-      const themeMeta = document.getElementById("theme-color-meta") || document.querySelector('meta[name="theme-color"]');
-      if (themeMeta) {
-        themeMeta.setAttribute("content", "#ffffff");
-      }
-      document.querySelectorAll('meta[name="theme-color"]').forEach((tag) => {
-        tag.setAttribute("content", "#ffffff");
-      });
-
-      // Configurar apple-mobile-web-app-status-bar-style a default para eliminar translucidez
-      const appleStatusMeta = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
-      if (appleStatusMeta) {
-        appleStatusMeta.setAttribute("content", "default");
-      }
-
-      document.documentElement.style.backgroundColor = "#ffffff";
-      document.body.style.backgroundColor = "#ffffff";
-    };
-
-    applyProfileStatusBar();
-  }, []);
-
-  // Asegurar que al navegar a la página de perfil siempre abra en la parte superior de la pantalla
-  useEffect(() => {
-    const scrollToTop = () => {
-      if (typeof window !== "undefined") {
-        window.scrollTo({ top: 0, left: 0, behavior: "instant" as ScrollBehavior });
-        document.documentElement.scrollTop = 0;
-        document.body.scrollTop = 0;
-        const scrollableSelectors = [
-          "#android-app-layout",
-          "#android-profile-view",
-          "#android-profile-container",
-          "#app-android-container",
-          "main"
-        ];
-        scrollableSelectors.forEach((selector) => {
-          const el = document.querySelector(selector);
-          if (el) {
-            el.scrollTop = 0;
-          }
-        });
-      }
-    };
-
-    // Scroll inmediato
-    scrollToTop();
-
-    // Re-verificar tras el pintado del navegador (RAF y timeout corto) para neutralizar cualquier scroll previo
-    const rafId = requestAnimationFrame(scrollToTop);
-    const timeoutId = setTimeout(scrollToTop, 40);
-
-    const handleRouteChange = () => {
-      scrollToTop();
-    };
-
-    window.addEventListener("popstate", handleRouteChange);
-    window.addEventListener("app-route-change", handleRouteChange);
-
-    return () => {
-      cancelAnimationFrame(rafId);
-      clearTimeout(timeoutId);
-      window.removeEventListener("popstate", handleRouteChange);
-      window.removeEventListener("app-route-change", handleRouteChange);
-    };
-  }, [activeUser.id, activeUser.username, selectedCreatorId]);
+  usePerfilEffects(activeUser, selectedCreatorId);
 
   const perfilData = usePerfilData({
     activeUser, currentUser, isMe, isSellerOrAdmin,
@@ -283,59 +200,36 @@ export default function Perfil({
         onOpenFeed={setSelectedFeedReelId}
         onDeletePublication={handleDeletePublication}
       />
-      </div>
-      </div>
 
-      {/* Publications Feed Modal */}
-      {selectedFeedReelId && (
-        <AndroidUserPublicationsFeed
-          user={activeUser}
-          reels={userReels}
-          products={products}
-          initialReelId={selectedFeedReelId}
-          currentUser={currentUser}
-          onClose={() => setSelectedFeedReelId(null)}
-          onSelectProduct={onSelectProduct}
-          onDeleteReel={handleDeletePublication}
-          savedReelIds={savedReelIds}
-          onToggleSaveReel={onToggleSaveReel}
-        />
-      )}
-
-      {/* Standalone Publish Modal for Android */}
-      {isPublishingOpen && (
-        <AndroidPublishView
-          currentUser={currentUser}
-          onBack={() => setIsPublishingOpen(false)}
-          onSuccess={() => {
-            setIsPublishingOpen(false);
-            onPublishSuccess?.();
-          }}
-          userProducts={userProducts}
-        />
-      )}
-
-      {/* Edit Profile Sheet (Imported from ./config) */}
-      <ConfigPerfilView
-        isOpen={isEditProfileOpen}
+      <ModalesPerfil
+        selectedFeedReelId={selectedFeedReelId}
+        onCloseFeed={() => setSelectedFeedReelId(null)}
         activeUser={activeUser}
+        userReels={userReels}
+        products={products}
         currentUser={currentUser}
+        onSelectProduct={onSelectProduct}
+        onDeleteReel={handleDeletePublication}
+        savedReelIds={savedReelIds}
+        onToggleSaveReel={onToggleSaveReel}
+        isPublishingOpen={isPublishingOpen}
+        onClosePublishing={() => setIsPublishingOpen(false)}
+        onPublishSuccess={onPublishSuccess}
+        userProducts={userProducts}
+        isEditProfileOpen={isEditProfileOpen}
         onProfileUpdate={onProfileUpdate}
         onUpdateUser={onUpdateUser}
         onLogout={onLogout}
-        onClose={() => {
+        onCloseConfig={() => {
           setIsEditProfileOpen(false);
           navigateTo(getProfilePath(activeUser));
-        }}      />
-
-      <ModalEliminarPublicacion
-        publication={publicationToDelete}
-        isDeleting={isDeletingPublication}
-        errorMessage={deleteErrorMessage}
-        onCancel={() => setPublicationToDelete(null)}
-        onConfirm={executeDeletePublication}
+        }}
+        publicationToDelete={publicationToDelete}
+        isDeletingPublication={isDeletingPublication}
+        deleteErrorMessage={deleteErrorMessage}
+        onCancelDelete={() => setPublicationToDelete(null)}
+        onConfirmDelete={executeDeletePublication}
       />
-
     </div>
   );
 }
