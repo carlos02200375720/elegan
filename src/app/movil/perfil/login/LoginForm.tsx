@@ -1,4 +1,4 @@
-import { FormEvent } from "react";
+import type { FormEvent } from "react";
 import { Eye, EyeOff, LockKeyhole, Mail, ShoppingBag } from "lucide-react";
 import { CartItem } from "../../../../types";
 import { AuthMode } from "./usePerfilLogin";
