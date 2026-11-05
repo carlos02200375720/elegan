@@ -27,7 +27,7 @@ export default function EncabezadoInicio({
 
   return (
     <header
-      className="sticky top-0 inset-x-0 z-40 flex flex-col shrink-0 box-border justify-end bg-white border-t-0 border-b border-slate-200/80 pointer-events-auto"
+      className="sticky top-0 inset-x-0 z-40 flex flex-col shrink-0 box-border justify-end bg-white border-t-0 border-b-[1px] border-slate-200 pointer-events-auto"
       style={{
         height: "calc(50px + env(safe-area-inset-top, 0px))",
         minHeight: "calc(50px + env(safe-area-inset-top, 0px))",
