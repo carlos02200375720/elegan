@@ -1,105 +1,18 @@
 import React from "react";
-import { User, Reel, Product, CartItem, Order, ChatMessage, NavigationTab, isGuestUser } from "../../types";
+import type { AndroidAppProps } from "./movilApp/tipos";
+import { cartItemsMatch } from "./movilApp/utilidades";
+import { isGuestUser } from "../../types";
 import Inicio from "./inicio/Inicio";
 import BarraNavegacion from "./componente/barranavegacion";
 import Tienda from "./tienda";
-import SocialPanel from "./SocialPanel";
+import SocialPanel from "./social-panel/SocialPanel";
 import Perfil from "./cuenta";
 import PerfilLogin from "./cuenta/login";
 import AdminView from "../admin/resumen";
 import { isSuperAdmin } from "../../superAdmin";
 import { motion, AnimatePresence } from "motion/react";
 import { sessionState } from "../../utils/sessionState";
-import { navigateTo, getProfilePath, getProfileCompraPath, getProductPath, getInicioPath, useCurrentRoute } from "../../router";
-
-export interface AndroidAppProps {
-  activeTab: NavigationTab;
-  setActiveTab: React.Dispatch<React.SetStateAction<NavigationTab>>;
-  users: User[];
-  reels: Reel[];
-  products: Product[];
-  cart: CartItem[];
-  currentUser: User;
-  directSelectedProduct: Product | null;
-  setDirectSelectedProduct: (product: Product | null) => void;
-  selectedCreatorProfileId: string | null;
-  setSelectedCreatorProfileId: (creatorId: string | null) => void;
-  isProductDetailOpen: boolean;
-  setIsProductDetailOpen: (open: boolean) => void;
-  shopInitialStep: 'catalog' | 'detail' | 'cart' | 'checkout' | 'payment' | 'thankyou';
-  setShopInitialStep: (step: 'catalog' | 'detail' | 'cart' | 'checkout' | 'payment' | 'thankyou') => void;
-  shopInitialSelectedIndices: number[];
-  setShopInitialSelectedIndices: (indices: number[]) => void;
-  activeChatUser: User | null;
-  setActiveChatUser: (user: User | null) => void;
-  privateMessages: ChatMessage[];
-  unreadCounts: Record<string, number>;
-  savedReelIds: string[];
-  isLiveViewerOpen: boolean;
-  totalUnreads: number;
-  targetReelId?: string | null;
-  handleAddToCart: (product: Product, quantity?: number, selectedOptions?: Record<string, string>, selectedVariantVid?: string) => void;
-  handleRemoveFromCart: (productId: string, idx?: number) => void;
-  handleUpdateCartQuantity: (productId: string, qty: number, idx?: number) => void;
-  handleCheckoutCart: (
-    address: string,
-    shippingCost: number,
-    onComplete: (newOrder: Order) => void,
-    itemsToCheckout?: CartItem[],
-    buyerInfo?: { buyerName?: string; buyerEmail?: string; buyerPhone?: string },
-    paypalOrderId?: string,
-    extraPaymentDetails?: {
-      paymentMethod?: string;
-      paymentReceiptUrl?: string | null;
-      receiptFileName?: string;
-      bankName?: string;
-    }
-  ) => Promise<boolean>;
-  handleCreatorProfileLink: (creatorId: string) => void;
-  handleProductDetailsLink: (product: Product) => void;
-  handleReelLink: (reelId: string) => void;
-  handleLikeReel: (reelId: string) => void;
-  handleAddComment: (reelId: string, text: string) => void;
-  handleToggleSaveReel: (reelId: string) => void;
-  handleSendPrivateMessage: (text: string) => void;
-  handleClearUnreads: (userId: string) => void;
-  refreshReels: () => void;
-  refreshProducts?: () => void;
-  refreshAllData: () => void;
-  isInitialLoading?: boolean;
-  setCurrentUser: React.Dispatch<React.SetStateAction<User>>;
-  setUsers: React.Dispatch<React.SetStateAction<User[]>>;
-  setReels?: React.Dispatch<React.SetStateAction<Reel[]>>;
-  setProducts?: React.Dispatch<React.SetStateAction<Product[]>>;
-  isLoggedIn?: boolean;
-  setIsLoggedIn: React.Dispatch<React.SetStateAction<boolean>>;
-  handleLogout: () => void;
-  setGuestInteractionAlert: (alert: string | null) => void;
-  openPrivateChatDirectly: (targetUser: User) => void;
-  socket: WebSocket | null;
-}
-
-function cartItemsMatch(left: CartItem, right: CartItem): boolean {
-  const getKey = (item: CartItem) => {
-    const extendedItem = item as CartItem & {
-      selectedOptions?: Record<string, string>;
-      selectedVariantVid?: string;
-      variantId?: string;
-    };
-    const options = extendedItem.selectedOptions && typeof extendedItem.selectedOptions === "object"
-      ? Object.fromEntries(Object.entries(extendedItem.selectedOptions).sort(([a], [b]) => a.localeCompare(b)))
-      : extendedItem.selectedOptions;
-    return JSON.stringify([
-      item.product.id || (item.product as any)._id || item.product.name || item.product,
-      options || null,
-      extendedItem.selectedVariantVid || extendedItem.variantId || null,
-      item.selectedCarrier || null,
-      item.selectedShippingCost || null,
-      item.selectedCountry || null,
-    ]);
-  };
-  return getKey(left) === getKey(right);
-}
+import { navigateTo, parseRoute, getProfilePath, getProfileCompraPath, getProductPath, getInicioPath, useCurrentRoute } from "../../router";
 
 export default function AndroidApp({
   activeTab,
@@ -155,12 +68,10 @@ export default function AndroidApp({
   socket,
 }: AndroidAppProps) {
   const currentRoute = useCurrentRoute();
-  const isUserLoggedIn = true;
   const hasActiveAccount = (isLoggedIn ?? sessionState.isAuthenticated()) && !isGuestUser(currentUser);
   const requiresLogin = !hasActiveAccount;
   const isLoginPage = currentRoute.type === "login";
   const isHomeActive = activeTab === 'inicio' || activeTab === 'reels';
-  const isDarkNavActive = false;
   const [navBarHeight, setNavBarHeight] = React.useState(56);
   const [cartDrawerRequest, setCartDrawerRequest] = React.useState(0);
   const [isCartPageOpen, setIsCartPageOpen] = React.useState(false);
@@ -250,7 +161,7 @@ export default function AndroidApp({
     >
       {/* Main Content Router */}
       <main
-        className={`flex-1 w-full no-scrollbar ${isDarkNavActive ? "bg-slate-950" : "bg-white"}`}
+        className={`flex-1 w-full no-scrollbar bg-white`}
         style={{
           scrollbarWidth: 'none',
           msOverflowStyle: 'none',
