@@ -543,6 +543,13 @@ export function ProductoIdTiendaView({
                       className="w-full h-full object-cover p-0 m-0 bg-white"
                     />
                   )}
+                  {isVideo && (
+                    <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
+                      <span className="w-14 h-14 rounded-full bg-black/45 border border-white/80 flex items-center justify-center shadow-lg">
+                        <Play className="w-7 h-7 text-white fill-white ml-1" />
+                      </span>
+                    </div>
+                  )}
                 </div>
               );
             })}
