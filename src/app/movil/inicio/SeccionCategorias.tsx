@@ -1,5 +1,6 @@
 import React from "react";
-import type { ReactNode } from "react";
+
+import { getMediaUrl } from "../../../config";
 
 interface SeccionCategoriasProps {
   categories: string[];
@@ -34,7 +35,7 @@ export default function SeccionCategorias({
             >
               <span className={`flex aspect-[9/19] w-full items-center justify-center overflow-hidden rounded-xl border-2 bg-slate-100 ${isActive ? "border-amber-500" : "border-slate-200"}`}>
                 {categoryImage ? (
-                  <img src={categoryImage} alt="" loading="lazy" className="h-full w-full object-cover" />
+                  <img src={getMediaUrl(categoryImage)} alt="" loading="lazy" className="h-full w-full object-cover" />
                 ) : (
                   <span className="text-lg font-bold text-slate-400">{category.charAt(0).toUpperCase()}</span>
                 )}
