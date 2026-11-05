@@ -1,7 +1,7 @@
 import React, { useRef, useState } from "react";
-import { User, Product, ProductVariantItem } from "../../../types";
+import type { ProductVariantItem } from "../../../types";
 import { androidApiFetch } from "../api";
-import type { AndroidPublishViewProps, PublishType, ProductVariantGroup, ProductVariantsProps } from "./TiposPublicasion";
+import type { AndroidPublishViewProps, PublishType, ProductVariantsProps } from "./TiposPublicasion";
 import EncabezadoPublicasion from "./EncabezadoPublicasion";
 import AlertasPublicasion from "./AlertasPublicasion";
 import FormularioVideo from "./FormularioVideo";
