@@ -1026,8 +1026,21 @@ export default function Inicio({
             <a
               href={activeBanner.link || undefined}
               onClick={(event) => {
-                event.preventDefault();
-                if (activeBanner.link) window.location.assign(activeBanner.link);
+                if (!activeBanner.link) {
+                  event.preventDefault();
+                  return;
+                }
+
+                const link = activeBanner.link.trim();
+                try {
+                  const target = new URL(link, window.location.origin);
+                  if (target.origin === window.location.origin) {
+                    event.preventDefault();
+                    navigateTo(`${target.pathname}${target.search}${target.hash}`);
+                  }
+                } catch {
+                  event.preventDefault();
+                }
               }}
               className={`relative block aspect-[4/3] w-full overflow-hidden rounded-none bg-gradient-to-r from-slate-950 via-slate-800 to-amber-700 shadow-sm ${activeBanner.link ? "cursor-pointer" : "cursor-default"}`}
               aria-label={activeBanner.title}
