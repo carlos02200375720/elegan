@@ -1,5 +1,5 @@
 import React from "react";
-import SocialPanel from "../../social-panel/SocialPanel";
+import SocialPanel from "../../soportes/SocialPanel";
 
 type Props = React.ComponentProps<typeof SocialPanel>;
 
