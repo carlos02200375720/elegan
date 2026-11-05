@@ -2,6 +2,7 @@ import React from "react";
 import type { AndroidAppProps } from "./movilApp/tipos";
 import { cartItemsMatch } from "./movilApp/utilidades";
 import { isGuestUser } from "../../types";
+import type { User, Reel, Product, CartItem, Order, ChatMessage, NavigationTab } from "../../types";
 import Inicio from "./inicio/Inicio";
 import BarraNavegacion from "./componente/barranavegacion";
 import Tienda from "./tienda";
