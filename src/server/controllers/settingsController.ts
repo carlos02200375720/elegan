@@ -243,7 +243,7 @@ export async function saveBanner(req: Request, res: Response): Promise<void> {
         bannerTitle: title,
         bannerDescription: description,
         bannerLink: link,
-        bannerImageUrl,
+        bannerImageUrl: imageUrl,
         bannerEnabled: enabled,
         updatedAt: new Date()
       }, $setOnInsert: { key: "global" } },
