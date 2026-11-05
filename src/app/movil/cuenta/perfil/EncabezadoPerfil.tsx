@@ -22,6 +22,7 @@ export default function EncabezadoPerfil({
               className="sticky top-0 z-40 w-full bg-white border-b border-slate-100 shadow-2xs"
               style={{
                 backgroundColor: "#ffffff",
+                borderBottom: "2px solid #e5e7eb",
                 paddingTop: "max(24px, env(safe-area-inset-top, 24px))",
               }}
             >
