@@ -74,10 +74,7 @@ export default function NavegacionPerfil({
       
               {isMe && (
                 <button
-                  onClick={() => {
-                    setIsEditProfileOpen(true);
-                    navigateTo(getProfileConfigPath(activeUser));
-                  }}
+                  onClick={onOpenConfig}
                   title="Configuración y Editar Perfil"
                   aria-label="Configuración y Editar Perfil"
                   className={`flex-1 py-3 text-xs font-bold flex items-center justify-center border-b-2 transition-all cursor-pointer active:scale-95 ${
