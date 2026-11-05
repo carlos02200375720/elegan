@@ -1022,26 +1022,26 @@ export default function Inicio({
           </div>
         </header>
         {activeBanner && (
-          <section aria-label="Publicidad y promociones" className="mx-auto w-full max-w-md px-3 pt-3 pb-1">
+          <section aria-label="Publicidad y promociones" className="w-full p-0">
             <a
               href={activeBanner.link || undefined}
               onClick={(event) => { if (!activeBanner.link) event.preventDefault(); }}
               target={activeBanner.link ? "_blank" : undefined}
               rel={activeBanner.link ? "noopener noreferrer" : undefined}
-              className={`relative block min-h-[112px] overflow-hidden rounded-2xl bg-gradient-to-r from-slate-950 via-slate-800 to-amber-700 px-4 py-3 shadow-sm ${activeBanner.link ? "cursor-pointer" : "cursor-default"}`}
+              className={`relative block aspect-[4/3] w-full overflow-hidden rounded-none bg-gradient-to-r from-slate-950 via-slate-800 to-amber-700 shadow-sm ${activeBanner.link ? "cursor-pointer" : "cursor-default"}`}
               aria-label={activeBanner.title}
             >
               {activeBanner.imageUrl && (
                 <img src={getMediaUrl(activeBanner.imageUrl)} alt="" className="absolute inset-0 h-full w-full object-cover" loading="lazy" />
               )}
               <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black/80 via-black/45 to-black/10" />
-              <div className="relative z-10 flex min-h-[88px] flex-col justify-center">
+              <div className="absolute inset-0 z-10 flex flex-col justify-center overflow-y-auto px-4 py-3">
                 <span className="mb-1 w-fit rounded-full bg-amber-400 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-slate-950">
                   {activeBanner.label || "Promoción"}
                 </span>
-                <h2 className="text-base font-extrabold leading-tight text-white">{activeBanner.title}</h2>
+                <h2 className="max-w-full break-words text-base font-extrabold leading-tight text-white [overflow-wrap:anywhere]">{activeBanner.title}</h2>
                 {activeBanner.description && (
-                  <p className="mt-1 max-w-[85%] text-[11px] leading-snug text-white/90">{activeBanner.description}</p>
+                  <p className="mt-1 w-full max-w-full whitespace-normal break-words text-[11px] leading-snug text-white/90 [overflow-wrap:anywhere]">{activeBanner.description}</p>
                 )}
               </div>
             </a>
