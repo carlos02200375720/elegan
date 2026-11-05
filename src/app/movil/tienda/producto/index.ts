@@ -1,0 +1,11 @@
+export { default } from "./productoid";
+export { ProductoIdTiendaView } from "./productoid";
+export * from "./TiposProducto";
+export * from "./FuncionesProducto";
+export { GaleriaProducto } from "./GaleriaProducto";
+export { InformacionProducto, DescripcionProducto } from "./InformacionProducto";
+export { VariantesProducto } from "./VariantesProducto";
+export { EnvioProducto } from "./EnvioProducto";
+export { PoliticasProducto } from "./PoliticasProducto";
+export { AccionesProducto } from "./AccionesProducto";
+export { CabeceraProducto } from "./CabeceraProducto";
