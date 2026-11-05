@@ -1070,7 +1070,7 @@ export default function Inicio({
                   aria-pressed={isActive}
                   className={`flex min-w-0 flex-[0_0_calc((100%-24px)/4)] flex-col items-center gap-1.5 rounded-xl px-1 py-1 transition-colors ${isActive ? "bg-amber-50" : "bg-transparent"}`}
                 >
-                  <span className={`flex aspect-square w-full items-center justify-center overflow-hidden rounded-full border-2 bg-slate-100 ${isActive ? "border-amber-500" : "border-slate-200"}`}>
+                  <span className={`flex aspect-[9/19] w-full items-center justify-center overflow-hidden rounded-xl border-2 bg-slate-100 ${isActive ? "border-amber-500" : "border-slate-200"}`}>
                     {categoryImage ? (
                       <img src={getMediaUrl(categoryImage)} alt="" loading="lazy" className="h-full w-full object-cover" />
                     ) : (
