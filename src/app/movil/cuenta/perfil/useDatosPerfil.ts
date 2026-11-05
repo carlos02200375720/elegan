@@ -22,7 +22,7 @@ export default function usePerfilData({
 }: UsePerfilDataParams) {
   const {
     initialTab, onClearInitialTab, onDeleteReel, onPublishSuccess,
-    onRefreshUsers, savedReelIds = [], cart, cartCount,
+    onRefreshUsers, savedReelIds = [], reels = [], products = [], cart, cartCount,
   } = props;
 
   const [activeTab, setActiveTab] = useState<TabType>(() => {
