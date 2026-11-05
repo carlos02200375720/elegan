@@ -1312,34 +1312,33 @@ export default function Catalogo({
                       {p.category}
                     </p>
                   )}
-                </div>
-
-                <div className="flex items-center justify-between mt-0 px-2.5 pb-2.5 pt-1 gap-1">
-                  <div className="flex flex-col">
-                    <span className="text-xs font-black text-amber-500">{formatPrice(p.price)}</span>
-                    {Boolean(p.freeShipping) && (
-                      <span className="text-[9px] font-bold text-emerald-700">
-                        Envío Gratis
-                      </span>
-                    )}
+                  <div className="flex items-center justify-between mt-[3px] gap-1">
+                    <div className="flex flex-col">
+                      <span className="text-xs font-black text-black">{formatPrice(p.price)}</span>
+                      {Boolean(p.freeShipping) && (
+                        <span className="text-[9px] font-bold text-emerald-700">
+                          Envío Gratis
+                        </span>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      id={`android-save-product-btn-${p.id}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onToggleSave?.(p.id);
+                      }}
+                      className="p-1 active:scale-90 transition-transform cursor-pointer flex items-center justify-center bg-transparent border-0"
+                      title={isSaved ? "Guardado en publicaciones" : "Guardar en publicaciones"}
+                      aria-label={isSaved ? "Quitar de publicaciones guardadas" : "Guardar en publicaciones"}
+                    >
+                      <Bookmark
+                        className={`w-4 h-4 transition-transform duration-200 ${
+                          isSaved ? "fill-amber-500 stroke-amber-500 scale-105" : "text-slate-400 hover:text-slate-600 stroke-[2.2]"
+                        }`}
+                      />
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    id={`android-save-product-btn-${p.id}`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onToggleSave?.(p.id);
-                    }}
-                    className="p-1 active:scale-90 transition-transform cursor-pointer flex items-center justify-center bg-transparent border-0"
-                    title={isSaved ? "Guardado en publicaciones" : "Guardar en publicaciones"}
-                    aria-label={isSaved ? "Quitar de publicaciones guardadas" : "Guardar en publicaciones"}
-                  >
-                    <Bookmark
-                      className={`w-4 h-4 transition-transform duration-200 ${
-                        isSaved ? "fill-amber-500 stroke-amber-500 scale-105" : "text-slate-400 hover:text-slate-600 stroke-[2.2]"
-                      }`}
-                    />
-                  </button>
                 </div>
               </div>
             );
