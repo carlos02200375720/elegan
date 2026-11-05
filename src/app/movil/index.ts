@@ -4,6 +4,6 @@ export { default as Tienda, default as Shop, default as ShopView } from "./tiend
 export * from "./tienda";
 export { default as Perfil, default as ProfileView } from "./cuenta";
 export * from "./cuenta";
-export { default as SocialPanel } from "./SocialPanel";
+export { default as SocialPanel } from "./soportes/SocialPanel";
 export { default as PublishView, default as Publicasion } from "./publicasion";
 export * from "./componente";
