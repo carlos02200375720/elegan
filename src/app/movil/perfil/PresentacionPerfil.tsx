@@ -28,7 +28,7 @@ export default function PresentacionPerfil({
                       <>
                         {(activeUser.canSell === true || isSuperAdmin(activeUser)) && (
                           <button
-                            onClick={() => (onOpenPublishModal ? onOpenPublishModal() : setIsPublishingOpen(true))}
+                            onClick={() => (onOpenPublishModal ? onOpenPublishModal() : onOpenPublishing())}
                             className="px-3.5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-xs font-bold flex items-center space-x-1.5 shadow-sm active:scale-95 transition-transform cursor-pointer"
                           >
                             <Plus className="w-3.5 h-3.5" />
