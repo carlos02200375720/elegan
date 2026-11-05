@@ -36,6 +36,7 @@ export default function EncabezadoInicio({
         paddingLeft: "env(safe-area-inset-left, 0px)",
         paddingRight: "env(safe-area-inset-right, 0px)",
         backgroundColor: "#ffffff",
+        borderBottom: "1px solid #e5e7eb",
       }}
       id="android-reels-fixed-header"
     >
