@@ -1310,7 +1310,7 @@ export default function Catalogo({
                       e.stopPropagation();
                       onToggleSave?.(p.id);
                     }}
-                    className="absolute top-2 left-2 z-10 p-1.5 rounded-full bg-white/90 shadow-sm active:scale-90 transition-transform cursor-pointer flex items-center justify-center border-0"
+                    className="absolute top-2 left-2 z-10 p-1.5 bg-transparent active:scale-90 transition-transform cursor-pointer flex items-center justify-center border-0"
                     title={isSaved ? "Guardado en publicaciones" : "Guardar en publicaciones"}
                     aria-label={isSaved ? "Quitar de publicaciones guardadas" : "Guardar en publicaciones"}
                   >
