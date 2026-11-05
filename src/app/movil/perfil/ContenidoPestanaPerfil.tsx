@@ -50,7 +50,7 @@ export default function ContenidoPestanaPerfil(props: ContenidoPestanaPerfilProp
                         id={`android-profile-pub-${reel.id}`}
                         onClick={() => {
                           if (onSelectReel) onSelectReel(reel);
-                          setSelectedFeedReelId(reel.id);
+                          onOpenFeed(reel.id);
                         }}
                         className="relative aspect-[9/16] rounded-xl overflow-hidden bg-slate-950 border border-slate-200 cursor-pointer group active:scale-95 transition-transform shadow-xs"
                       >
@@ -63,7 +63,7 @@ export default function ContenidoPestanaPerfil(props: ContenidoPestanaPerfilProp
                             onClick={(e) => {
                               e.stopPropagation();
                               e.preventDefault();
-                              handleDeletePublication(reel.id);
+                              onDeletePublication(reel.id);
                             }}
                             onTouchEnd={(e) => {
                               e.stopPropagation();
@@ -127,7 +127,7 @@ export default function ContenidoPestanaPerfil(props: ContenidoPestanaPerfilProp
                   onSelectProduct={onSelectProduct}
                   onSelectReel={onSelectReel}
                   onToggleSaveReel={onToggleSaveReel}
-                  onOpenFeed={(reelId) => setSelectedFeedReelId(reelId)}
+                  onOpenFeed={(reelId) => onOpenFeed(reelId)}
                 />
               )}
       
