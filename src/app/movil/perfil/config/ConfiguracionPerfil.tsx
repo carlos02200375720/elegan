@@ -1,5 +1,6 @@
 import React from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { LogOut } from "lucide-react";
 import { User } from "../../../../types";
 import { isSuperAdmin } from "../../../../superAdmin";
 import { navigateTo } from "../../../../router";
@@ -54,8 +55,6 @@ export function ConfigPerfilView({
               avatar={configuracion.editAvatar}
               correo={activeUser.email}
               onSelect={configuracion.seleccionarFoto}
-              onAvatarChange={configuracion.setEditAvatar}
-              onMessage={configuracion.setStatusMessage}
             />
             <DatosPersonales
               nombre={configuracion.editName}
@@ -90,7 +89,7 @@ export function ConfigPerfilView({
                   title="Cerrar sesión"
                   aria-label="Cerrar sesión"
                 >
-                  <span className="text-rose-700">Cerrar sesión</span>
+                  <><LogOut className="w-4 h-4 text-rose-600 group-hover:scale-110 transition-transform" /><span className="text-rose-700">Cerrar sesión</span></>
                 </button>
                 <p className="text-[10px] text-slate-400 mt-2 text-center">
                   Cerrarás la sesión en este dispositivo móvil de forma segura.
