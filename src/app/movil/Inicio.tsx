@@ -37,6 +37,7 @@ export interface AndroidInicioProps {
   unreadCount?: number;
   totalUnreads?: number;
   onNavigateToTab?: (tab: NavigationTab) => void;
+  onNavigateToPath?: (path: string) => void;
   onAuthRequired?: (actionDescription?: string) => void;
   onGuestInteraction?: (action: string) => void;
   onRefreshReels?: () => void;
@@ -1036,7 +1037,9 @@ export default function Inicio({
                   const target = new URL(link, window.location.origin);
                   if (target.origin === window.location.origin) {
                     event.preventDefault();
-                    navigateTo(`${target.pathname}${target.search}${target.hash}`);
+                    const targetPath = `${target.pathname}${target.search}${target.hash}`;
+                    if (onNavigateToPath) onNavigateToPath(targetPath);
+                    else navigateTo(targetPath);
                   }
                 } catch {
                   event.preventDefault();
