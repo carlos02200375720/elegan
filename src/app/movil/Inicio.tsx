@@ -1025,7 +1025,10 @@ export default function Inicio({
           <section aria-label="Publicidad y promociones" className="w-full p-0">
             <a
               href={activeBanner.link || undefined}
-              onClick={(event) => { if (!activeBanner.link) event.preventDefault(); }}
+              onClick={(event) => {
+                event.preventDefault();
+                if (activeBanner.link) window.location.assign(activeBanner.link);
+              }}
               className={`relative block aspect-[4/3] w-full overflow-hidden rounded-none bg-gradient-to-r from-slate-950 via-slate-800 to-amber-700 shadow-sm ${activeBanner.link ? "cursor-pointer" : "cursor-default"}`}
               aria-label={activeBanner.title}
             >
