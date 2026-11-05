@@ -4,8 +4,8 @@ import { User, Reel, Product, Order } from "../../../../types";
 
 import { isSuperAdmin } from "../../../../superAdmin";
 import { navigateTo, getProfilePath, getProfileConfigPath } from "../../../../router";
-import usePerfilData from "./usePerfilData";
-import usePerfilEffects from "./usePerfilEffects";
+import usePerfilData from "./useDatosPerfil";
+import usePerfilEffects from "./useEfectosPerfil";
 import ModalesPerfil from "./ModalesPerfil";
 
 // Sub-components inside src/app/movil/perfil/
