@@ -1,4 +1,5 @@
 import React from "react";
+import { motion, AnimatePresence } from "motion/react";
 import { User } from "../../../../types";
 import { isSuperAdmin } from "../../../../superAdmin";
 import { navigateTo } from "../../../../router";
@@ -40,8 +41,9 @@ export function ConfigPerfilView({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end bg-black/50 backdrop-blur-xs" id="android-profile-config-modal">
-      <div className="w-full max-h-[90vh] bg-white border-t border-slate-200 rounded-t-3xl text-slate-900 shadow-2xl flex flex-col overflow-hidden">
+    <AnimatePresence>
+      <div className="fixed inset-0 z-50 flex items-end bg-black/50 backdrop-blur-xs" id="android-profile-config-modal">
+      <motion.div initial={{ y: "100%" }} animate={{ y: 0 }} exit={{ y: "100%" }} transition={{ type: "spring", damping: 25, stiffness: 220 }} className="w-full max-h-[90vh] bg-white border-t border-slate-200 rounded-t-3xl text-slate-900 shadow-2xl flex flex-col overflow-hidden">
         <EncabezadoConfiguracion
           verificado={isSuperAdmin(activeUser)}
           onClose={onClose}
@@ -98,8 +100,9 @@ export function ConfigPerfilView({
           </div>
           <PieConfiguracion guardando={configuracion.isSaving} />
         </form>
+      </motion.div>
       </div>
-    </div>
+    </AnimatePresence>
   );
 }
 
