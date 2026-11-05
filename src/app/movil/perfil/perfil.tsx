@@ -1,24 +1,22 @@
 import React, { useEffect } from "react";
 import { StatusBar, Style } from "@capacitor/status-bar";
 import { Capacitor } from "@capacitor/core";
-import { User, Reel, Product, Order, isGuestUser } from "../../../types";
-import { Sparkles, UserPlus, X, Plus, Truck, Mail } from "lucide-react";
+import { User, Reel, Product, Order } from "../../../types";
+
 
 import AndroidUserPublicationsFeed from "../componente/Feedperfil";
-import AndroidPublicationCover from "../componente/miniaturapublicacion";
 import AndroidPublishView from "../publicasion";
 import { isSuperAdmin } from "../../../superAdmin";
 import { navigateTo, getProfilePath, getProfileConfigPath } from "../../../router";
-import { formatPrice } from "../../../utils/currency";
 import usePerfilData from "./usePerfilData";
 
 // Sub-components inside src/app/movil/perfil/
-import GuardadoPerfilView from "./guardado";
-import CompraPerfilView from "./compra";
 import ConfigPerfilView from "./config";
 import EncabezadoPerfil from "./EncabezadoPerfil";
 import NavegacionPerfil from "./NavegacionPerfil";
 import ModalEliminarPublicacion from "./ModalEliminarPublicacion";
+import PresentacionPerfil from "./PresentacionPerfil";
+import ContenidoPestanaPerfil from "./ContenidoPestanaPerfil";
 
 export interface AndroidPerfilProps {
   user?: User;
@@ -241,96 +239,15 @@ export default function Perfil({
         }}
       >
         {/* Profile Bio Section */}
-        <div className="px-4 pt-3">
-          {/* Fila de acciones superiores (Publicar / Seguir / Mensaje) */}
-          <div className="flex items-center justify-end">
-            <div className="flex items-center space-x-2">
-              {isMe ? (
-                <>
-                  {(activeUser.canSell === true || isSuperAdmin(activeUser)) && (
-                    <button
-                      onClick={() => (onOpenPublishModal ? onOpenPublishModal() : setIsPublishingOpen(true))}
-                      className="px-3.5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-xs font-bold flex items-center space-x-1.5 shadow-sm active:scale-95 transition-transform cursor-pointer"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                      <span>Publicar</span>
-                    </button>
-                  )}
-                </>
-              ) : (
-                <div className="flex items-center space-x-2">
-                  {onOpenDirectChat && (
-                    <button
-                      onClick={() => onOpenDirectChat(activeUser)}
-                      className="px-3.5 py-2 bg-slate-100 text-slate-800 rounded-xl text-xs font-bold border border-slate-200 active:scale-95 cursor-pointer"
-                    >
-                      Mensaje
-                    </button>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="mt-2">
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <h1 className="text-lg font-black text-slate-900">{activeUser.name}</h1>
-              {isSuperAdmin(activeUser) && (
-                <span className="inline-flex items-center justify-center shrink-0" title="Verificado">
-                  <BadgeCheck className="w-4 h-4 text-white fill-blue-500 shrink-0 drop-shadow-2xs" />
-                </span>
-              )}
-            </div>
-            {activeUser.email && (
-              <div className="flex items-center gap-1.5 mt-1 text-[11px] text-slate-600 font-medium">
-                <Mail className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                <span className="truncate">{activeUser.email}</span>
-                {activeUser.city && <span className="text-slate-400">• {activeUser.city}</span>}
-                {activeUser.country && <span className="text-slate-400">, {activeUser.country}</span>}
-              </div>
-            )}
-          </div>
-
-        {/* Banner para usuarios que navegan como invitado */}
-        {isMe && (!activeUser.email || isGuestUser(activeUser)) && (
-          <div className="mt-3 p-3.5 bg-gradient-to-br from-amber-50 via-orange-50 to-amber-100/60 border border-amber-200/90 rounded-2xl shadow-xs">
-            <div className="flex items-start gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-700 flex items-center justify-center shrink-0 mt-0.5">
-                <Sparkles className="w-4 h-4" />
-              </div>
-              <div className="flex-1">
-                <p className="text-xs font-black text-slate-900 leading-tight">Estás navegando como Invitado</p>
-                <p className="text-[11px] text-slate-600 mt-0.5 leading-snug">
-                  Regístrate para guardar todas tus compras, carrito y videos favoritos, o inicia sesión si ya tienes cuenta.
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 mt-3 pt-2.5 border-t border-amber-200/60">
-              <button
-                type="button"
-                onClick={() => navigateTo("/perfil/login?mode=register")}
-                className="flex-1 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs rounded-xl active:scale-95 transition-transform cursor-pointer shadow-xs flex items-center justify-center gap-1.5"
-              >
-                <UserPlus className="w-3.5 h-3.5" />
-                <span>Crear Cuenta y Guardar Mis Datos</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => navigateTo("/perfil/login?mode=login")}
-                className="px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-800 border border-amber-200 font-bold text-xs rounded-xl active:scale-95 transition-transform cursor-pointer"
-              >
-                Ya tengo cuenta
-              </button>
-            </div>
-          </div>
-        )}
-
-        {isSellerOrAdmin && (
-          <div className="mt-4 py-3 border-y border-slate-100 bg-slate-50/70 rounded-2xl text-center">
-            <span className="block text-sm font-bold text-slate-900">{userReels.length}</span>
-            <span className="block text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Reels</span>
-          </div>
-        )}
+        <PresentacionPerfil
+          activeUser={activeUser}
+          isMe={isMe}
+          isSellerOrAdmin={isSellerOrAdmin}
+          userReels={userReels}
+          onOpenPublishModal={onOpenPublishModal}
+          onOpenDirectChat={onOpenDirectChat}
+          onOpenPublishing={() => setIsPublishingOpen(true)}
+        />
       </div>
 
       {/* Tabs */}      <NavegacionPerfil
@@ -347,111 +264,25 @@ export default function Perfil({
       />
 
       {/* Tab Content */}
-      <div className="p-3">
-        {isSellerOrAdmin && activeTab === "reels" && (
-          <div className="grid grid-cols-3 gap-2">
-            {userReels.length === 0 ? (
-              <div className="col-span-3 py-16 text-center text-xs text-slate-400">
-                {isMe ? "Aún no tienes publicaciones ni reels." : "Este usuario aún no tiene publicaciones."}
-              </div>
-            ) : (
-              userReels.map((reel, rIdx) => (
-                <div
-                  key={`${reel.id}-${rIdx}`}
-                  id={`android-profile-pub-${reel.id}`}
-                  onClick={() => {
-                    if (onSelectReel) onSelectReel(reel);
-                    setSelectedFeedReelId(reel.id);
-                  }}
-                  className="relative aspect-[9/16] rounded-xl overflow-hidden bg-slate-950 border border-slate-200 cursor-pointer group active:scale-95 transition-transform shadow-xs"
-                >
-                  {canDelete && (
-                    <button
-                      type="button"
-                      id={`btn-delete-publication-${reel.id}`}
-                      aria-label="Eliminar publicación"
-                      title="Eliminar publicación de MongoDB y GCS"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        e.preventDefault();
-                        handleDeletePublication(reel.id);
-                      }}
-                      onTouchEnd={(e) => {
-                        e.stopPropagation();
-                      }}
-                      className="absolute right-0 top-0 z-30 flex h-10 w-10 items-center justify-center bg-transparent border-0 text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.95)] transition-transform hover:scale-110 active:scale-90 focus:outline-none cursor-pointer"
-                    >
-                      <X className="w-5 h-5 stroke-[2.5]" />
-                    </button>
-                  )}
-                  <AndroidPublicationCover reel={reel} />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end p-2 pointer-events-none">
-                    <span className="text-[10px] font-bold text-white line-clamp-1">{reel.description || reel.title || "Reel"}</span>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        )}
-
-        {isSellerOrAdmin && activeTab === "products" && (
-          <div className="grid grid-cols-2 gap-3">
-            {userProducts.length === 0 ? (
-              <div className="col-span-2 py-16 text-center text-xs text-slate-400">
-                No hay productos en esta tienda.
-              </div>
-            ) : (
-              userProducts.map((p, pIdx) => (
-                <div
-                  key={`${p.id}-${pIdx}`}
-                  onClick={() => onSelectProduct?.(p)}
-                  className="p-3 bg-white rounded-2xl border border-slate-200 shadow-sm flex flex-col justify-between cursor-pointer hover:border-amber-300 transition-colors"
-                >
-                  <img src={p.imageUrl} alt={p.name} className="w-full aspect-square rounded-xl object-cover mb-2" />
-                  <h4 className="text-xs font-bold text-slate-900 line-clamp-1">{p.name}</h4>
-                  <div className="flex items-center justify-between gap-1 mt-1.5 pt-1.5 border-t border-slate-100 flex-wrap">
-                    <p className="text-xs font-black text-amber-600">{formatPrice(p.price)}</p>
-                    <span className={`inline-flex items-center gap-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded border ${
-                      Number(p.shippingCost || 0) > 0
-                        ? "bg-amber-50 text-amber-800 border-amber-200"
-                        : "bg-emerald-50 text-emerald-700 border-emerald-200"
-                    }`}>
-                      <Truck className="w-2.5 h-2.5" />
-                      <span>
-                        {Number(p.shippingCost || 0) > 0
-                          ? `+${formatPrice(Number(p.shippingCost))}`
-                          : "Gratis"}
-                      </span>
-                    </span>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        )}
-
-        {/* 3. Guardado (Imported from ./guardado) */}
-        {activeTab === "saved" && (
-          <GuardadoPerfilView
-            savedProducts={savedProducts}
-            savedReels={savedReels}
-            onSelectProduct={onSelectProduct}
-            onSelectReel={onSelectReel}
-            onToggleSaveReel={onToggleSaveReel}
-            onOpenFeed={(reelId) => setSelectedFeedReelId(reelId)}
-          />
-        )}
-
-        {/* 4. Compras / Pedidos (Imported from ./compra) */}
-        {activeTab === "orders" && (
-          <CompraPerfilView
-            orders={orders}
-            activeUser={activeUser}
-            currentUser={currentUser}
-            socket={socket}
-            onSelectProduct={onSelectProduct}
-          />
-        )}
+      <ContenidoPestanaPerfil
+        activeTab={activeTab}
+        isSellerOrAdmin={isSellerOrAdmin}
+        isMe={isMe}
+        canDelete={canDelete}
+        userReels={userReels}
+        userProducts={userProducts}
+        savedReels={savedReels}
+        savedProducts={savedProducts}
+        orders={orders}
+        activeUser={activeUser}
+        currentUser={currentUser}
+        socket={socket}
+        onSelectReel={onSelectReel}
+        onSelectProduct={onSelectProduct}
+        onToggleSaveReel={onToggleSaveReel}
+        onOpenFeed={setSelectedFeedReelId}
+        onDeletePublication={handleDeletePublication}
+      />
       </div>
       </div>
 
