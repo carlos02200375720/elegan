@@ -4,13 +4,13 @@ export type { AndroidAppProps } from "./tipos";
 import { cartItemsMatch } from "./utilidades";
 import { isGuestUser } from "../../../types";
 import type { CartItem } from "../../../types";
-import Inicio from "../inicio/Inicio";
+import InicioVista from "./vistas/InicioVista";
 import BarraNavegacion from "../componente/barranavegacion";
-import Tienda from "../tienda";
-import SocialPanel from "../social-panel/SocialPanel";
-import Perfil from "../cuenta";
+import TiendaVista from "./vistas/TiendaVista";
+import MensajesVista from "./vistas/MensajesVista";
+import PerfilVista from "./vistas/PerfilVista";
 import PerfilLogin from "../cuenta/login";
-import AdminView from "../../admin/resumen";
+import AdministracionVista from "./vistas/AdministracionVista";
 import { isSuperAdmin } from "../../../superAdmin";
 import { motion, AnimatePresence } from "motion/react";
 import { sessionState } from "../../../utils/sessionState";
@@ -182,7 +182,7 @@ export default function AndroidApp({
             className={`w-full ${isHomeActive ? 'h-full' : ''}`}
           >
             {isHomeActive && (
-              <Inicio
+              <InicioVista
                 reels={reels}
                 currentUser={currentUser}
                 users={users}
@@ -264,7 +264,7 @@ export default function AndroidApp({
             )}
 
             {activeTab === 'shop' && (
-              <Tienda
+              <TiendaVista
                 products={products}
                 initialCategory={shopInitialCategory}
                 cart={cart}
@@ -377,7 +377,7 @@ export default function AndroidApp({
                   paddingBottom: `${navBarHeight + 3}px`
                 }}
               >
-                <Perfil
+                <PerfilVista
                     currentUser={currentUser}
                     selectedCreatorId={selectedCreatorProfileId}
                     users={users}
@@ -423,7 +423,7 @@ export default function AndroidApp({
             )}
 
             {activeTab === 'messages' && (
-              <SocialPanel
+              <MensajesVista
                 users={users}
                 currentUser={currentUser}
                 messages={privateMessages}
@@ -445,7 +445,7 @@ export default function AndroidApp({
                 id="android-admin-container"
                 style={{ paddingBottom: `${navBarHeight + 12}px` }}
               >
-                <AdminView
+                <AdministracionVista
                   currentUser={currentUser}
                   users={users}
                   reels={reels}
