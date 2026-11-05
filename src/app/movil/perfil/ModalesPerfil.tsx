@@ -4,6 +4,7 @@ import AndroidUserPublicationsFeed from "../componente/Feedperfil";
 import AndroidPublishView from "../publicasion";
 import ConfigPerfilView from "./config";
 import ModalEliminarPublicacion from "./ModalEliminarPublicacion";
+import { navigateTo, getProfilePath } from "../../../router";
 
 interface ModalesPerfilProps {
   selectedFeedReelId: string | null;
@@ -43,6 +44,7 @@ export default function ModalesPerfil(props: ModalesPerfilProps) {
   } = props;
 
   return (
+    <>
             {/* Publications Feed Modal */}
             {selectedFeedReelId && (
               <AndroidUserPublicationsFeed
@@ -51,9 +53,9 @@ export default function ModalesPerfil(props: ModalesPerfilProps) {
                 products={products}
                 initialReelId={selectedFeedReelId}
                 currentUser={currentUser}
-                onClose={() => setSelectedFeedReelId(null)}
+                onClose={onCloseFeed}
                 onSelectProduct={onSelectProduct}
-                onDeleteReel={handleDeletePublication}
+                onDeleteReel={onDeleteReel}
                 savedReelIds={savedReelIds}
                 onToggleSaveReel={onToggleSaveReel}
               />
@@ -63,9 +65,9 @@ export default function ModalesPerfil(props: ModalesPerfilProps) {
             {isPublishingOpen && (
               <AndroidPublishView
                 currentUser={currentUser}
-                onBack={() => setIsPublishingOpen(false)}
+                onBack={onClosePublishing}
                 onSuccess={() => {
-                  setIsPublishingOpen(false);
+                  onClosePublishing();
                   onPublishSuccess?.();
                 }}
                 userProducts={userProducts}
@@ -80,18 +82,16 @@ export default function ModalesPerfil(props: ModalesPerfilProps) {
               onProfileUpdate={onProfileUpdate}
               onUpdateUser={onUpdateUser}
               onLogout={onLogout}
-              onClose={() => {
-                setIsEditProfileOpen(false);
-                navigateTo(getProfilePath(activeUser));
-              }}      />
+              onClose={onCloseConfig}      />
       
             <ModalEliminarPublicacion
               publication={publicationToDelete}
               isDeleting={isDeletingPublication}
               errorMessage={deleteErrorMessage}
-              onCancel={() => setPublicationToDelete(null)}
-              onConfirm={executeDeletePublication}
+              onCancel={onCancelDelete}
+              onConfirm={onConfirmDelete}
             />
       
+    </>
   );
 }
