@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect } from "react";
 import { Product, CartItem, Order } from "../../../../types";
 import { navigateTo, getProductPath, parseRoute } from "../../../../router";
-import ProductoIdTiendaView from "../productoid";
+import ProductoIdTiendaView from "../producto";
 import CarritoTiendaView from "../carrito";
 import VerificacionTiendaView from "../verificacion";
 import GraciaTiendaView from "../gracia";
