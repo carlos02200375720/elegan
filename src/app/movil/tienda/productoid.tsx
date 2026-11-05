@@ -140,6 +140,7 @@ export function ProductoIdTiendaView({
   const [selectedVariants, setSelectedVariants] = useState<{ [key: string]: string }>({});
   const [optionsValidationError, setOptionsValidationError] = useState<string | null>(null);
   const [isGalleryVideoMuted, setIsGalleryVideoMuted] = useState(true);
+  const [playingGalleryVideoIndex, setPlayingGalleryVideoIndex] = useState<number | null>(null);
   const [shippingOptions, setShippingOptions] = useState<ShippingOptionItem[]>([]);
   const [selectedShippingOption, setSelectedShippingOption] = useState<ShippingOptionItem | null>(null);
   const [isAddedSuccess, setIsAddedSuccess] = useState(false);
@@ -532,6 +533,8 @@ export function ProductoIdTiendaView({
                         loop={true}
                         muted={isGalleryVideoMuted}
                         isCurrent={true}
+                        onPlay={() => setPlayingGalleryVideoIndex(idx)}
+                        onPause={() => setPlayingGalleryVideoIndex((current) => current === idx ? null : current)}
                         className="w-full h-full object-contain bg-black"
                       />
                     </div>
@@ -543,9 +546,9 @@ export function ProductoIdTiendaView({
                       className="w-full h-full object-cover p-0 m-0 bg-white"
                     />
                   )}
-                  {isVideo && (
+                  {isVideo && playingGalleryVideoIndex !== idx && (
                     <div className="absolute inset-0 z-10 flex items-center justify-center pointer-events-none">
-                      <span className="w-14 h-14 rounded-full bg-black/45 border border-white/80 flex items-center justify-center shadow-lg">
+                      <span className="w-14 h-14 rounded-full bg-black/45 flex items-center justify-center shadow-lg">
                         <Play className="w-7 h-7 text-white fill-white ml-1" />
                       </span>
                     </div>
