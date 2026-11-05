@@ -4,7 +4,6 @@ import type { PublishType } from "./TiposPublicasion";
 interface Props { type: PublishType; loading: boolean; publishVideo: () => void; publishProduct: () => void; }
 export default function PiePublicasion({ type, loading, publishVideo, publishProduct }: Props) {
   return (
-          {/* 3. Footer (Fixed at the bottom of the page) */}
           <footer
             className="flex-shrink-0 bg-slate-950/95 border-t border-slate-800/80 px-4 pt-3 pb-4 backdrop-blur-md shadow-[0_-4px_20px_rgba(0,0,0,0.4)] z-20"
             style={{
