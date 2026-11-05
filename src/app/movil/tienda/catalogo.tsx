@@ -1125,7 +1125,7 @@ export default function Catalogo({
           >
             <ShoppingBag
               className={`w-5 h-5 transition-all duration-300 ${
-                isCartShockwave ? "text-amber-600 scale-110 drop-shadow-[0_0_8px_rgba(245,158,11,0.8)]" : "text-amber-500"
+                isCartShockwave ? "text-slate-950 scale-110 drop-shadow-[0_0_8px_rgba(245,158,11,0.8)]" : "text-slate-950"
               }`}
             />
             {(cart.length > 0 || isCartShockwave) && (
