@@ -295,6 +295,23 @@ export default function AndroidApp({
                     navigateTo('/admin/resumen');
                   }
                 }}
+                onNavigateToPath={(path) => {
+                  const route = parseRoute(path.split(/[?#]/, 1)[0]);
+                  setSelectedCreatorProfileId(null);
+                  if (route.type === 'product' || route.type === 'shop' || route.type === 'cart' ||
+                      route.type === 'checkout' || route.type === 'thankyou') {
+                    setActiveTab('shop');
+                  } else if (route.type === 'inicio' || route.type === 'reels') {
+                    setActiveTab('inicio');
+                  } else if (route.type === 'profile' || route.type === 'login') {
+                    setActiveTab('profile');
+                  } else if (route.type === 'messages') {
+                    setActiveTab('messages');
+                  } else if (route.type === 'admin') {
+                    setActiveTab('admin');
+                  }
+                  navigateTo(path);
+                }}
                 onRemoveFromCart={handleRemoveFromCart}
                 onUpdateCartQuantity={handleUpdateCartQuantity}
                 onNavigateToShop={() => {
