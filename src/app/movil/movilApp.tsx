@@ -1,6 +1,6 @@
 import React from "react";
 import { User, Reel, Product, CartItem, Order, ChatMessage, NavigationTab, isGuestUser } from "../../types";
-import Inicio from "./Inicio";
+import Inicio from "./inicio/Inicio";
 import BarraNavegacion from "./componente/barranavegacion";
 import Tienda from "./tienda";
 import SocialPanel from "./SocialPanel";
