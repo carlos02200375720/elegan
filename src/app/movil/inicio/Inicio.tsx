@@ -10,7 +10,7 @@ import { getInicioShareUrl, findReelByInicioParam, navigateTo } from "../../../r
 import { getLocalGuestToken } from "../../../utils/guestToken";
 import { isSuperAdmin } from "../../../superAdmin";
 import type { AndroidInicioProps, PublicationFormat } from "./TiposInicio";
-import { findProductForReel, isDefaultDescription, isFilenameTitle } from "./FuncionesInicio";
+import { findProductForReel } from "./FuncionesInicio";
 import InicioCargando from "./InicioCargando";
 import InicioSinContenido from "./InicioSinContenido";
 import EncabezadoInicio from "./EncabezadoInicio";
