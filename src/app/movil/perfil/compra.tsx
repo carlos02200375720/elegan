@@ -1,9 +1,9 @@
 import { Receipt, RotateCw, ShoppingBag } from "lucide-react";
-import { Order, Product, User } from "../../../types";
 import { formatPrice } from "../../../utils/currency";
 import { navigateTo } from "../../../router";
 import CompraPedido from "./CompraPedido";
-import { CompraPerfilProps, useCompraPerfil } from "./useCompraPerfil";
+import { useCompraPerfil } from "./useCompraPerfil";
+import type { CompraPerfilProps } from "./useCompraPerfil";
 
 export type { CompraPerfilProps };
 
