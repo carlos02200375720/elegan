@@ -36,6 +36,7 @@ export default function Inicio({
   unreadCount = 0,
   totalUnreads = 0,
   onNavigateToTab,
+  onNavigateToPath,
   onAuthRequired,
   onGuestInteraction,
   onRefreshReels,
