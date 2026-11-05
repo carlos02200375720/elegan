@@ -8,7 +8,7 @@ export {
   getAndroidApiUrl,
   androidApiFetch,
   readResponseBody,
-} from "./api/transporte";
+} from "./transporte";
 
 export const androidApi = {
   getHealth: async () => {
