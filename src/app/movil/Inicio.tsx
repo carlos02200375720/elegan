@@ -1058,7 +1058,14 @@ export default function Inicio({
                 </span>
                 <h2 className="max-w-full break-words text-base font-extrabold leading-tight text-white [overflow-wrap:anywhere]">{activeBanner.title}</h2>
                 {activeBanner.description && (
-                  <p className="mt-1 w-full max-w-full whitespace-normal break-words text-[11px] leading-snug text-white/90 [overflow-wrap:anywhere]">{activeBanner.description}</p>
+                  <p className="mt-1 w-full max-w-full whitespace-normal break-words text-[11px] leading-snug text-white/90 [overflow-wrap:anywhere]">
+                    {Array.from({ length: Math.ceil(Array.from(activeBanner.description).length / 30) }, (_, index) => (
+                      <React.Fragment key={index}>
+                        {Array.from(activeBanner.description).slice(index * 30, (index + 1) * 30).join("")}
+                        {index < Math.ceil(Array.from(activeBanner.description).length / 30) - 1 && <br />}
+                      </React.Fragment>
+                    ))}
+                  </p>
                 )}
               </div>
             </a>
