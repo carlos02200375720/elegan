@@ -17,14 +17,6 @@ import EncabezadoInicio from "./EncabezadoInicio";
 import BannerPrincipal from "./BannerPrincipal";
 import SeccionCategorias from "./SeccionCategorias";
 import SeccionVideos from "./SeccionVideos";
-import type { AndroidInicioProps, PublicationFormat } from "./TiposInicio";
-import { findProductForReel, isDefaultDescription, isFilenameTitle } from "./FuncionesInicio";
-import InicioCargando from "./InicioCargando";
-import InicioSinContenido from "./InicioSinContenido";
-import EncabezadoInicio from "./EncabezadoInicio";
-import BannerPrincipal from "./BannerPrincipal";
-import SeccionCategorias from "./SeccionCategorias";
-import SeccionVideos from "./SeccionVideos";
 
 export default function Inicio({
   reels: publishedReels,
