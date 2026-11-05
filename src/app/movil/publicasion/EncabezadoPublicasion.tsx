@@ -4,7 +4,6 @@ import type { PublishType } from "./TiposPublicasion";
 interface Props { onBack: () => void; type: PublishType; setType: (type: PublishType) => void; setError: (error: string | null) => void; }
 export default function EncabezadoPublicasion({ onBack, type, setType, setError }: Props) {
   return (
-          {/* 1. Header (Fixed at top) */}
           <header
             className="flex-shrink-0 bg-slate-950/95 border-b border-slate-850 px-4 py-3 backdrop-blur-md z-10"
             style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top, 0px))" }}
