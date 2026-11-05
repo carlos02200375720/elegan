@@ -17,13 +17,11 @@ export default function ModalEliminarPublicacion({
   if (!publication) return null;
   return (
     <AnimatePresence>
-      {/* Modal de confirmación de eliminación in-app (evita bloqueos de window.confirm) */}
-            <AnimatePresence>
-              {publication && (
+      {publication && (
                 <div
                   id="modal-confirm-delete-publication"
                   className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-xs p-4"
-                  onClick={() => !isDeleting && onCancel}
+                  onClick={() => !isDeleting && onCancel()}
                 >
                   <motion.div
                     initial={{ scale: 0.92, opacity: 0, y: 10 }}
@@ -53,7 +51,7 @@ export default function ModalEliminarPublicacion({
                       <button
                         type="button"
                         disabled={isDeleting}
-                        onClick={() => onCancel}
+                        onClick={onCancel}
                         className="py-2.5 px-4 rounded-xl border border-slate-300 text-slate-700 text-xs font-bold hover:bg-slate-50 active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
                       >
                         Cancelar
@@ -77,8 +75,7 @@ export default function ModalEliminarPublicacion({
                     </div>
                   </motion.div>
                 </div>
-              )}
-            </AnimatePresence>
+      )}
     </AnimatePresence>
   );
 }
