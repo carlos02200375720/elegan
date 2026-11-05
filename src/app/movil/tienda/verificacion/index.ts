@@ -1,0 +1,11 @@
+export { default } from "./verificacion";
+export { VerificacionTiendaView } from "./verificacion";
+export * from "./TiposVerificacion";
+export * from "./FuncionesVerificacion";
+export { DatosComprador } from "./DatosComprador";
+export { DireccionEntrega } from "./DireccionEntrega";
+export { ResumenPedido } from "./ResumenPedido";
+export { OpcionesEnvio } from "./OpcionesEnvio";
+export { MetodosPago } from "./MetodosPago";
+export { FormularioPago } from "./FormularioPago";
+export { ConfirmacionPedido } from "./ConfirmacionPedido";
