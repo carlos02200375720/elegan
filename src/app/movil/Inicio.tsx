@@ -1026,8 +1026,6 @@ export default function Inicio({
             <a
               href={activeBanner.link || undefined}
               onClick={(event) => { if (!activeBanner.link) event.preventDefault(); }}
-              target={activeBanner.link ? "_blank" : undefined}
-              rel={activeBanner.link ? "noopener noreferrer" : undefined}
               className={`relative block aspect-[4/3] w-full overflow-hidden rounded-none bg-gradient-to-r from-slate-950 via-slate-800 to-amber-700 shadow-sm ${activeBanner.link ? "cursor-pointer" : "cursor-default"}`}
               aria-label={activeBanner.title}
             >
