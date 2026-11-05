@@ -105,7 +105,7 @@ export default function Perfil({
     activeUser, currentUser, isMe, isSellerOrAdmin,
     props: {
       initialTab, onClearInitialTab, onDeleteReel, onPublishSuccess,
-      onRefreshUsers, savedReelIds, cart, cartCount,
+      onRefreshUsers, savedReelIds, reels, products, cart, cartCount,
     },
   });
   const {
