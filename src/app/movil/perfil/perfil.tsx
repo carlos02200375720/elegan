@@ -2,14 +2,14 @@ import React, { useState, useEffect } from "react";
 import { StatusBar, Style } from "@capacitor/status-bar";
 import { Capacitor } from "@capacitor/core";
 import { User, Reel, Product, Order, isGuestUser } from "../../../types";
-import { ShoppingBag, Bookmark, Settings, Grid, Sparkles, UserPlus, X, Package, Plus, Truck, Mail } from "lucide-react";
+import { Sparkles, UserPlus, X, Plus, Truck, Mail } from "lucide-react";
 
 import { androidApiFetch } from "../api";
 import AndroidUserPublicationsFeed from "../componente/Feedperfil";
 import AndroidPublicationCover from "../componente/miniaturapublicacion";
 import AndroidPublishView from "../publicasion";
 import { isSuperAdmin } from "../../../superAdmin";
-import { navigateTo, parseRoute, getProfilePath, getProfileSavedPath, getProfileCompraPath, getProfileConfigPath, getProfileProductoPath, getProfilePublicacionesPath, getProfilePublicarPath } from "../../../router";
+import { navigateTo, parseRoute, getProfilePath, getProfileSavedPath, getProfileCompraPath, getProfileConfigPath, getProfileProductoPath, getProfilePublicacionesPath } from "../../../router";
 import { formatPrice } from "../../../utils/currency";
 
 // Sub-components inside src/app/movil/perfil/
