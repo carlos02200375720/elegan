@@ -1105,7 +1105,7 @@ export default function Catalogo({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Buscar productos..."
-              className="w-full pl-9 pr-8 py-2 bg-slate-100 hover:bg-slate-100/80 border border-slate-200 rounded-full text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-amber-500 focus:bg-white transition-colors"
+              className="w-full pl-9 pr-8 py-2 bg-white hover:bg-white border border-slate-200 rounded-full text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-amber-500 focus:bg-white transition-colors"
             />
             {searchQuery && (
               <button
