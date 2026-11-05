@@ -2,8 +2,8 @@ import React, { useState, useEffect } from "react";
 import { StatusBar, Style } from "@capacitor/status-bar";
 import { Capacitor } from "@capacitor/core";
 import { User, Reel, Product, Order, isGuestUser } from "../../../types";
-import { Play, ShoppingBag, Bookmark, Settings, LogOut, Edit3, Grid, Camera, Check, Sparkles, UserPlus, X, ExternalLink, Package, Plus, Trash2, ShieldCheck, Truck, Mail, BadgeCheck, ArrowLeft } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
+import { ShoppingBag, Bookmark, Settings, Grid, Sparkles, UserPlus, X, Package, Plus, Truck, Mail } from "lucide-react";
+
 import { androidApiFetch } from "../api";
 import AndroidUserPublicationsFeed from "../componente/Feedperfil";
 import AndroidPublicationCover from "../componente/miniaturapublicacion";
@@ -16,6 +16,9 @@ import { formatPrice } from "../../../utils/currency";
 import GuardadoPerfilView from "./guardado";
 import CompraPerfilView from "./compra";
 import ConfigPerfilView from "./config";
+import EncabezadoPerfil from "./EncabezadoPerfil";
+import NavegacionPerfil from "./NavegacionPerfil";
+import ModalEliminarPublicacion from "./ModalEliminarPublicacion";
 
 export interface AndroidPerfilProps {
   user?: User;
@@ -217,8 +220,7 @@ export default function Perfil({
       const parsed = parseRoute(window.location.pathname);
       if (parsed.type === "profile" && parsed.profileTab === "publicar") {
         return true;
-      }
-    }
+      }    }
     return false;
   });
 
@@ -437,8 +439,7 @@ export default function Perfil({
 
   const totalCartItems = React.useMemo(() => {
     if (typeof cartCount === "number") return cartCount;
-    if (Array.isArray(cart)) {
-      return cart.reduce((acc, item: any) => acc + (Number(item?.quantity) || 1), 0);
+    if (Array.isArray(cart)) {      return cart.reduce((acc, item: any) => acc + (Number(item?.quantity) || 1), 0);
     }
     if (typeof window !== "undefined") {
       try {
@@ -474,88 +475,17 @@ export default function Perfil({
       />
 
       {/* Cabecera fija del perfil con fondo blanco igual que la barra de estado nativa de Android */}
-      <header
-        id="android-profile-header"
-        className="sticky top-0 z-40 w-full bg-white border-b border-slate-100 shadow-2xs"
-        style={{
-          backgroundColor: "#ffffff",
-          paddingTop: "max(24px, env(safe-area-inset-top, 24px))",
+      <EncabezadoPerfil
+        activeUser={activeUser}
+        isMe={isMe}
+        onBackToSelf={onBackToSelf}
+        onEditProfile={() => {
+          setIsEditProfileOpen(true);
+          navigateTo(getProfileConfigPath(activeUser));
         }}
-      >
-        <div className="flex items-center justify-between px-4 h-14 w-full">
-          {/* Lado izquierdo: Foto / Icono de perfil (y botón para volver si es perfil de otro creador) */}
-          <div className="flex items-center gap-2 shrink-0">
-            {onBackToSelf && !isMe && (
-              <button
-                type="button"
-                onClick={onBackToSelf}
-                className="p-1.5 -ml-1 text-slate-700 hover:text-slate-900 active:scale-95 transition-transform cursor-pointer"
-                aria-label="Volver a mi perfil"
-                title="Volver a mi perfil"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </button>
-            )}
-            <div
-              className={`relative ${isMe ? "cursor-pointer active:scale-95 transition-transform" : ""}`}
-              onClick={() => {
-                if (isMe) {
-                  setIsEditProfileOpen(true);
-                  navigateTo(getProfileConfigPath(activeUser));
-                }
-              }}
-              title={isMe ? "Editar foto y perfil" : activeUser.name}
-            >
-              <img
-                src={activeUser.avatar}
-                alt={activeUser.name}
-                className="w-9 h-9 rounded-full object-cover border border-slate-200 shadow-2xs bg-white"
-                onError={(e) => {
-                  (e.currentTarget as HTMLImageElement).src =
-                    "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80";
-                }}
-              />
-            </div>
-          </div>
-
-          {/* En el medio: Solo el nombre del cliente con el icono azul de verificado */}
-          <div className="flex-1 flex items-center justify-center gap-1.5 px-2 min-w-0">
-            <span className="text-sm font-bold text-slate-900 truncate">
-              {activeUser.name}
-            </span>
-            {isSuperAdmin(activeUser) && (
-              <span className="inline-flex items-center justify-center shrink-0" title="Verificado">
-                <BadgeCheck className="w-4 h-4 text-white fill-blue-500 shrink-0 drop-shadow-2xs" />
-              </span>
-            )}
-          </div>
-
-          {/* Esquina derecha: Icono del carrito con contador de productos */}
-          <div className="flex items-center justify-end shrink-0">
-            <button
-              type="button"
-              onClick={() => {
-                if (onOpenCart) {
-                  onOpenCart();
-                } else {
-                  navigateTo("/tienda/carrito");
-                }
-              }}
-              id="mobile-profile-cart-btn"
-              className="relative p-2 rounded-xl text-slate-700 hover:text-slate-900 hover:bg-slate-100 active:scale-95 transition-all cursor-pointer"
-              title="Carrito de compras"
-              aria-label={`Carrito de compras (${totalCartItems} productos)`}
-            >
-              <ShoppingBag className="w-5 h-5 text-slate-800" />
-              {totalCartItems > 0 && (
-                <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-amber-500 text-slate-950 text-[10px] font-black rounded-full flex items-center justify-center shadow-xs border-2 border-white leading-none">
-                  {totalCartItems > 99 ? "99+" : totalCartItems}
-                </span>
-              )}
-            </button>
-          </div>
-        </div>
-      </header>
+        onOpenCart={onOpenCart}
+        totalCartItems={totalCartItems}
+      />
 
       {/* Contenedor del contenido del perfil */}
       <div
@@ -657,76 +587,19 @@ export default function Perfil({
         )}
       </div>
 
-      {/* Tabs */}
-      <div className="flex border-b border-slate-200 mt-2 px-2">
-        {isSellerOrAdmin && (
-          <button
-            onClick={() => handleSelectMobileTab("reels")}
-            title={`Reels (${userReels.length})`}
-            aria-label="Reels"
-            className={`flex-1 py-3 text-xs font-bold flex items-center justify-center border-b-2 transition-all cursor-pointer ${
-              activeTab === "reels" ? "border-amber-500 text-amber-600" : "border-transparent text-slate-400 hover:text-slate-600"
-            }`}
-          >
-            <Grid className="w-5 h-5" />
-          </button>
-        )}
-
-        {isSellerOrAdmin && (
-          <button
-            onClick={() => handleSelectMobileTab("products")}
-            title={`Tienda (${userProducts.length})`}
-            aria-label="Tienda"
-            className={`flex-1 py-3 text-xs font-bold flex items-center justify-center border-b-2 transition-all cursor-pointer ${
-              activeTab === "products" ? "border-amber-500 text-amber-600" : "border-transparent text-slate-400 hover:text-slate-600"
-            }`}
-          >
-            <ShoppingBag className="w-5 h-5" />
-          </button>
-        )}
-
-        {isMe && (
-          <button
-            onClick={() => handleSelectMobileTab("saved")}
-            title="Guardados"
-            aria-label="Guardados"
-            className={`flex-1 py-3 text-xs font-bold flex items-center justify-center border-b-2 transition-all cursor-pointer ${
-              activeTab === "saved" ? "border-amber-500 text-amber-600" : "border-transparent text-slate-400 hover:text-slate-600"
-            }`}
-          >
-            <Bookmark className="w-5 h-5" />
-          </button>
-        )}
-
-        {isMe && (
-          <button
-            onClick={() => handleSelectMobileTab("orders")}
-            title="Pedidos"
-            aria-label="Pedidos"
-            className={`flex-1 py-3 text-xs font-bold flex items-center justify-center border-b-2 transition-all cursor-pointer ${
-              activeTab === "orders" ? "border-amber-500 text-amber-600" : "border-transparent text-slate-400 hover:text-slate-600"
-            }`}
-          >
-            <Package className="w-5 h-5" />
-          </button>
-        )}
-
-        {isMe && (
-          <button
-            onClick={() => {
-              setIsEditProfileOpen(true);
-              navigateTo(getProfileConfigPath(activeUser));
-            }}
-            title="Configuración y Editar Perfil"
-            aria-label="Configuración y Editar Perfil"
-            className={`flex-1 py-3 text-xs font-bold flex items-center justify-center border-b-2 transition-all cursor-pointer active:scale-95 ${
-              isEditProfileOpen ? "border-amber-500 text-amber-600" : "border-transparent text-slate-400 hover:text-slate-600"
-            }`}
-          >
-            <Settings className="w-5 h-5" />
-          </button>
-        )}
-      </div>
+      {/* Tabs */}      <NavegacionPerfil
+        isSellerOrAdmin={isSellerOrAdmin}
+        isMe={isMe}
+        activeTab={activeTab}
+        isEditProfileOpen={isEditProfileOpen}
+        reelCount={userReels.length}
+        productCount={userProducts.length}
+        onSelectTab={handleSelectMobileTab}
+        onOpenConfig={() => {
+          setIsEditProfileOpen(true);
+          navigateTo(getProfileConfigPath(activeUser));
+        }}
+      />
 
       {/* Tab Content */}
       <div className="p-3">
@@ -877,71 +750,15 @@ export default function Perfil({
         onClose={() => {
           setIsEditProfileOpen(false);
           navigateTo(getProfilePath(activeUser));
-        }}
+        }}      />
+
+      <ModalEliminarPublicacion
+        publication={publicationToDelete}
+        isDeleting={isDeletingPublication}
+        errorMessage={deleteErrorMessage}
+        onCancel={() => setPublicationToDelete(null)}
+        onConfirm={executeDeletePublication}
       />
-
-      {/* Modal de confirmación de eliminación in-app (evita bloqueos de window.confirm) */}
-      <AnimatePresence>
-        {publicationToDelete && (
-          <div
-            id="modal-confirm-delete-publication"
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-xs p-4"
-            onClick={() => !isDeletingPublication && setPublicationToDelete(null)}
-          >
-            <motion.div
-              initial={{ scale: 0.92, opacity: 0, y: 10 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.92, opacity: 0, y: 10 }}
-              transition={{ duration: 0.15 }}
-              onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl text-slate-900 border border-slate-200 flex flex-col items-center text-center"
-            >
-              <div className="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mb-3">
-                <Trash2 className="w-6 h-6 stroke-[2.5]" />
-              </div>
-              <h3 className="text-base font-bold text-slate-900">
-                ¿Eliminar publicación?
-              </h3>
-              <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
-                Esta publicación se eliminará permanentemente de MongoDB Atlas, Google Cloud Storage y de todos los servidores.
-              </p>
-
-              {deleteErrorMessage && (
-                <div className="mt-2 text-xs text-rose-600 font-semibold">
-                  {deleteErrorMessage}
-                </div>
-              )}
-
-              <div className="grid grid-cols-2 gap-2.5 w-full mt-5">
-                <button
-                  type="button"
-                  disabled={isDeletingPublication}
-                  onClick={() => setPublicationToDelete(null)}
-                  className="py-2.5 px-4 rounded-xl border border-slate-300 text-slate-700 text-xs font-bold hover:bg-slate-50 active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="button"
-                  id="btn-confirm-delete-publication"
-                  disabled={isDeletingPublication}
-                  onClick={() => executeDeletePublication(publicationToDelete)}
-                  className="py-2.5 px-4 rounded-xl bg-rose-600 text-white text-xs font-bold shadow-md hover:bg-rose-700 active:scale-95 transition-all flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
-                >
-                  {isDeletingPublication ? (
-                    <>
-                      <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      <span>Eliminando...</span>
-                    </>
-                  ) : (
-                    <span>Eliminar</span>
-                  )}
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
 
     </div>
   );
