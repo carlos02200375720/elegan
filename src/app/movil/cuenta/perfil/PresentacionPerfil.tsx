@@ -88,16 +88,7 @@ export default function PresentacionPerfil({
                   </div>
                 </div>
       
-                <div className="mt-2">
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <h1 className="text-lg font-black text-slate-900">{activeUser.name}</h1>
-                    {isSuperAdmin(activeUser) && (
-                      <span className="inline-flex items-center justify-center shrink-0" title="Verificado">
-                        <BadgeCheck className="w-4 h-4 text-white fill-blue-500 shrink-0 drop-shadow-2xs" />
-                      </span>
-                    )}
-                  </div>
-                </div>
+
       
               {/* Banner para usuarios que navegan como invitado */}
               {isMe && (!activeUser.email || isGuestUser(activeUser)) && (
