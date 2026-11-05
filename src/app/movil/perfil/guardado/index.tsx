@@ -1,4 +1,3 @@
-import React from "react";
 import { Bookmark, Play, ShoppingBag } from "lucide-react";
 import { Product, Reel } from "../../../types";
 import { formatPrice } from "../../../utils/currency";
