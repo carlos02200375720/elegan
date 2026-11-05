@@ -98,14 +98,6 @@ export default function PresentacionPerfil({
                       </span>
                     )}
                   </div>
-                  {activeUser.email && (
-                    <div className="flex items-center gap-1.5 mt-1 text-[11px] text-slate-600 font-medium">
-                      <Mail className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                      <span className="truncate">{activeUser.email}</span>
-                      {activeUser.city && <span className="text-slate-400">• {activeUser.city}</span>}
-                      {activeUser.country && <span className="text-slate-400">, {activeUser.country}</span>}
-                    </div>
-                  )}
                 </div>
       
               {/* Banner para usuarios que navegan como invitado */}
