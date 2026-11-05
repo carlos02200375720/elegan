@@ -31,7 +31,6 @@ export default function PresentacionPerfil({
                       </h2>
                     </div>
                     <div className="space-y-2 text-xs text-slate-700">
-                      {activeUser.name && <p className="font-semibold">{activeUser.name}</p>}
                       {activeUser.email && (
                         <div className="flex items-center gap-2">
                           <Mail className="h-3.5 w-3.5 shrink-0 text-slate-400" />
