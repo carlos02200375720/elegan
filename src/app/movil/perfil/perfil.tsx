@@ -3,7 +3,7 @@ import { User, Reel, Product, Order } from "../../../types";
 
 
 import { isSuperAdmin } from "../../../superAdmin";
-import { navigateTo, getProfileConfigPath } from "../../../router";
+import { navigateTo, getProfilePath, getProfileConfigPath } from "../../../router";
 import usePerfilData from "./usePerfilData";
 import usePerfilEffects from "./usePerfilEffects";
 import ModalesPerfil from "./ModalesPerfil";
