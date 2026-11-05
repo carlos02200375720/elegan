@@ -1316,7 +1316,7 @@ export default function Catalogo({
                   >
                     <Bookmark
                       className={`w-4 h-4 transition-transform duration-200 ${
-                        isSaved ? "fill-amber-500 stroke-amber-500 scale-105" : "text-slate-500 stroke-[2.2]"
+                        isSaved ? "fill-amber-500 stroke-amber-500 scale-105" : "fill-white text-slate-500 stroke-[2.2]"
                       }`}
                     />
                   </button>
