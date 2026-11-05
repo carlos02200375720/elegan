@@ -2,6 +2,7 @@ import React from "react";
 import { User } from "../../../types";
 import { ShoppingBag, ArrowLeft, BadgeCheck } from "lucide-react";
 import { isSuperAdmin } from "../../../superAdmin";
+import { navigateTo } from "../../../router";
 
 interface EncabezadoPerfilProps {
   activeUser: User;
