@@ -1303,6 +1303,23 @@ export default function Catalogo({
               >
                 <div className="relative w-full aspect-square overflow-hidden bg-slate-100">
                   <img src={getProductImageUrl(p)} alt={p.name} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
+                  <button
+                    type="button"
+                    id={`android-save-product-btn-${p.id}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onToggleSave?.(p.id);
+                    }}
+                    className="absolute top-2 left-2 z-10 p-1.5 rounded-full bg-white/90 shadow-sm active:scale-90 transition-transform cursor-pointer flex items-center justify-center border-0"
+                    title={isSaved ? "Guardado en publicaciones" : "Guardar en publicaciones"}
+                    aria-label={isSaved ? "Quitar de publicaciones guardadas" : "Guardar en publicaciones"}
+                  >
+                    <Bookmark
+                      className={`w-4 h-4 transition-transform duration-200 ${
+                        isSaved ? "fill-amber-500 stroke-amber-500 scale-105" : "text-slate-500 stroke-[2.2]"
+                      }`}
+                    />
+                  </button>
                 </div>
 
                 <div className="p-2.5">
@@ -1321,23 +1338,7 @@ export default function Catalogo({
                         </span>
                       )}
                     </div>
-                    <button
-                      type="button"
-                      id={`android-save-product-btn-${p.id}`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onToggleSave?.(p.id);
-                      }}
-                      className="p-1 active:scale-90 transition-transform cursor-pointer flex items-center justify-center bg-transparent border-0"
-                      title={isSaved ? "Guardado en publicaciones" : "Guardar en publicaciones"}
-                      aria-label={isSaved ? "Quitar de publicaciones guardadas" : "Guardar en publicaciones"}
-                    >
-                      <Bookmark
-                        className={`w-4 h-4 transition-transform duration-200 ${
-                          isSaved ? "fill-amber-500 stroke-amber-500 scale-105" : "text-slate-400 hover:text-slate-600 stroke-[2.2]"
-                        }`}
-                      />
-                    </button>
+
                   </div>
                 </div>
               </div>
