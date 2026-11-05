@@ -41,10 +41,7 @@ export default function EncabezadoPerfil({
                   <div
                     className={`relative ${isMe ? "cursor-pointer active:scale-95 transition-transform" : ""}`}
                     onClick={() => {
-                      if (isMe) {
-                        setIsEditProfileOpen(true);
-                        navigateTo(getProfileConfigPath(activeUser));
-                      }
+                      if (isMe) onEditProfile();
                     }}
                     title={isMe ? "Editar foto y perfil" : activeUser.name}
                   >
