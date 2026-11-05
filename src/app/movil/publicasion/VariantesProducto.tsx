@@ -3,7 +3,6 @@ import { Image as ImageIcon, Plus, Tag, Trash2, Upload, X } from "lucide-react";
 import type { ProductVariantsProps } from "./TiposPublicasion";
 export default function VariantesProducto({ prodVariants, newColorName, setNewColorName, newColorFile, setNewColorFile, colorImageFiles, setColorImageFiles, colorImagePreviews, setColorImagePreviews, prodVariantList, setProdVariantList, editingColorTarget, setEditingColorTarget, newVarName, setNewVarName, newVarValue, setNewVarValue, newColorImageInputRef, existingColorImageInputRef, price, handleAddColorVariant, handleAssignColorImage, handleRemoveVariant, handleRemoveVariantOption, handleAddVariant }: ProductVariantsProps) {
   return (
-                {/* Product Variants (Colores con Imagen y Tallas) */}
                 <div className="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3.5">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-amber-400 flex items-center gap-1.5">
