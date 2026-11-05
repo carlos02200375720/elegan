@@ -1,4 +1,4 @@
-import type { Dispatch, RefObject, SetStateAction } from "react";
+import type { ChangeEvent, Dispatch, RefObject, SetStateAction } from "react";
 import type { User, Product, ProductVariantItem } from "../../../types";
 
 export interface AndroidPublishViewProps {
@@ -15,7 +15,7 @@ export interface VideoFormProps {
   setVideo: Dispatch<SetStateAction<File | null>>;
   videoInputRef: RefObject<HTMLInputElement | null>;
   aspect: "vertical" | "horizontal" | "square";
-  selectVideo: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  selectVideo: (event: ChangeEvent<HTMLInputElement>) => void;
   title: string;
   setTitle: Dispatch<SetStateAction<string>>;
   description: string;
