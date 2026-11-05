@@ -1,6 +1,6 @@
 import React from "react";
 import { User, Reel } from "../../../../types";
-import { BadgeCheck, Mail, Plus, Sparkles, UserPlus } from "lucide-react";
+import { BadgeCheck, Mail, MapPin, Phone, Plus, Sparkles, UserPlus } from "lucide-react";
 import { isGuestUser } from "../../../../types";
 import { isSuperAdmin } from "../../../../superAdmin";
 import { navigateTo } from "../../../../router";
@@ -21,6 +21,44 @@ export default function PresentacionPerfil({
 }: PresentacionPerfilProps) {
   return (
               <div className="px-4 pt-3">
+                {/* Resumen privado de los datos de entrega del cliente */}
+                {isMe && !isGuestUser(activeUser) && (
+                  <section className="mb-3 rounded-2xl border border-slate-200 bg-slate-50 p-3.5">
+                    <div className="mb-2 flex items-center gap-2">
+                      <MapPin className="h-4 w-4 shrink-0 text-amber-500" />
+                      <h2 className="text-xs font-black uppercase tracking-wide text-slate-800">
+                        Datos de entrega
+                      </h2>
+                    </div>
+                    <div className="space-y-2 text-xs text-slate-700">
+                      {activeUser.name && <p className="font-semibold">{activeUser.name}</p>}
+                      {activeUser.email && (
+                        <div className="flex items-center gap-2">
+                          <Mail className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                          <span className="break-all">{activeUser.email}</span>
+                        </div>
+                      )}
+                      {activeUser.phone && (
+                        <div className="flex items-center gap-2">
+                          <Phone className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                          <span>{activeUser.phone}</span>
+                        </div>
+                      )}
+                      {(activeUser.shippingAddress || activeUser.address) && (
+                        <div className="flex items-start gap-2">
+                          <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400" />
+                          <span>{activeUser.shippingAddress || activeUser.address}</span>
+                        </div>
+                      )}
+                      {(activeUser.city || activeUser.country || activeUser.postalCode) && (
+                        <p className="pl-5 text-slate-500">
+                          {[activeUser.city, activeUser.country, activeUser.postalCode].filter(Boolean).join(" · ")}
+                        </p>
+                      )}
+                    </div>
+                  </section>
+                )}
+
                 {/* Fila de acciones superiores (Publicar / Seguir / Mensaje) */}
                 <div className="flex items-center justify-end">
                   <div className="flex items-center space-x-2">
