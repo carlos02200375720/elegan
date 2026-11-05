@@ -1,6 +1,6 @@
 import React from "react";
 import { User, Reel, Product, Order } from "../../../types";
-import { androidApiFetch } from "../../api";
+import { androidApiFetch } from "../api";
 import {
   navigateTo, parseRoute, getProfilePath, getProfileSavedPath,
   getProfileCompraPath, getProfileConfigPath, getProfileProductoPath,
