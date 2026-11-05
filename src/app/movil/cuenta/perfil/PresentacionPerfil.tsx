@@ -20,7 +20,7 @@ export default function PresentacionPerfil({
   onOpenPublishModal, onOpenDirectChat, onOpenPublishing,
 }: PresentacionPerfilProps) {
   return (
-              <div className="px-4 pt-3">
+              <div className="px-4 pt-3 mb-1">
                 {/* Resumen privado de los datos de entrega del cliente */}
                 {isMe && !isGuestUser(activeUser) && (
                   <section className="mb-3 rounded-2xl border border-slate-200 bg-slate-50 p-3.5">
