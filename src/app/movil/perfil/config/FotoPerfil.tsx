@@ -5,8 +5,6 @@ interface Props {
   avatar: string;
   correo?: string;
   onSelect: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  onAvatarChange: (value: string) => void;
-  onMessage: (message: { type: "success" | "error"; text: string } | null) => void;
 }
 
 const AVATAR_PREDETERMINADO = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80";
