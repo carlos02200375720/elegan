@@ -17,7 +17,7 @@ import {
   MapPin,
 } from "lucide-react";
 import { motion } from "motion/react";
-import { Order } from "../../../types";
+import { Order } from "../tipos";
 
 export interface CompraPerfilProps {
   userOrders: Order[];
