@@ -7,7 +7,7 @@ interface Props {
 
 export default function FormularioAcceso({ estado }: Props) {
   const {
-    pestaña, setPestaña, correo, setCorreo, contraseña, setContraseña,
+    pestaña, cambiarPestaña, correo, setCorreo, contraseña, setContraseña,
     errorAcceso, cargandoAcceso, nombre, setNombre, correoRegistro,
     setCorreoRegistro, contraseñaRegistro, setContraseñaRegistro,
     errorRegistro, cargandoRegistro, iniciarSesion, registrar,
@@ -17,10 +17,10 @@ export default function FormularioAcceso({ estado }: Props) {
     <div className="flex-1 p-6 md:p-8 flex flex-col justify-between bg-white">
       <div>
         <div className="flex border-b border-slate-200 pb-3 mb-6">
-          <button onClick={() => { setPestaña("login"); }} className={`text-xs font-bold px-4 py-2 rounded-xl transition-all mr-2 flex items-center space-x-2 cursor-pointer ${pestaña === "login" ? "bg-amber-500 text-slate-950 shadow-xs" : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"}`} id="btn-tab-login">
+          <button onClick={() => { cambiarPestaña("login"); }} className={`text-xs font-bold px-4 py-2 rounded-xl transition-all mr-2 flex items-center space-x-2 cursor-pointer ${pestaña === "login" ? "bg-amber-500 text-slate-950 shadow-xs" : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"}`} id="btn-tab-login">
             <span>Iniciar Sesión</span>
           </button>
-          <button onClick={() => { setPestaña("register"); }} className={`text-xs font-bold px-4 py-2 rounded-xl transition-all flex items-center space-x-2 cursor-pointer ${pestaña === "register" ? "bg-amber-500 text-slate-950 shadow-xs" : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"}`} id="btn-tab-register">
+          <button onClick={() => { cambiarPestaña("register"); }} className={`text-xs font-bold px-4 py-2 rounded-xl transition-all flex items-center space-x-2 cursor-pointer ${pestaña === "register" ? "bg-amber-500 text-slate-950 shadow-xs" : "text-slate-500 hover:text-slate-900 hover:bg-slate-100"}`} id="btn-tab-register">
             <UserPlus className="w-3.5 h-3.5" /><span>Crear Cuenta</span>
           </button>
         </div>
@@ -47,7 +47,7 @@ export default function FormularioAcceso({ estado }: Props) {
 
         {pestaña === "register" && (
           <div className="space-y-4 pb-4">
-            <div><h2 className="text-lg font-extrabold text-slate-900 tracking-tight">Crea tu Cuenta</h2><p className="text-xs text-slate-500 mt-1">Regístrate para acceder a tu perfil, compras y datos de tu cuenta.</p></div>
+            <div><h2 className="text-lg font-extrabold text-slate-900 tracking-tight">Crea tu Cuenta</h2><p className="text-xs text-slate-500 mt-1">Regístrate para acceder a tu perfil, publicaciones guardadas, compras e interacciones.</p></div>
             <form onSubmit={registrar} className="space-y-3">
               <div><label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1">Nombre Completo</label><input type="text" placeholder="Ej. Juan Pérez" value={nombre} onChange={(e) => setNombre(e.target.value)} className="w-full bg-slate-50 text-slate-900 placeholder-slate-400 rounded-xl px-4 py-2.5 text-xs border border-slate-200 focus:bg-white focus:outline-none focus:border-amber-500 transition-colors" id="reg-name-input" required /></div>
               <div><label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wider mb-1">Correo Electrónico</label><input type="email" placeholder="ejemplo@correo.com" value={correoRegistro} onChange={(e) => setCorreoRegistro(e.target.value)} className="w-full bg-slate-50 text-slate-900 placeholder-slate-400 rounded-xl px-4 py-2.5 text-xs border border-slate-200 focus:bg-white focus:outline-none focus:border-amber-500 transition-colors" id="reg-email-input" required /></div>
