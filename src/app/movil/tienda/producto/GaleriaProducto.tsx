@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from "react";
 import { Play, Volume2, VolumeX } from "lucide-react";
-import { Product } from "../../../../types";
+import { Product } from "../../tipos";
 import { AndroidVideoPlayer } from "../../componente/videoplay";
 import { getProductImageUrl } from "../productMedia";
 import { checkIsVideo } from "./FuncionesProducto";
