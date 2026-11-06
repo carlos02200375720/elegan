@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Headphones, MessageSquare, Send, ShieldCheck } from "lucide-react";
 import type { ConversationProps } from "./TiposSocialPanel";
-import { SUPPORT_EMAIL } from "../../../utils/supportChat";
+import { SUPPORT_EMAIL } from "./utilidades";
 import EncabezadoSocialPanel from "./EncabezadoSocialPanel";
 
 export default function VistaConversacion({
