@@ -1,5 +1,5 @@
 import type { ChangeEvent, Dispatch, RefObject, SetStateAction } from "react";
-import type { User, Product, ProductVariantItem } from "../../../types";
+import type { User, Product, ProductVariantItem } from "../tipos";
 
 export interface AndroidPublishViewProps {
   currentUser: User;
