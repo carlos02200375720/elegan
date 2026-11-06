@@ -1,6 +1,6 @@
 import { WebSocket } from "ws";
 import mongoose from "mongoose";
-import { Product, Reel, Order, ChatMessage, LiveSession, User } from "../../types";
+import { Product, Reel, Order, ChatMessage, LiveSession, User } from "../types";
 import { MongoUser } from "../models";
 import { uploadBase64ToGCS } from "./mediaStorage";
 import { bucketName } from "../config/storage";
