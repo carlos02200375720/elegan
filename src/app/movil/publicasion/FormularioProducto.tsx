@@ -1,6 +1,6 @@
 import React from "react";
 import { CheckCircle2, Image as ImageIcon } from "lucide-react";
-import { formatPrice } from "../../utilidades/moneda";
+import { formatPrice } from "../utilidades/moneda";
 import VariantesProducto from "./VariantesProducto";
 import type { ProductFormProps } from "./TiposPublicasion";
 export default function FormularioProducto({ image, setImage, imageInputRef, name, setName, price, setPrice, stock, setStock, shippingCapital, setShippingCapital, shippingProvince, setShippingProvince, freeShipping, setFreeShipping, category, setCategory, productDescription, setProductDescription, variantProps }: ProductFormProps) {
