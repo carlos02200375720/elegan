@@ -8,6 +8,7 @@ import { AuthModal } from "./componente/AuthModal";
 import { apiFetch } from "./config";
 import { sesionMovil } from "./sesion";
 import { trackDailyVisitor } from "./analitica";
+import { getLocalGuestToken } from "./guestToken";
 import { parseRoute, navigateTo, getProfilePath, getProductPath } from "./enrutador";
 
 export default function AppMovil() {
@@ -21,7 +22,7 @@ export default function AppMovil() {
     return "inicio";
   });
 
-  useCicloNativo();
+  const { ocultarPantallaCarga } = useCicloNativo();
   const { users, setUsers, reels, setReels, products, setProducts, loadData } = useDatosMovil();
 
   const [currentUser, setCurrentUser] = useState<User>(() => {
@@ -42,7 +43,7 @@ export default function AppMovil() {
   });
 
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => !currentUser.isGuest);
-  const { cart, setCart, handleAddToCart, handleRemoveFromCart, handleUpdateCartQuantity, handleCheckoutCart } = useCarritoMovil(currentUser);
+  const { cart, handleAddToCart, handleRemoveFromCart, handleUpdateCartQuantity, handleCheckoutCart } = useCarritoMovil(currentUser);
   const [directSelectedProduct, setDirectSelectedProduct] = useState<Product | null>(null);
   const [selectedCreatorProfileId, setSelectedCreatorProfileId] = useState<string | null>(null);
   const [isProductDetailOpen, setIsProductDetailOpen] = useState(false);
@@ -59,7 +60,6 @@ export default function AppMovil() {
     trackDailyVisitor("android");
   }, [currentUser.id]);
 
-  const { ocultarPantallaCarga } = useCicloNativo();
   useEffect(() => {
     loadData().finally(ocultarPantallaCarga);
   }, [loadData, ocultarPantallaCarga]);
