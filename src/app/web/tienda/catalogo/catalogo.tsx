@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useMemo } from "react";
 import { Product } from "../../tipos";
 import { AnimatePresence } from "motion/react";
-import { navigateTo, parseRoute } from "../../../../router";
+import { navigateTo, parseRoute } from "../../enrutador";
 import ProductoIdTiendaView from "../producto/index";
 import CarritoTiendaView from "../carrito/index";
 import VerificasionTiendaView from "../verificasion/index";
