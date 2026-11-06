@@ -1,4 +1,4 @@
-import { Send, X, ShieldCheck, ArrowLeft, Search, MessageSquare, Headphones, CheckCheck, Sparkles, AlertCircle, Check } from "lucide-react";
+import { ShieldCheck, MessageSquare, Sparkles, Check, Search } from "lucide-react";
 import { SUPPORT_EMAIL, SUPPORT_USER_ID, isSupportAlias } from "../../../utils/supportChat";
 
 export default function ListaConversaciones({ props }: { props: any }) {
