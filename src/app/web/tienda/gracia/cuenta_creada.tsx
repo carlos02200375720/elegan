@@ -1,6 +1,6 @@
 import React from "react";
-import { User } from "../../../types";
-import { Order } from "../../../types";
+import { User } from "../../../../types";
+import { Order } from "../../../../types";
 interface Props { activeOrder: Order | null; onLoginSuccess?: (user: User) => void; }
 export function CuentaCreada({ activeOrder, onLoginSuccess }: Props) {
   return (
