@@ -2,7 +2,7 @@ import { Server as HttpServer } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import mongoose from "mongoose";
 import { MongoUser, MongoChatMessage } from "../models";
-import { ChatMessage } from "../../types";
+import { ChatMessage } from "../types";
 import { generateId } from "../utils/helpers";
 import {
   activeClients,
