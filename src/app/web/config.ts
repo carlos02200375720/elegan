@@ -71,7 +71,7 @@ export const apiFetch = async (
 
   if (typeof window !== "undefined") {
     try {
-      const currentUser = sessionState.getUser();
+      const currentUser = sesionWeb.getUser();
       if (currentUser?.originalId || currentUser?.id) {
         headers.set("x-user-id", currentUser.originalId || currentUser.id);
       }
