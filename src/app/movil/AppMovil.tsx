@@ -6,13 +6,13 @@ import { useCicloNativo } from "./nativo/useCicloNativo";
 import { AndroidApp } from "./index";
 import { AuthModal } from "./componente/AuthModal";
 import { trackDailyVisitor } from "./analitica";
-import { navigateTo, getProfilePath, getProductPath } from "./enrutador";
+import { getProfilePath, getProductPath } from "./enrutador";
 import { useSesionAplicacionMovil } from "./sesion/useSesionMovil";
 import { useNavegacionMovil } from "./navegacion/useNavegacionMovil";
 import { useMensajeriaMovil } from "./mensajeria/useMensajeriaMovil";
 
 export default function AppMovil() {
-  const { pestanaActiva: activeTab, establecerPestanaActiva: setActiveTab } = useNavegacionMovil();
+  const { pestanaActiva: activeTab, establecerPestanaActiva: setActiveTab, navegarA } = useNavegacionMovil();
 
   const { ocultarPantallaCarga } = useCicloNativo();
   const { users, setUsers, reels, setReels, products, setProducts, loadData } = useDatosMovil();
@@ -85,15 +85,13 @@ export default function AppMovil() {
           handleUpdateCartQuantity={handleUpdateCartQuantity}
           handleCheckoutCart={handleCheckoutCart}
           handleCreatorProfileLink={(cId) => {
-            setSelectedCreatorProfileId(cId);
-            setActiveTab("profile");
-            navigateTo(getProfilePath(cId));
+            navegarA("profile", getProfilePath(cId), () => setSelectedCreatorProfileId(cId));
           }}
           handleProductDetailsLink={(p) => {
-            setDirectSelectedProduct(p);
-            setActiveTab("shop");
-            setShopInitialStep("detail");
-            navigateTo(getProductPath(p));
+            navegarA("shop", getProductPath(p), () => {
+              setDirectSelectedProduct(p);
+              setShopInitialStep("detail");
+            });
           }}
           handleReelLink={() => {}}
           handleLikeReel={() => {}}
@@ -116,9 +114,7 @@ export default function AppMovil() {
           handleLogout={handleLogout}
           setGuestInteractionAlert={setGuestInteractionAlert}
           openPrivateChatDirectly={(u) => {
-            setActiveChatUser(u);
-            setActiveTab("messages");
-            navigateTo("/messages");
+            navegarA("messages", "/messages", () => setActiveChatUser(u));
           }}
           socket={socketRef.current}
         />
