@@ -9,7 +9,7 @@ import { ComentarioButton } from "../componente/comentario";
 import { GuardadoButton } from "../componente/guardado";
 import { ConpartilButton } from "../componente/conpartil";
 import { getMediaUrl } from "../config";
-import { formatPrice } from "../../utilidades/moneda";
+import { formatPrice } from "../utilidades/moneda";
 import { isDefaultDescription, isFilenameTitle, findProductForReel } from "./FuncionesInicio";
 import type { PublicationFormat } from "./TiposInicio";
 
