@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import mongoose from "mongoose";
 import { MongoProduct, MongoReel } from "../models";
-import { Product } from "../../types";
+import { Product } from "../types";
 import { generateId } from "../utils/helpers";
 import { createCompanionReelForProduct } from "../utils/reelUtils";
 import { saveCanonicalReelToMongo } from "../services/reelService";
