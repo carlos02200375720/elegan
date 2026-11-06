@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { User, Product, Reel, Order, isGuestUser } from "../../../types";
+import { User, Product, Reel, Order, isGuestUser } from "../tipos";
 import { PerfilProps } from "./tipos";
 import { deduplicateById } from "./utilidades";
 import {
@@ -9,8 +9,8 @@ import {
   getProfileSavedPath,
   getProfileCompraPath,
   getProfileConfigPath,
-} from "../../../router";
-import { apiFetch } from "../../../config";
+} from "../enrutador";
+import { apiFetch } from "../config";
 
 export function usePerfilEstado(props: PerfilProps) {
   const {
