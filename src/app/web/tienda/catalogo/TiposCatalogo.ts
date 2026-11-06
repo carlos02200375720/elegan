@@ -1,4 +1,4 @@
-import { Product, CartItem, Order, User } from "../../../../types";
+import { Product, CartItem, Order, User } from "../../tipos";
 
 export interface CategoriaTienda {
   id: string;
