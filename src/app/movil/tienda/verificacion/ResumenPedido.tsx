@@ -1,5 +1,5 @@
 import React from "react";
-import { CartItem } from "../../../../types";
+import { CartItem } from "../../tipos";
 import { formatPrice } from "../../utilidades/moneda";
 import { getProductImageUrl } from "../productMedia";
 
