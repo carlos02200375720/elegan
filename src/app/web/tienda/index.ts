@@ -14,6 +14,7 @@ export {
   getManualShippingOptions,
 } from "./producto/index";
 export * from "./producto/index";
+export * from "./producto/tipos";
 export { default as Carrito, default as CarritoTiendaView } from "./carrito";
 export * from "./carrito";
 export {
