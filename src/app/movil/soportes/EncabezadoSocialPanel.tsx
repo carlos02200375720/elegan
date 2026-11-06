@@ -1,6 +1,6 @@
 import React from "react";
 import { ArrowLeft, Headphones, ShieldCheck, X } from "lucide-react";
-import { SUPPORT_EMAIL } from "../../../utils/supportChat";
+import { SUPPORT_EMAIL } from "./utilidades";
 
 interface Props {
   isAdmin: boolean;
