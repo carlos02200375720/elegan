@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import mongoose from "mongoose";
 import { MongoUser } from "../models";
-import { LiveSession } from "../../types";
+import { LiveSession } from "../types";
 import { generateId } from "../utils/helpers";
 import {
   liveSessions,
