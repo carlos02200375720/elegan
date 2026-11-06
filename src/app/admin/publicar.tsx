@@ -1,26 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
-import { User, Product, Reel, ProductVariantItem, ProductShippingOption } from "../../types";
 import { 
-  ArrowLeft, 
-  Video, 
-  Image as ImageIcon, 
-  Layers, 
-  ShoppingBag, 
-  Upload, 
-  Trash2, 
-  Plus, 
-  X, 
-  Loader2, 
-  Sparkles, 
-  AlertCircle,
-  CheckCircle2,
-  Tag,
-  Download,
-  Truck,
-  Globe,
-  PackageCheck,
-  RefreshCw,
-  Clock
+
 } from "lucide-react";
 import { apiFetch, getApiUrl } from "../../config";
 import Banner from "./publicar/banner";
