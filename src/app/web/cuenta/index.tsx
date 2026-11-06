@@ -1,6 +1,6 @@
-import React from "react";
 import { motion, AnimatePresence } from "motion/react";
 import LoginView from "../LoginView";
+import { getDefaultAvatar } from "../../../utils/defaultAssets";
 import GuardadoPerfilView from "./guardado";
 import CompraPerfilView from "./compra";
 import ConfigPerfilView from "./config";
