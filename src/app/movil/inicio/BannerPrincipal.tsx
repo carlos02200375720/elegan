@@ -1,7 +1,7 @@
 import React from "react";
 import type { MouseEvent } from "react";
-import { getMediaUrl } from "../../../config";
-import { navigateTo } from "../../../router";
+import { getMediaUrl } from "../config";
+import { navigateTo } from "../enrutador";
 
 export interface BannerInicioData {
   label?: string;
