@@ -3,7 +3,7 @@ import { User, Reel } from "../../../../types";
 import { BadgeCheck, Mail, MapPin, Phone, Plus, Sparkles, UserPlus } from "lucide-react";
 import { isGuestUser } from "../../../../types";
 import { isSuperAdmin } from "../../../../superAdmin";
-import { navigateTo } from "../../../../router";
+import { navigateTo } from "../../enrutador";
 
 interface PresentacionPerfilProps {
   activeUser: User;
