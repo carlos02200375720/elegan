@@ -1,4 +1,5 @@
 import React from "react";
+import PublishView from "../publicar";
 import { LayoutDashboard, Users, Video, ShoppingBag, Truck, RefreshCw, AlertCircle, CheckCircle2, Database, X, Plus, BarChart3, Headphones } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
