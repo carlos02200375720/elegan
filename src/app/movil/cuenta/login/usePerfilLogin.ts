@@ -39,9 +39,9 @@ export function usePerfilLogin({
     restoredCart?: CartItem[],
     restoredSavedReels?: string[]
   ) => {
-    sessionState.setUser(user);
-    sessionState.setAuthenticated(true);
-    sessionState.setEmail(user.email || "");
+    sesionMovil.setUser(user);
+    sesionMovil.setAuthenticated(true);
+    sesionMovil.setEmail(user.email || "");
 
     const savedIds = restoredSavedReels || user.savedReelIds || [];
     try {
