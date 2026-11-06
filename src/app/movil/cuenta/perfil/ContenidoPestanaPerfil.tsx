@@ -1,5 +1,5 @@
 import React from "react";
-import { User, Reel, Product, Order } from "../../../../types";
+import { User, Reel, Product, Order } from "../../tipos";
 import { X, Truck } from "lucide-react";
 import { formatPrice } from "../../utilidades/moneda";
 import AndroidPublicationCover from "../../componente/miniaturapublicacion";
