@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import mongoose from "mongoose";
 import { chatMessages, activeOriginalUserId, activeClients } from "../services/state";
 import { MongoChatMessage, MongoUser } from "../models";
-import { ChatMessage } from "../../types";
+import { ChatMessage } from "../types";
 import { generateId } from "../utils/helpers";
 import { WebSocket } from "ws";
 
