@@ -1,14 +1,14 @@
 import React from "react";
 import { Heart, MessageCircle, Share2, Bookmark, BadgeCheck } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import type { Reel, ReelMedia, Product, User } from "../../../types";
+import type { Reel, ReelMedia, Product, User } from "../tipos";
 import { MovilVideoPlay, MovilVideoPlayHandle } from "../componente/videoplay";
 import { AndroidProgressBar } from "../componente/barraprogreso";
 import { LikeButton } from "../componente/like";
 import { ComentarioButton } from "../componente/comentario";
 import { GuardadoButton } from "../componente/guardado";
 import { ConpartilButton } from "../componente/conpartil";
-import { getMediaUrl } from "../../../config";
+import { getMediaUrl } from "../config";
 import { formatPrice } from "../../utilidades/moneda";
 import { isDefaultDescription, isFilenameTitle, findProductForReel } from "./FuncionesInicio";
 import type { PublicationFormat } from "./TiposInicio";
