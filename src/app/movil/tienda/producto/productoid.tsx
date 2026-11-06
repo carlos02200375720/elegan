@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect } from "react";
 import { StatusBar, Style } from "@capacitor/status-bar";
-import { Product } from "../../../../types";
+import { Product } from "../../tipos";
 import { getProductGalleryMedia, getProductImageUrl } from "../productMedia";
 import {
   AndroidProductoIdProps,
