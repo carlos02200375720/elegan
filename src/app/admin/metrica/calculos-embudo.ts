@@ -1,4 +1,4 @@
-import { FunnelAnalyticsData, getLocalFunnelCounts } from "../../../utils/analyticsTracker";
+import { FunnelAnalyticsData, getLocalFunnelCounts } from "../analitica";
 import { Order, Product } from "../tipos";
 export function calcularDatosEmbudo(funnelApiData: FunnelAnalyticsData | null, orders: Order[]) {
 
