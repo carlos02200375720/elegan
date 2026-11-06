@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Product, CartItem, Order, isGuestUser } from "../../../../types";
+import { Product, CartItem, Order, isGuestUser } from "../../tipos";
 import { getProductPath, getThankYouPath, navigateTo, parseRoute } from "../../enrutador";
-import { apiFetch } from "../../../../config";
+import { apiFetch } from "../../config";
 import { DEST_COUNTRIES } from "../verificasion/index";
-import { trackFunnelStep } from "../../../../utils/analyticsTracker";
+import { trackFunnelStep } from "../../analitica";
 import { ShopProps, PasoTienda } from "./TiposCatalogo";
 
 export function useEstadoCatalogo(props: ShopProps) {
