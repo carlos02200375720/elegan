@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { Capacitor } from "@capacitor/core";
 import { StatusBar, Style } from "@capacitor/status-bar";
 import { SplashScreen } from "@capacitor/splash-screen";
@@ -14,11 +14,11 @@ export function useCicloNativo() {
     } catch {}
   }, []);
 
-  const ocultarPantallaCarga = () => {
+  const ocultarPantallaCarga = useCallback(() => {
     try {
       if (Capacitor.isNativePlatform()) SplashScreen.hide().catch(() => {});
     } catch {}
-  };
+  }, []);
 
   return { ocultarPantallaCarga };
 }
