@@ -2,7 +2,7 @@ import { AlertCircle } from "lucide-react";
 
 type Props = { scope: any };
 
-export default function Componente({ scope }: Props) {
+export default function DatosProducto({ scope }: Props) {
  const { prodName, setProdName, prodCategory, setProdCategory, prodDescription, setProdDescription, prodPrice, setProdPrice, prodQuantity, setProdQuantity } = scope;
  return (
   <>
