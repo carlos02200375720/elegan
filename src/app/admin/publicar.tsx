@@ -23,7 +23,11 @@ import {
   Clock
 } from "lucide-react";
 import { apiFetch, getApiUrl } from "../../config";
-import VideoUploadPreview from "../web/components/VideoUploadPreview";
+import Banner from "./publicar/banner";
+import Vender from "./publicar/vender";
+import Carrusel from "./publicar/carrusel";
+import Imagen from "./publicar/imagen";
+import Video from "./publicar/video";
 
 export interface PublishViewProps {
   currentUser: User;
@@ -64,7 +68,9 @@ export default function PublishView({ currentUser, onBack, onSuccess, userProduc
       setBannerImagePreview(data.banner.imageUrl || "");
       setBannerEnabled(data.banner.enabled !== false);
     }).catch((error) => console.warn("[Banner] No se pudo cargar la configuración:", error));
-    return () => { cancelled = true; };
+    const publishScope = { bannerLabel, bannerTitle, bannerDescription, bannerLink, bannerEnabled, setBannerLabel, setBannerTitle, setBannerDescription, setBannerLink, setBannerEnabled, bannerImageFile, setBannerImageFile, bannerImagePreview, setBannerImagePreview, errorMessage, successMessage, handleSaveBanner, bannerSaving, videoInputRef, singleVideoFile, setSingleVideoFile, videoCoverFile, setVideoCoverFile, videoCoverInputRef, imageInputRef, singleImageFile, setSingleImageFile, carouselInputRef, carouselImageFiles, setCarouselImageFiles, prodPhotosRef, productPhotoFiles, setProductPhotoFiles, prodVideoRef, productVideoFile, setProductVideoFile, newColorImageInputRef, existingColorImageInputRef, newColorName, newColorFile, setNewColorFile, colorImageFiles, colorImagePreviews, editingColorTarget, setEditingColorTarget };
+
+  return () => { cancelled = true; };
   }, [showBannerSection]);
 
   const handleSaveBanner = async () => {
@@ -1064,61 +1070,7 @@ export default function PublishView({ currentUser, onBack, onSuccess, userProduc
         </div>
       </div>
 
-      {showBannerSection ? (
-        <div className="space-y-5 p-5 sm:p-6">
-          <div>
-            <h3 className="text-sm font-extrabold text-slate-900">Configurar banner de Inicio</h3>
-            <p className="mt-1 text-xs text-slate-500">Prepara el contenido visual y promocional que aparecerá debajo de la cabecera de la app móvil.</p>
-          </div>
-          <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-            <div className="space-y-3">
-              <div>
-                <label className="mb-1 block text-[11px] font-bold text-slate-700">Etiqueta</label>
-                <input value={bannerLabel} onChange={(e) => setBannerLabel(e.target.value)} maxLength={35} placeholder="Ej. Cupón exclusivo" className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-xs outline-none focus:border-amber-500" />
-              </div>
-              <div>
-                <label className="mb-1 block text-[11px] font-bold text-slate-700">Título de la promoción</label>
-                <input value={bannerTitle} onChange={(e) => setBannerTitle(e.target.value)} maxLength={70} placeholder="Ej. 20% de descuento en tu compra" className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-xs outline-none focus:border-amber-500" />
-              </div>
-              <div>
-                <label className="mb-1 block text-[11px] font-bold text-slate-700">Descripción</label>
-                <textarea value={bannerDescription} onChange={(e) => setBannerDescription(e.target.value)} maxLength={160} rows={3} placeholder="Describe brevemente la oferta, cupón o campaña..." className="w-full resize-y rounded-xl border border-slate-200 px-3 py-2.5 text-xs outline-none focus:border-amber-500" />
-              </div>
-              <div>
-                <label className="mb-1 block text-[11px] font-bold text-slate-700">Enlace al pulsar el banner (opcional)</label>
-                <input type="url" value={bannerLink} onChange={(e) => setBannerLink(e.target.value)} placeholder="https://..." className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-xs outline-none focus:border-amber-500" />
-              </div>
-              <label className="flex cursor-pointer items-center justify-between rounded-xl border border-slate-200 p-3">
-                <span><span className="block text-xs font-bold text-slate-800">Banner activado</span><span className="block text-[10px] text-slate-500">Controla si la campaña debe mostrarse</span></span>
-                <input type="checkbox" checked={bannerEnabled} onChange={(e) => setBannerEnabled(e.target.checked)} className="h-4 w-4 accent-amber-500" />
-              </label>
-            </div>
-            <div className="space-y-3">
-              <label className="block text-[11px] font-bold text-slate-700">Imagen publicitaria</label>
-              <input type="file" accept="image/png,image/jpeg,image/webp" onChange={(e) => { const file = e.target.files?.[0]; if (!file) return; setBannerImageFile(file); setBannerImagePreview(URL.createObjectURL(file)); }} className="block w-full text-xs text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-amber-100 file:px-3 file:py-2 file:text-[11px] file:font-bold file:text-amber-900" />
-              <p className="text-[10px] text-slate-500">Formatos JPG, PNG o WebP. Recomendado: imagen horizontal.</p>
-              <div className="relative flex min-h-[150px] items-center justify-center overflow-hidden rounded-2xl border border-dashed border-slate-300 bg-slate-950 p-4 text-center">
-                {bannerImagePreview ? <img src={bannerImagePreview} alt="Vista previa del banner" className="absolute inset-0 h-full w-full object-cover" /> : <div className="relative z-10 text-white/70"><ImageIcon className="mx-auto mb-2 h-7 w-7" /><span className="text-xs font-bold">Vista previa de la imagen</span></div>}
-                <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black/70 via-black/25 to-transparent" />
-                <div className="relative z-10 mr-auto max-w-[85%] text-left text-white">
-                  <span className="inline-block rounded-full bg-amber-400 px-2 py-1 text-[9px] font-black uppercase text-slate-950">{bannerLabel || "Promoción"}</span>
-                  <p className="mt-2 text-base font-extrabold">{bannerTitle || "Título de tu promoción"}</p>
-                  <p className="mt-1 text-[10px] text-white/90">{bannerDescription || "Aquí aparecerá la descripción de la campaña."}</p>
-                </div>
-              </div>
-              {bannerImageFile && <button type="button" onClick={() => { setBannerImageFile(null); setBannerImagePreview(""); }} className="inline-flex items-center gap-1.5 text-[11px] font-bold text-rose-600"><Trash2 className="h-3.5 w-3.5" />Quitar imagen</button>}
-            </div>
-          </div>
-          {errorMessage && <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-[11px] text-rose-700">{errorMessage}</div>}
-          {successMessage && <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-[11px] text-emerald-700">{successMessage}</div>}
-          <div className="flex justify-end">
-            <button type="button" onClick={handleSaveBanner} disabled={bannerSaving || (!bannerTitle.trim() && bannerEnabled)} className="inline-flex items-center gap-2 rounded-xl bg-slate-950 px-5 py-3 text-xs font-extrabold text-white disabled:cursor-not-allowed disabled:opacity-50">
-              {bannerSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
-              {bannerSaving ? "Guardando promoción..." : "Guardar y publicar promoción"}
-            </button>
-          </div>
-        </div>
-      ) : (
+          <Banner scope={publishScope} />
       <>
       {/* Tabs / Content types selector */}
       <div className="grid grid-cols-5 border-b border-slate-100 p-2 gap-1 bg-slate-50/20">
@@ -1214,275 +1166,13 @@ export default function PublishView({ currentUser, onBack, onSuccess, userProduc
               : "border-slate-200 hover:border-slate-300 bg-slate-50/30"
           }`}
         >
-          {publishType === "video" && (
-            <>
-              <input
-                type="file"
-                ref={videoInputRef}
-                accept="video/mp4, video/quicktime, video/webm, video/x-m4v, video/*"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) setSingleVideoFile(file);
-                }}
-                className="hidden"
-              />
-              {singleVideoFile ? (
-                <div className="space-y-4 w-full max-w-xl">
-                  {/* Interactive Video Preview Player and Metadata Summary */}
-                  <VideoUploadPreview
-                    file={singleVideoFile}
-                    coverFile={videoCoverFile}
-                    onRemove={() => setSingleVideoFile(null)}
-                    onChangeFile={() => videoInputRef.current?.click()}
-                  />
-                  
-                  {/* Custom video cover selector */}
-                  <div className="mt-3 pt-3 border-t border-slate-200 w-full text-left">
-                    <label className="block text-[11px] font-bold text-slate-700 mb-1 flex items-center justify-between">
-                      <span className="flex items-center space-x-1">
-                        <ImageIcon className="w-3.5 h-3.5 text-amber-500" />
-                        <span>Portada / Imagen de Miniatura</span>
-                      </span>
-                      <span className="text-[10px] text-slate-400 font-normal">Opcional</span>
-                    </label>
-                    <input
-                      type="file"
-                      ref={videoCoverInputRef}
-                      accept="image/png, image/jpeg, image/jpg, image/webp"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) setVideoCoverFile(file);
-                      }}
-                      className="hidden"
-                    />
-                    {videoCoverFile ? (
-                      <div className="flex items-center space-x-2.5 p-2 bg-slate-100 rounded-lg">
-                        <img
-                          src={URL.createObjectURL(videoCoverFile)}
-                          alt="Portada"
-                          className="w-10 h-10 object-cover rounded border border-slate-200 shrink-0"
-                        />
-                        <div className="flex-1 min-w-0 text-left">
-                          <p className="text-xs font-semibold text-slate-800 truncate">{videoCoverFile.name}</p>
-                          <p className="text-[10px] text-emerald-600 font-medium">Portada personalizada</p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setVideoCoverFile(null)}
-                          className="p-1 hover:bg-slate-200 text-slate-500 rounded cursor-pointer"
-                        >
-                          <X className="w-3.5 h-3.5 text-rose-500" />
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => videoCoverInputRef.current?.click()}
-                        className="w-full py-1.5 px-3 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg text-xs font-semibold text-slate-700 flex items-center justify-center space-x-1.5 transition-colors cursor-pointer"
-                      >
-                        <Upload className="w-3.5 h-3.5 text-slate-500" />
-                        <span>Subir portada propia (Imagen)</span>
-                      </button>
-                    )}
-                    {!videoCoverFile && (
-                      <p className="text-[10px] text-slate-400 mt-1">
-                        * Si no subes una imagen, la app generará automáticamente la portada desde tu video.
-                      </p>
-                    )}
-                  </div>
-                </div>
-              ) : (
-                <div className="cursor-pointer space-y-2" onClick={() => videoInputRef.current?.click()}>
-                  <div className="mx-auto w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">
-                    <Upload className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-slate-700">Arrastra o haz clic para subir tu Video Reel</p>
-                    <p className="text-[10px] text-slate-400 font-medium mt-0.5">Soporta cualquier formato de video (transcodificación exclusiva a HLS .m3u8)</p>
-                  </div>
-                </div>
-              )}
-            </>
-          )}
+          <Video scope={publishScope} />
 
-          {publishType === "image" && (
-            <>
-              <input
-                type="file"
-                ref={imageInputRef}
-                accept="image/png, image/jpeg, image/jpg, image/webp"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) setSingleImageFile(file);
-                }}
-                className="hidden"
-              />
-              {singleImageFile ? (
-                <div className="space-y-3">
-                  <div className="w-24 h-24 mx-auto rounded-lg overflow-hidden border border-slate-200 relative bg-slate-100">
-                    <img 
-                      src={URL.createObjectURL(singleImageFile)} 
-                      alt="Preview" 
-                      className="w-full h-full object-cover" 
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setSingleImageFile(null)}
-                      className="absolute top-1 right-1 p-1 bg-white/95 hover:bg-white text-slate-700 rounded-md shadow-sm cursor-pointer"
-                    >
-                      <X className="w-3 h-3 text-rose-500" />
-                    </button>
-                  </div>
-                  <span className="text-[10px] font-mono text-slate-500 block">{singleImageFile.name}</span>
-                </div>
-              ) : (
-                <div className="cursor-pointer space-y-2" onClick={() => imageInputRef.current?.click()}>
-                  <div className="mx-auto w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">
-                    <Upload className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-slate-700">Arrastra o haz clic para subir tu Imagen</p>
-                    <p className="text-[10px] text-slate-400 font-medium mt-0.5">Formatos: .png, .jpeg, .webp</p>
-                  </div>
-                </div>
-              )}
-            </>
-          )}
+          <Imagen scope={publishScope} />
 
-          {publishType === "carousel" && (
-            <>
-              <input
-                type="file"
-                ref={carouselInputRef}
-                multiple
-                accept="image/png, image/jpeg, image/jpg, image/webp"
-                onChange={(e) => {
-                  const files = Array.from(e.target.files || []);
-                  setCarouselImageFiles([...carouselImageFiles, ...files]);
-                }}
-                className="hidden"
-              />
-              <div className="w-full space-y-4">
-                {carouselImageFiles.length > 0 && (
-                  <div className="flex flex-wrap gap-2.5 justify-center">
-                    {carouselImageFiles.map((file, idx) => (
-                      <div key={idx} className="w-16 h-16 rounded-lg overflow-hidden border border-slate-200 relative bg-slate-100 shrink-0">
-                        <img 
-                          src={URL.createObjectURL(file)} 
-                          alt="Carousel thumb" 
-                          className="w-full h-full object-cover" 
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setCarouselImageFiles(carouselImageFiles.filter((_, i) => i !== idx))}
-                          className="absolute top-0.5 right-0.5 p-0.5 bg-white/90 rounded text-slate-600 shadow-sm cursor-pointer"
-                        >
-                          <X className="w-2.5 h-2.5 text-rose-500" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                
-                <div className="cursor-pointer space-y-1" onClick={() => carouselInputRef.current?.click()}>
-                  <div className="mx-auto w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500">
-                    <Plus className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-slate-700">Agregar imágenes al carrusel</p>
-                    <p className="text-[10px] text-slate-400 font-medium">Puedes subir múltiples imágenes (.png, .jpeg, .webp)</p>
-                  </div>
-                </div>
-              </div>
-            </>
-          )}
+          <Carrusel scope={publishScope} />
 
-          {publishType === "product" && (
-            <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {/* Product Photos */}
-              <div className="border border-slate-200 rounded-lg p-4 bg-white/50">
-                <p className="text-xs font-bold text-slate-700 mb-2">Fotos del Producto *</p>
-                <input
-                  type="file"
-                  ref={prodPhotosRef}
-                  multiple
-                  accept="image/png, image/jpeg, image/jpg, image/webp"
-                  onChange={(e) => {
-                    const files = Array.from(e.target.files || []);
-                    setProductPhotoFiles([...productPhotoFiles, ...files]);
-                  }}
-                  className="hidden"
-                />
-                
-                <div className="flex flex-wrap gap-2 mb-3 min-h-[40px] justify-center items-center">
-                  {/* Uploaded Local Files */}
-                  {productPhotoFiles.map((file, idx) => (
-                    <div key={idx} className="w-12 h-12 rounded overflow-hidden border border-slate-150 relative">
-                      <img src={URL.createObjectURL(file)} className="w-full h-full object-cover" />
-                      <button
-                        type="button"
-                        onClick={() => setProductPhotoFiles(productPhotoFiles.filter((_, i) => i !== idx))}
-                        className="absolute top-0 right-0 p-0.5 bg-white/90 rounded text-slate-600 cursor-pointer"
-                      >
-                        <X className="w-2 h-2 text-rose-500" />
-                      </button>
-                    </div>
-                  ))}
-                  {productPhotoFiles.length === 0 && (
-                    <span className="text-[10px] text-slate-400 italic">No hay fotos seleccionadas</span>
-                  )}
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => prodPhotosRef.current?.click()}
-                  className="w-full py-1.5 bg-slate-100 hover:bg-slate-200 rounded text-[10px] font-bold text-slate-700 transition-colors flex items-center justify-center space-x-1 cursor-pointer"
-                >
-                  <Plus className="w-3 h-3" />
-                  <span>Añadir Fotos Locales</span>
-                </button>
-              </div>
-
-              {/* Product Video */}
-              <div className="border border-slate-200 rounded-lg p-4 bg-white/50">
-                <p className="text-xs font-bold text-slate-700 mb-2">Video del Producto (Opcional)</p>
-                <input
-                  type="file"
-                  ref={prodVideoRef}
-                  accept="video/mp4, video/quicktime, video/webm, video/x-m4v, video/*"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) setProductVideoFile(file);
-                  }}
-                  className="hidden"
-                />
-
-                {productVideoFile ? (
-                  <div className="mb-3">
-                    <VideoUploadPreview
-                      file={productVideoFile}
-                      compact={true}
-                      onRemove={() => setProductVideoFile(null)}
-                      onChangeFile={() => prodVideoRef.current?.click()}
-                    />
-                  </div>
-                ) : (
-                  <div className="h-[48px] flex items-center justify-center text-center text-slate-400 text-[10px] italic border border-dashed border-slate-200 rounded mb-3">
-                    Sin video seleccionado (se procesará a stream HLS)
-                  </div>
-                )}
-
-                <button
-                  type="button"
-                  onClick={() => prodVideoRef.current?.click()}
-                  className="w-full py-1.5 bg-slate-100 hover:bg-slate-200 rounded text-[10px] font-bold text-slate-700 transition-colors flex items-center justify-center space-x-1 cursor-pointer"
-                >
-                  <Plus className="w-3 h-3" />
-                  <span>Añadir Video</span>
-                </button>
-              </div>
-            </div>
-          )}
+          <Vender scope={publishScope} />
         </div>
 
         {/* Form Inputs based on Publish Type */}
