@@ -4,7 +4,7 @@ import WebSidebar from "./WebSidebar";
 import Tienda from "./tienda";
 import SocialPanel from "./SocialPanel";
 import Perfil from "./perfil";
-import AdminView from "../admin/resumen";
+import AdminView from "../admin/resumen/index";
 import { motion, AnimatePresence } from "motion/react";
 import { sessionState } from "../../utils/sessionState";
 import { navigateTo, parseRoute, getProfilePath, getProfileSavedPath, getProfileCompraPath, getProfileConfigPath, getProfileProductoPath, getProfileVentaPath, getProfilePublicacionesPath, getProfilePublicarPath, getProfileRendimientoPath, getProductPath, getThankYouPath } from "../../router";
