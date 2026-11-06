@@ -24,7 +24,7 @@ export {
   default as VerificasionTiendaView,
   VerificacionTiendaView,
   DEST_COUNTRIES,
-} from "./verificasion";
-export * from "./verificasion";
-export { default as Gracia, default as GraciaTiendaView } from "./gracia";
-export * from "./gracia";
+} from "./verificasion/index";
+export * from "./verificasion/index";
+export { default as Gracia, default as GraciaTiendaView } from "./gracia/index";
+export * from "./gracia/index";
