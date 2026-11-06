@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { CartItem, Order, User } from "../../../../types";
+import { CartItem, Order, User } from "../../tipos";
 import { androidApi } from "../../api";
-import { getLocalGuestToken } from "../../../../utils/guestToken";
-import { sessionState } from "../../../../utils/sessionState";
+import { getLocalGuestToken } from "../../guestToken";
+import { sesionMovil } from "../../sesion";
 import { mergeCartItems } from "./mergeCartItems";
 
 export type AuthMode = "register" | "login";
