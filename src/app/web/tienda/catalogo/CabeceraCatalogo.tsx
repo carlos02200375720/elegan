@@ -1,6 +1,6 @@
 import React from "react";
 import { ArrowLeft, Search, X, ShoppingCart, Bookmark } from "lucide-react";
-import { Product } from "../../../../types";
+import { Product } from "../../tipos";
 import { PasoTienda } from "./TiposCatalogo";
 import CarruselCategorias from "./CarruselCategorias";
 
