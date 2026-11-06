@@ -3,18 +3,18 @@ import mongoose from "mongoose";
 import fs from "fs";
 import path from "path";
 import { Bucket } from "@google-cloud/storage";
-import { User, Reel, Product, Order } from "../../"types";
-import { transcodeVideoToLocalHlsDirect } from "../../"hlsTranscoder";
-import { formatReelDTO, createCompanionReelForProduct } from "../../"utils/reelUtils";
+import { User, Reel, Product, Order } from "../../types";
+import { transcodeVideoToLocalHlsDirect } from "../../hlsTranscoder";
+import { formatReelDTO, createCompanionReelForProduct } from "../../utils/reelUtils";
 import {
   getCanonicalReelsFromMongo,
   saveCanonicalReelToMongo,
   getUserCanonicalReelsFromMongo,
-} from "../../"services/reelService";
-import { isConfiguredSuperadmin, handleGuestSession, registerUser, switchUser, loginWithEmail, logoutUser } from "../../"controllers/userController";
-import { getCart, updateCart, clearCart } from "../../"controllers/cartController";
-import { createPaypalOrder, getPaypalConfig } from "../../"controllers/paypalController";
-import { MongoCart, MongoChatMessage, MongoSuperAdmin } from "../../"models";
+} from "../../services/reelService";
+import { isConfiguredSuperadmin, handleGuestSession, registerUser, switchUser, loginWithEmail, logoutUser } from "../../controllers/userController";
+import { getCart, updateCart, clearCart } from "../../controllers/cartController";
+import { createPaypalOrder, getPaypalConfig } from "../../controllers/paypalController";
+import { MongoCart, MongoChatMessage, MongoSuperAdmin } from "../../models";
 import type { AndroidRouterDependencies } from "../../androidRouterTypes";
 
 export function registerAndroidOrderRoutes(router: Router, deps: AndroidRouterDependencies): void {
