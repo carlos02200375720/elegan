@@ -1,9 +1,8 @@
 import { Send, X, ShieldCheck, ArrowLeft, Search, MessageSquare, Headphones, CheckCheck, Sparkles, AlertCircle, Check } from "lucide-react";
 import { SUPPORT_EMAIL, SUPPORT_USER_ID, isSupportAlias } from "../../../utils/supportChat";
-import type { User } from "../../../types";
 
 export default function EncabezadoSoporte({ props }: { props: any }) {
-  const { isAdmin, activeChatUser, onSelectChatUser, onClose, SUPPORT_EMAIL } = props;
+  const { isAdmin, activeChatUser, onSelectChatUser, onClose } = props;
   return (
       <header
         className="px-4 py-3 bg-white border-b border-slate-200 flex items-center justify-between shrink-0 shadow-xs z-20"
