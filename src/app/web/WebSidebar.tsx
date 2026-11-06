@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { ShoppingBag, User as UserIcon, MessageSquare, Sparkles, Menu, X, ShieldCheck, Bookmark, Settings } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import { User, NavigationTab, isGuestUser } from "../../types";
-import { navigateTo, getProfilePath, parseRoute } from "../../router";
-import { isSuperAdmin } from "../../superAdmin";
+import { User, NavigationTab, isGuestUser } from "./tipos";
+import { navigateTo, getProfilePath, parseRoute } from "./enrutador";
+import { isSuperAdmin } from "./superAdmin";
 
 
 export interface WebSidebarProps {
