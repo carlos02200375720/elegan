@@ -1,5 +1,5 @@
 import React from "react";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, Image as ImageIcon } from "lucide-react";
 import { formatPrice } from "../../../utils/currency";
 import VariantesProducto from "./VariantesProducto";
 import type { ProductFormProps } from "./TiposPublicasion";

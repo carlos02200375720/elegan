@@ -6,8 +6,8 @@ export {
   Catalogo,
   CatalogoTiendaView,
   CATEGORIES,
-} from "./catalogo";
-export * from "./catalogo";
+} from "./catalogo/index";
+export * from "./catalogo/index";
 export {
   default as ProductoId,
   default as ProductoIdTiendaView,

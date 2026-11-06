@@ -1,4 +1,5 @@
 import { motion, AnimatePresence } from "motion/react";
+import { LogOut, Mail, FileText, MessageCircle } from "lucide-react";
 import LoginView from "../LoginView";
 import { getDefaultAvatar } from "../../../utils/defaultAssets";
 import GuardadoPerfilView from "./guardado";

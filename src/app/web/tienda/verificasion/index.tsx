@@ -2,6 +2,7 @@ import React from "react";
 import { Truck, CreditCard, ShoppingBag, ShieldCheck, Building2, Check, Upload, X, MapPin } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { DEST_COUNTRIES, VerificasionTiendaViewProps } from "./tipos";
+export { DEST_COUNTRIES };
 import { useEstadoPago } from "./estado_pago";
 
 export function VerificasionTiendaView(props: VerificasionTiendaViewProps) {

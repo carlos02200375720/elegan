@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { apiFetch } from "../../../../config";
 import { VerificasionTiendaViewProps, WebPaymentExtraDetails, WebPaymentMethod, WebPaypalSdk } from "./tipos";
 
