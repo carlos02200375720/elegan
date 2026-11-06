@@ -1,6 +1,6 @@
-import { sessionState } from "../../../utils/sessionState";
-import { syncGuestSession as syncLocalGuestSession } from "../../../utils/guestToken";
-import { BACKEND_URL, CLOUD_RUN_BACKEND_URL, isExternalStaticHost } from "../../../config";
+import { sesionMovil } from "../sesion";
+import { syncGuestSession as syncLocalGuestSession } from "../guestToken";
+import { BACKEND_URL, CLOUD_RUN_BACKEND_URL, isExternalStaticHost } from "../config";
 
 export { BACKEND_URL, CLOUD_RUN_BACKEND_URL };
 
@@ -58,7 +58,7 @@ export const androidApiFetch = async (
 
   if (typeof window !== "undefined") {
     try {
-      const currentUser = sessionState.getUser();
+      const currentUser = sesionMovil.getUser();
       if (currentUser?.originalId || currentUser?.id) headers.set("x-user-id", currentUser.originalId || currentUser.id);
       const storedGuestToken = localStorage.getItem("mall_guest_access_token");
       if (storedGuestToken && !headers.has("x-guest-token")) headers.set("x-guest-token", storedGuestToken);
