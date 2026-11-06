@@ -649,7 +649,7 @@ export function getProfilePath(
   if (!rawId) {
     if (typeof window !== 'undefined') {
       try {
-        const sessionUser = sessionState.getUser();
+        const sessionUser = sesionMovil.getUser();
         if (sessionUser) {
           const sid =
             sessionUser.id && !isGenericProfileUser(sessionUser.id)
