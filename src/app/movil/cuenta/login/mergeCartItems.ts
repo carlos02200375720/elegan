@@ -1,4 +1,4 @@
-import { CartItem } from "../../../../types";
+import { CartItem } from "../../tipos";
 
 export function mergeCartItems(sources: CartItem[][]): CartItem[] {
   const merged = new Map<string, CartItem>();
