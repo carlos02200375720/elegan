@@ -1,5 +1,5 @@
 import type React from "react";
-import type { User } from "../../../types";
+import type { User } from "../tipos";
 
 export interface LoginViewProps {
   onLoginSuccess: (user: User) => void;
