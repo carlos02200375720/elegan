@@ -265,6 +265,7 @@ export default function Perfil(props: PerfilProps) {
   );
 }
 
+export { Perfil, Perfil as ProfileView };
 export { default as Guardado, default as GuardadoPerfilView, PublicationCover } from "./guardado";
 export * from "./guardado";
 export { default as Compra, default as CompraPerfilView } from "./compra";
