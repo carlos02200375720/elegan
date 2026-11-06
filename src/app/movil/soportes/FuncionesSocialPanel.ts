@@ -1,5 +1,5 @@
-import type { User, ChatMessage } from "../../../types";
-import { isSupportAlias, SUPPORT_EMAIL } from "../../../utils/supportChat";
+import type { User, ChatMessage } from "../tipos";
+import { isSupportAlias, SUPPORT_EMAIL } from "./utilidades";
 import type { AdminClient } from "./TiposSocialPanel";
 
 const DEFAULT_CLIENT_AVATAR = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80";
