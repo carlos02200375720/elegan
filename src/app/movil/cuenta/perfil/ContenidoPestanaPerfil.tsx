@@ -1,7 +1,7 @@
 import React from "react";
 import { User, Reel, Product, Order } from "../../../../types";
 import { X, Truck } from "lucide-react";
-import { formatPrice } from "../../../../utils/currency";
+import { formatPrice } from "../../utilidades/moneda";
 import AndroidPublicationCover from "../../componente/miniaturapublicacion";
 import GuardadoPerfilView from "../guardado";
 import CompraPerfilView from "../compra";
