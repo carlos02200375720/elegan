@@ -1,6 +1,6 @@
 import React from "react";
 import { CreditCard } from "lucide-react";
-import { formatPrice } from "../../../../utils/currency";
+import { formatPrice } from "../../utilidades/moneda";
 import { ResumenCarrito } from "./ResumenCarrito";
 
 export interface BarraCompraCarritoProps {
