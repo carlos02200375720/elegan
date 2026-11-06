@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { Product, CartItem, Order, isGuestUser } from "../../../../types";
-import { getProductPath, getThankYouPath, navigateTo, parseRoute } from "../../../../router";
+import { getProductPath, getThankYouPath, navigateTo, parseRoute } from "../../enrutador";
 import { apiFetch } from "../../../../config";
 import { DEST_COUNTRIES } from "../verificasion/index";
 import { trackFunnelStep } from "../../../../utils/analyticsTracker";
