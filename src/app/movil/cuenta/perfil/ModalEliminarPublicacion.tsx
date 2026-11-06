@@ -1,7 +1,7 @@
 import React from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Trash2 } from "lucide-react";
-import { Reel } from "../../../../types";
+import { Reel } from "../../tipos";
 
 interface ModalEliminarPublicacionProps {
   publication: Reel | null;
