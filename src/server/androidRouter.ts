@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 import fs from "fs";
 import path from "path";
 import { Bucket } from "@google-cloud/storage";
-import { User, Reel, Product, Order } from "../types";
+import { User, Reel, Product, Order } from "./types";
 import { transcodeVideoToLocalHlsDirect } from "./hlsTranscoder";
 import { formatReelDTO, createCompanionReelForProduct } from "./utils/reelUtils";
 import {
