@@ -1,9 +1,9 @@
 import React from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { LogOut } from "lucide-react";
-import { User } from "../../../../types";
-import { isSuperAdmin } from "../../../../superAdmin";
-import { navigateTo } from "../../../../router";
+import { User } from "../../tipos";
+import { isSuperAdmin } from "../../superAdmin";
+import { navigateTo } from "../../enrutador";
 import EncabezadoConfiguracion from "./EncabezadoConfiguracion";
 import FotoPerfil from "./FotoPerfil";
 import DatosPersonales from "./DatosPersonales";
