@@ -1,6 +1,6 @@
 import React from "react";
 import { Users, Video, ShoppingBag, Package, Truck, Activity, Database, Server, Loader2, ChevronRight, ArrowUpRight, Sparkles, Edit3, Headphones } from "lucide-react";
-import { navigateTo } from "../../../router";
+import { navigateTo } from "../enrutador";
 import { DatosResumen } from "./tipos";
 
 export default function PanelResumen({ datos }: { datos: DatosResumen }) {
