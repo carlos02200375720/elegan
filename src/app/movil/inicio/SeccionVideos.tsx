@@ -1,5 +1,5 @@
 import React from "react";
-import type { Reel } from "../../../types";
+import type { Reel } from "../tipos";
 import TarjetaContenido from "./TarjetaContenido";
 import type { TarjetaContenidoProps } from "./TarjetaContenido";
 
