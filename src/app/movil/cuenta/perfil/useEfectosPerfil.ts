@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { StatusBar, Style } from "@capacitor/status-bar";
 import { Capacitor } from "@capacitor/core";
-import { User } from "../../../../types";
+import { User } from "../../tipos";
 
 export default function usePerfilEffects(activeUser: User, selectedCreatorId?: string | null) {
   // Configuración de la barra de estado nativa en celulares para la página de perfil:
