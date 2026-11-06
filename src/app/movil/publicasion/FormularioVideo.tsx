@@ -1,6 +1,6 @@
 import React from "react";
 import { Video } from "lucide-react";
-import { formatPrice } from "../../utilidades/moneda";
+import { formatPrice } from "../utilidades/moneda";
 import AndroidVideoUploadPreview from "../componente/vistapreviavideo";
 import type { VideoFormProps } from "./TiposPublicasion";
 export default function FormularioVideo({ video, setVideo, videoInputRef, aspect, selectVideo, title, setTitle, description, setDescription, productId, setProductId, userProducts }: VideoFormProps) {
