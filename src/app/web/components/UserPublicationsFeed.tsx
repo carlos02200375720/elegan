@@ -20,8 +20,8 @@ import {
 } from "lucide-react";
 import { Reel, Product, Comment, User } from "../tipos";
 import { motion, AnimatePresence } from "motion/react";
-import { apiFetch, getMediaUrl } from "../../../config";
-import { getInicioShareUrl } from "../../../router";
+import { apiFetch, getMediaUrl } from "../config";
+import { getInicioShareUrl } from "../enrutador";
 import { ReelProgressBar } from "./ReelProgressBar";
 
 interface UserPublicationsFeedProps {
