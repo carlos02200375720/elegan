@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import type { User, Product, ChatMessage, NavigationTab } from "./tipos";
+import type { User, Product } from "./tipos";
 import { useDatosMovil } from "./datos/useDatosMovil";
 import { useCarritoMovil } from "./tienda/useCarritoMovil";
 import { useCicloNativo } from "./nativo/useCicloNativo";
@@ -129,8 +129,6 @@ export default function AppMovil() {
         actionDescription={guestInteractionAlert || "interactuar con las publicaciones"}
         onClose={() => setGuestInteractionAlert(null)}
         onLoginSuccess={(loggedUser) => {
-          setCurrentUser(loggedUser);
-          setIsLoggedIn(true);
           handleSessionLogin(loggedUser);
           setGuestInteractionAlert(null);
         }}
