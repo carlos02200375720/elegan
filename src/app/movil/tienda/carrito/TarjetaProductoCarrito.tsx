@@ -1,7 +1,7 @@
 import React from "react";
 import { Check, Trash2 } from "lucide-react";
 import { Product, CartItem } from "../../../../types";
-import { formatPrice } from "../../../../utils/currency";
+import { formatPrice } from "../../utilidades/moneda";
 import { getProductImageUrl } from "../productMedia";
 import { calculateItemShippingFee } from "./FuncionesCarrito";
 import { ControlesCantidad } from "./ControlesCantidad";
