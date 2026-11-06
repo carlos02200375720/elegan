@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { apiFetch } from "../../../../config";
+import { apiFetch } from "../../config";
 import { VerificasionTiendaViewProps, WebPaymentExtraDetails, WebPaymentMethod, WebPaypalSdk } from "./tipos";
 
 export function useEstadoPago({ name, email, phone, address, city, country, postalCode, effectiveCheckoutItems, cartShippingTotal, cartTotal, executePayment }: VerificasionTiendaViewProps) {
