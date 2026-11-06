@@ -1,6 +1,6 @@
 import React from "react";
 import { Truck } from "lucide-react";
-import { formatPrice } from "../../../../utils/currency";
+import { formatPrice } from "../../utilidades/moneda";
 
 export interface OpcionesEnvioProps {
   cartShippingTotal: number;
