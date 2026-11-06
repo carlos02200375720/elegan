@@ -1,4 +1,4 @@
-import type { Product } from "../../../../types";
+import type { Product } from "../../tipos";
 import type { ShippingOptionItem } from "./tipos";
 
 export function getManualShippingOptions(prod: Product | null): ShippingOptionItem[] {
