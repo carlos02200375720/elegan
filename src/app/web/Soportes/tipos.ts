@@ -1,4 +1,4 @@
-import type { User, ChatMessage } from "../../../types";
+import type { User, ChatMessage } from "../tipos";
 
 export interface SocialPanelProps {
   users: User[];
