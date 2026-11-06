@@ -1,4 +1,4 @@
-import { Product, CartItem } from "../../../../types";
+import { Product, CartItem } from "../../tipos";
 import { AndroidCategory } from "./TiposCatalogo";
 import { getProductImageUrl } from "../productMedia";
 
