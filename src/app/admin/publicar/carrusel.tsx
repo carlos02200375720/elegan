@@ -3,7 +3,7 @@ import { X, Plus } from "lucide-react";
 type Props = { scope: any };
 
 export default function Carrusel({ scope }: Props) {
- const { carouselInputRef, carouselImageFiles, setCarouselImageFiles } = scope;
+ const { publishType, carouselInputRef, carouselImageFiles, setCarouselImageFiles } = scope;
  return (
   <>
           {publishType === "carousel" && (
