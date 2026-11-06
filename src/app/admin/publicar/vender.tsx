@@ -3,7 +3,7 @@ import { X, Plus, Upload } from "lucide-react";
 type Props = { scope: any };
 
 export default function Vender({ scope }: Props) {
- const { prodPhotosRef, productPhotoFiles, setProductPhotoFiles, prodVideoRef, productVideoFile, setProductVideoFile, newColorImageInputRef, existingColorImageInputRef, newColorName, newColorFile, setNewColorFile, colorImageFiles, colorImagePreviews, editingColorTarget, setEditingColorTarget } = scope;
+ const { publishType, prodPhotosRef, productPhotoFiles, setProductPhotoFiles, prodVideoRef, productVideoFile, setProductVideoFile, newColorImageInputRef, existingColorImageInputRef, newColorName, newColorFile, setNewColorFile, colorImageFiles, colorImagePreviews, editingColorTarget, setEditingColorTarget } = scope;
  return (
   <>
           {publishType === "product" && (
