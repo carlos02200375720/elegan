@@ -1,4 +1,5 @@
 import { X, Plus, Upload } from "lucide-react";
+import VideoUploadPreview from "../../web/components/VideoUploadPreview";
 
 type Props = { scope: any };
 
