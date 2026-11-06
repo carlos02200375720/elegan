@@ -10,7 +10,7 @@ import { ShieldAlert, LogIn, ArrowLeft } from "lucide-react";
 export default function AppAdmin() {
   const [currentUser, setCurrentUser] = useState<User>(() => {
     if (typeof window !== "undefined") {
-      const savedUser = sessionState.getUser();
+      const savedUser = sesionAdmin.getUser();
       if (savedUser && savedUser.id) return savedUser;
     }
     return {
