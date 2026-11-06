@@ -1,4 +1,4 @@
-import { Product, User } from "../../../../types";
+import { Product, User } from "../../tipos";
 import { getMediaUrl } from "../../../../config";
 import { ShippingOptionItem, VariantGroup, VariantSwatch } from "./TiposProducto";
 
