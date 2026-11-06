@@ -1,5 +1,5 @@
 import React from "react";
-import { Order } from "../../../types";
+import { Order } from "../../../../types";
 interface Props { activeOrder: Order | null; }
 export function ProductosComprados({ activeOrder }: Props) {
   return (
