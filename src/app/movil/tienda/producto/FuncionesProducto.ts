@@ -1,5 +1,5 @@
 import { Product, User } from "../../tipos";
-import { getMediaUrl } from "../../../../config";
+import { getMediaUrl } from "../../config";
 import { ShippingOptionItem, VariantGroup, VariantSwatch } from "./TiposProducto";
 
 export function getManualShippingOptions(prod: Product | null): ShippingOptionItem[] {
