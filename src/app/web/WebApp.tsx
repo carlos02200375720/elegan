@@ -2,7 +2,7 @@ import React from "react";
 import { User, Reel, Product, CartItem, Order, ChatMessage, NavigationTab, isGuestUser } from "../../types";
 import WebSidebar from "./WebSidebar";
 import Tienda from "./tienda";
-import SocialPanel from "./SocialPanel";
+import SocialPanel from "./Soportes/principal";
 import Perfil from "./cuenta";
 import AdminView from "../admin/resumen/index";
 import { motion, AnimatePresence } from "motion/react";
