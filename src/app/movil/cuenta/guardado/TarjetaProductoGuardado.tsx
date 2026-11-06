@@ -1,6 +1,6 @@
 import { Bookmark, ShoppingBag } from "lucide-react";
 import { Product } from "../../../../types";
-import { formatPrice } from "../../../../utils/currency";
+import { formatPrice } from "../../utilidades/moneda";
 
 interface TarjetaProductoGuardadoProps {
   product: Product;
