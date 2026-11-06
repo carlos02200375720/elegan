@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import type { Reel, Product } from "../../../types";
+import type { Reel, Product } from "../tipos";
 import type { PublicationFormat } from "./TiposInicio";
 
 export const getPublicationFormatStyles = (format: PublicationFormat): CSSProperties => {
