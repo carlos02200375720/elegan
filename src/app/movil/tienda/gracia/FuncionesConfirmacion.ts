@@ -1,4 +1,4 @@
-import { CartItem } from "../../../../types";
+import { CartItem } from "../../tipos";
 
 export function calculateOrderSubtotal(items: CartItem[]): number {
   return (items || []).reduce(
