@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import { User } from "../../../../types";
+import { User } from "../../tipos";
 import { androidApiFetch } from "../../api";
-import { sessionState } from "../../../../utils/sessionState";
+import { sesionMovil } from "../../sesion";
 
 type MensajeEstado = { type: "success" | "error"; text: string } | null;
 
