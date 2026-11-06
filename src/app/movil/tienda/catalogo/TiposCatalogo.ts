@@ -1,4 +1,4 @@
-import { Product, CartItem, User, Order, Reel } from "../../../../types";
+import { Product, CartItem, User, Order, Reel } from "../../tipos";
 import { AndroidCheckoutForm } from "../verificacion";
 
 export interface AndroidCategory {
