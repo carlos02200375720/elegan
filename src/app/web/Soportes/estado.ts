@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type React from "react";
-import type { User, ChatMessage } from "../../../types";
-import { isGuestUser } from "../../../types";
-import { resolveSupportUser, isSupportAdmin, isSupportAlias, SUPPORT_EMAIL, SUPPORT_USER_ID } from "../../../utils/supportChat";
-import { apiFetch } from "../../../config";
+import type { User, ChatMessage } from "../tipos";
+import { isGuestUser } from "../tipos";
+import { resolveSupportUser, isSupportAdmin, isSupportAlias, SUPPORT_EMAIL, SUPPORT_USER_ID } from "./utilidades";
+import { apiFetch } from "../config";
 import type { SocialPanelProps, SupportConversationItem } from "./tipos";
 
 export function useEstadoSoporte(props: SocialPanelProps) {
