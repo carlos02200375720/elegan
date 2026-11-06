@@ -1,5 +1,5 @@
 import type React from "react";
-import type { User, Reel, Product, CartItem, Order, ChatMessage, NavigationTab } from "../../../types";
+import type { User, Reel, Product, CartItem, Order, ChatMessage, NavigationTab } from "../tipos";
 
 export interface AndroidAppProps {
   activeTab: NavigationTab;
