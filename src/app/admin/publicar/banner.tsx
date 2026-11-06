@@ -3,7 +3,7 @@ import { Image as ImageIcon, Trash2, Loader2, CheckCircle2 } from "lucide-react"
 type Props = { scope: any };
 
 export default function Banner({ scope }: Props) {
- const { bannerLabel, bannerTitle, bannerDescription, bannerLink, bannerEnabled, setBannerLabel, setBannerTitle, setBannerDescription, setBannerLink, setBannerEnabled, bannerImageFile, setBannerImageFile, bannerImagePreview, setBannerImagePreview, errorMessage, successMessage, handleSaveBanner, bannerSaving } = scope;
+ const { showBannerSection, bannerLabel, bannerTitle, bannerDescription, bannerLink, bannerEnabled, setBannerLabel, setBannerTitle, setBannerDescription, setBannerLink, setBannerEnabled, bannerImageFile, setBannerImageFile, bannerImagePreview, setBannerImagePreview, errorMessage, successMessage, handleSaveBanner, bannerSaving } = scope;
  return (
   <>
       {showBannerSection ? (
@@ -60,7 +60,5 @@ export default function Banner({ scope }: Props) {
             </button>
           </div>
         </div>
-      ) : (
-  </>
- );
+      ) : null;
 }
