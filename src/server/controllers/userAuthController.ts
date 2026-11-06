@@ -169,7 +169,7 @@ export async function resolveAuthenticatedUser(req: any, fallbackRole = "creator
   return resolvedUser;
 }
 
-async function findAccount(filter: any): Promise<any> {
+export async function findAccount(filter: any): Promise<any> {
   if (mongoose.connection.readyState !== 1) return null;
 
   const configuredSuperadminEmail = String(
