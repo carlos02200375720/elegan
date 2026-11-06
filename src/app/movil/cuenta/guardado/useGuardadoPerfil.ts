@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Product, Reel } from "../../../../types";
+import { Product, Reel } from "../../tipos";
 
 export type GuardadoSubTab = "all" | "products" | "reels";
 
