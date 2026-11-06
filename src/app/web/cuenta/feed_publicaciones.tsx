@@ -1,7 +1,7 @@
 import React from "react";
 import { User, Product, Reel } from "../tipos";
 import UserPublicationsFeed from "../components/UserPublicationsFeed";
-import { apiFetch } from "../../../config";
+import { apiFetch } from "../config";
 import { AnimatePresence } from "motion/react";
 
 interface FeedPublicacionesProps {
