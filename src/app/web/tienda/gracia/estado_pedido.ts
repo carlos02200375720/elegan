@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Order } from "../../../../types";
+import { Order } from "../../tipos";
 import { apiFetch } from "../../../../config";
 
 export function useEstadoPedido(completedOrder: Order | null, orderId?: string) {
