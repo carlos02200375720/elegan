@@ -27,7 +27,7 @@ import Banner from "./publicar/banner";
 import Vender from "./publicar/vender";
 import Carrusel from "./publicar/carrusel";
 import Imagen from "./publicar/imagen";
-import Video from "./publicar/video";
+import VideoForm from "./publicar/video";
 
 export interface PublishViewProps {
   currentUser: User;
@@ -1167,7 +1167,7 @@ export default function PublishView({ currentUser, onBack, onSuccess, userProduc
               : "border-slate-200 hover:border-slate-300 bg-slate-50/30"
           }`}
         >
-          <Video scope={publishScope} />
+          <VideoForm scope={publishScope} />
 
           <Imagen scope={publishScope} />
 
