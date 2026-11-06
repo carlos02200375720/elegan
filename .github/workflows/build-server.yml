@@ -15,7 +15,7 @@ on:
 
 concurrency:
   group: elegan-cloud-run-server
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 permissions:
   contents: read
