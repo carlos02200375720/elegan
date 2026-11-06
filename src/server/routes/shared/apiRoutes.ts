@@ -1,19 +1,19 @@
 import { Router } from "express";
 import mongoose from "mongoose";
-import { uploadSingleSafe } from "../middleware/upload";
-import * as userController from "../controllers/userController";
-import * as reelController from "../controllers/reelController";
-import * as productController from "../controllers/productController";
-import * as cartController from "../controllers/cartController";
-import * as orderController from "../controllers/orderController";
-import * as chatController from "../controllers/chatController";
-import * as liveController from "../controllers/liveController";
-import * as uploadController from "../controllers/uploadController";
-import * as settingsController from "../controllers/settingsController";
-import * as analyticsController from "../controllers/analyticsController";
-import * as visitorController from "../controllers/visitorController";
-import * as paypalController from "../controllers/paypalController";
-import { getMongoStatus, connectToMongoDB } from "../config/database";
+import { uploadSingleSafe } from "../../middleware/upload";
+import * as userController from "../../controllers/userController";
+import * as reelController from "../../controllers/reelController";
+import * as productController from "../../controllers/productController";
+import * as cartController from "../../controllers/cartController";
+import * as orderController from "../../controllers/orderController";
+import * as chatController from "../../controllers/chatController";
+import * as liveController from "../../controllers/liveController";
+import * as uploadController from "../../controllers/uploadController";
+import * as settingsController from "../../controllers/settingsController";
+import * as analyticsController from "../../controllers/analyticsController";
+import * as visitorController from "../../controllers/visitorController";
+import * as paypalController from "../../controllers/paypalController";
+import { getMongoStatus, connectToMongoDB } from "../../config/database";
 
 export function createApiRouter(): Router {
   const router = Router();
