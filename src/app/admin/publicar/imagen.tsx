@@ -3,7 +3,7 @@ import { X, Upload } from "lucide-react";
 type Props = { scope: any };
 
 export default function Imagen({ scope }: Props) {
- const { imageInputRef, singleImageFile, setSingleImageFile } = scope;
+ const { publishType, imageInputRef, singleImageFile, setSingleImageFile } = scope;
  return (
   <>
           {publishType === "image" && (
