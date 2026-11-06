@@ -283,8 +283,6 @@ export default function Componente({ scope }: Props) {
                 </div>
               </div>
             </div>
-          </div>
-        )}
   </>
  );
 }
