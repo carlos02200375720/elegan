@@ -25,7 +25,7 @@ function obtenerUsuarioGuardado() {
 export default function useConfiguracionPerfil({
   activeUser, currentUser, onProfileUpdate, onUpdateUser, onClose,
 }: Props) {
-  const usuarioSesion = sessionState.getUser();
+  const usuarioSesion = sesionMovil.getUser();
   const usuarioCache = obtenerUsuarioGuardado();
 
   const [editName, setEditName] = useState(activeUser.name || currentUser.name || usuarioSesion?.name || usuarioCache?.name || "");
@@ -45,7 +45,7 @@ export default function useConfiguracionPerfil({
   const [statusMessage, setStatusMessage] = useState<MensajeEstado>(null);
 
   React.useEffect(() => {
-    const storedUser = sessionState.getUser() || obtenerUsuarioGuardado();
+    const storedUser = sesionMovil.getUser() || obtenerUsuarioGuardado();
     const sources = [activeUser, currentUser, storedUser].filter(Boolean);
     const getValue = (key: "name" | "email" | "shippingAddress" | "address" | "city" | "country" | "phone" | "postalCode" | "avatar") =>
       sources.map((source) => source[key]).find((value) => typeof value === "string" && value.trim()) || "";
@@ -117,7 +117,7 @@ export default function useConfiguracionPerfil({
         throw new Error("No se pudo procesar la foto de perfil en la nube. Intenta de nuevo.");
       }
       const usuarioActualizado: User = { ...activeUser, ...usuarioServidor };
-      sessionState.setUser(usuarioActualizado);
+      sesionMovil.setUser(usuarioActualizado);
       try {
         localStorage.setItem("mall_user", JSON.stringify(usuarioActualizado));
       } catch {}
