@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Order, User } from "../../tipos";
-import { apiFetch } from "../../../../config";
+import { apiFetch } from "../../config";
 import { androidApiFetch } from "../../api";
 
 export interface CompraPerfilProps {
