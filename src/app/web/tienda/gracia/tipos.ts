@@ -1,4 +1,4 @@
-import { Order, User } from "../../../types";
+import { Order, User } from "../../../../types";
 
 export interface GraciaTiendaViewProps {
   completedOrder: Order | null;
