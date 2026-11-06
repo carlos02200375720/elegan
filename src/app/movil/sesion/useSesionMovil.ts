@@ -26,7 +26,7 @@ function obtenerUsuarioInicial(): User {
 
 export function useSesionAplicacionMovil() {
   const [usuarioActual, establecerUsuarioActual] = useState<User>(obtenerUsuarioInicial);
-  const [sesionIniciada, establecerSesionIniciada] = useState<boolean>(() => !usuarioActualEsInvitado());
+  const [sesionIniciada, establecerSesionIniciada] = useState<boolean>(() => !usuarioActual.isGuest);
 
   const cerrarSesion = useCallback(() => {
     sesionMovil.clear();
@@ -52,6 +52,3 @@ export function useSesionAplicacionMovil() {
   };
 }
 
-function usuarioActualEsInvitado(): boolean {
-  return !sesionMovil.isAuthenticated();
-}
