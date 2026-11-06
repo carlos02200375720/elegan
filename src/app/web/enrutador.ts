@@ -240,3 +240,19 @@ export function useCurrentRoute(): WebRoute {
 
   return route;
 }
+
+
+/** Devuelve la URL absoluta para compartir una publicación de inicio. */
+export function getInicioShareUrl(
+  reelOrId: string | { id?: string; _id?: string }
+): string {
+  const path = getInicioPath(reelOrId);
+  if (typeof window === "undefined") return path;
+  return `${window.location.origin}${path}`;
+}
+
+export function getReelShareUrl(
+  reelOrId: string | { id?: string; _id?: string }
+): string {
+  return getInicioShareUrl(reelOrId);
+}
