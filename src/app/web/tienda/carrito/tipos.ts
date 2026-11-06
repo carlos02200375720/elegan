@@ -1,5 +1,5 @@
-import type React from "react";
-import type { Product, CartItem } from "../../../types";
+import type { MouseEvent } from "react";
+import type { Product, CartItem } from "../../../../types";
 
 export interface CarritoTiendaViewProps {
   showCartDrawer: boolean;
@@ -9,7 +9,7 @@ export interface CarritoTiendaViewProps {
   selectedCartIndices: number[];
   isAllCartSelected: boolean;
   toggleSelectAllCart: () => void;
-  toggleItemSelection: (index: number, e?: React.MouseEvent) => void;
+  toggleItemSelection: (index: number, e?: MouseEvent) => void;
   onRemoveFromCart: (productId: string, cartItemIndex?: number) => void;
   onUpdateCartQuantity: (productId: string, qty: number, cartItemIndex?: number) => void;
   onSelectProductFromCart: (product: Product) => void;
