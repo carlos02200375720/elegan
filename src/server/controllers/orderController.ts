@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import mongoose from "mongoose";
 import { MongoOrder, MongoUser, MongoCart, MongoProduct } from "../models";
-import { Order } from "../../types";
+import { Order } from "../types";
 import { generateId } from "../utils/helpers";
 import { getUsers } from "./userController";
 import { capturePaypalOrder } from "./paypalController";
