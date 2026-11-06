@@ -1,14 +1,14 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import { Reel, ReelMedia, Product, User, Comment, CartItem, isGuestUser } from "../../../types";
+import { Reel, ReelMedia, Product, User, Comment, CartItem, isGuestUser } from "../tipos";
 import { Send, X } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { MovilHamburgerMenu } from "../componente/menu";
 import { CATEGORIES_WITH_IMAGES } from "../tienda/catalogo";
 import { CarritoTiendaView } from "../tienda/carrito";
-import { apiFetch } from "../../../config";
+import { apiFetch } from "../config";
 import { getInicioShareUrl, findReelByInicioParam, navigateTo } from "../../../router";
-import { getLocalGuestToken } from "../../../utils/guestToken";
-import { isSuperAdmin } from "../../../superAdmin";
+import { getLocalGuestToken } from "../guestToken";
+import { isSuperAdmin } from "../utilidades/superAdmin";
 import type { AndroidInicioProps, PublicationFormat } from "./TiposInicio";
 import { findProductForReel } from "./FuncionesInicio";
 import InicioCargando from "./InicioCargando";
