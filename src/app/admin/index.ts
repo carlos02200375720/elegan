@@ -5,7 +5,7 @@ export { default as Producto, default as Productos, default as ProductoAdminView
 export { default as Publicar, default as PublishView } from "./publicar";
 export { default as Pedidos, default as Ordenes, default as PedidosAdminView } from "./pedidos/index";
 export { default as Metrica, default as Metricas, default as MetricaAdminView } from "./metrica";
-export { default as Sistema, default as SistemaAdminView } from "./sistema";
+export { default as Sistema, default as SistemaAdminView } from "./sistema/index";
 export * from "./resumen/index";
 export * from "./usuarios/index";
 export * from "./reels/index";
@@ -13,4 +13,4 @@ export * from "./producto/index";
 export * from "./publicar";
 export * from "./pedidos/index";
 export * from "./metrica";
-export * from "./sistema";
+export * from "./sistema/index";
