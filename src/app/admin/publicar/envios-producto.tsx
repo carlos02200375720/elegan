@@ -3,7 +3,7 @@ import { Truck, Globe, Plus, Clock, Trash2, CheckCircle2 } from "lucide-react";
 
 type Props = { scope: any };
 
-export default function Componente({ scope }: Props) {
+export default function EnviosProducto({ scope }: Props) {
  const { newShipLabel, setNewShipLabel, newShipOrigin, setNewShipOrigin, newShipPrice, setNewShipPrice, newShipTime, setNewShipTime, prodShippingOptions, prodShippingCapital, setProdShippingCapital, prodShippingProvince, setProdShippingProvince, prodFreeShipping, setProdFreeShipping, handleSelectShippingPreset, handleAddShippingOption, handleUpdateShippingOption, handleRemoveShippingOption } = scope;
  return (
   <>
