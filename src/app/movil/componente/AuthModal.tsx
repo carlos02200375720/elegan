@@ -3,7 +3,7 @@ import { Lock, UserPlus, LogIn, X, AlertCircle, Loader2, Sparkles, CheckCircle2 
 import { User } from "../tipos";
 import { apiFetch } from "../config";
 import { motion, AnimatePresence } from "motion/react";
-import { sesionWeb } from "../sesion";
+import { sesionMovil } from "../sesion";
 import { navigateTo } from "../enrutador";
 
 interface AuthModalProps {
@@ -80,10 +80,10 @@ export function AuthModal({
 
       const data = await response.json();
       if (response.ok && data.success) {
-        sesionWeb.setAuthenticated(true);
-        sesionWeb.setEmail(data.user?.email || regEmail.trim().toLowerCase());
+        sesionMovil.setAuthenticated(true);
+        sesionMovil.setEmail(data.user?.email || regEmail.trim().toLowerCase());
         
-        sesionWeb.setUser(data.user);
+        sesionMovil.setUser(data.user);
 
         setSuccessMessage(`¡Cuenta creada con éxito! Bienvenido, ${data.user?.name || regName.trim()}`);
         setTimeout(() => {
@@ -128,10 +128,10 @@ export function AuthModal({
 
       const data = await response.json();
       if (response.ok && data.success) {
-        sesionWeb.setAuthenticated(true);
-        sesionWeb.setEmail(data.user.name || data.user.email || "");
+        sesionMovil.setAuthenticated(true);
+        sesionMovil.setEmail(data.user.name || data.user.email || "");
         
-        sesionWeb.setUser(data.user);
+        sesionMovil.setUser(data.user);
 
         setSuccessMessage(`¡Bienvenido de vuelta, ${data.user.name}!`);
         setTimeout(() => {
