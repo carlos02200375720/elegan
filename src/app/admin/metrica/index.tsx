@@ -13,7 +13,7 @@ import {
   getLocalFunnelCounts,
   fetchDailyVisitorAnalytics,
   DailyVisitorAnalyticsData,
-} from "../../../utils/analyticsTracker";
+} from "../analitica";
 
 
 import ResumenMetrica from "./resumen";
