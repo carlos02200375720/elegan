@@ -1,7 +1,7 @@
 import React from "react";
 import { Search } from "lucide-react";
 import { motion } from "motion/react";
-import { Product, User } from "../../../../types";
+import { Product, User } from "../../tipos";
 import TarjetaProducto from "./TarjetaProducto";
 
 interface CuadriculaProductosProps {
