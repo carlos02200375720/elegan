@@ -1,14 +1,14 @@
 import React from "react";
-import { User, Reel, Product, CartItem, Order, ChatMessage, NavigationTab, isGuestUser } from "../../types";
+import { User, Reel, Product, CartItem, Order, ChatMessage, NavigationTab, isGuestUser } from "./tipos";
 import WebSidebar from "./WebSidebar";
 import Tienda from "./tienda";
 import SocialPanel from "./Soportes/principal";
 import Perfil from "./cuenta";
 import { motion, AnimatePresence } from "motion/react";
-import { sessionState } from "../../utils/sessionState";
-import { navigateTo, parseRoute, getProfilePath, getProfileSavedPath, getProfileCompraPath, getProfileConfigPath, getProfileProductoPath, getProfileVentaPath, getProfilePublicacionesPath, getProfilePublicarPath, getProfileRendimientoPath, getProductPath, getThankYouPath } from "../../router";
-import { isSuperAdmin } from "../../superAdmin";
-import { trackFunnelStep } from "../../utils/analyticsTracker";
+import { sesionWeb } from "./sesion";
+import { navigateTo, parseRoute, getProfilePath, getProfileSavedPath, getProfileCompraPath, getProfileConfigPath, getProfileProductoPath, getProfileVentaPath, getProfilePublicacionesPath, getProfilePublicarPath, getProfileRendimientoPath, getProductPath, getThankYouPath } from "./enrutador";
+import { isSuperAdmin } from "./superAdmin";
+import { trackFunnelStep } from "./analitica";
 
 export interface WebAppProps {
   activeTab: NavigationTab;
@@ -225,9 +225,9 @@ export default function WebApp({
                   };
                   setCurrentUser(normalizedUser);
                   setIsLoggedIn(true);
-                  sessionState.setAuthenticated(true);
-                  sessionState.setEmail(normalizedUser.email || "");
-                  sessionState.setUser(normalizedUser);
+                  sesionWeb.setAuthenticated(true);
+                  sesionWeb.setEmail(normalizedUser.email || "");
+                  sesionWeb.setUser(normalizedUser);
                   setSelectedCreatorProfileId(null);
                   setActiveTab('shop');
                   setShopInitialStep('catalog');
@@ -285,12 +285,12 @@ export default function WebApp({
                   onProfileUpdate={(updatedUser) => {
                     const wasGuest = isGuestUser(currentUser);
                     setCurrentUser(updatedUser);
-                    sessionState.setUser(updatedUser);
+                    sesionWeb.setUser(updatedUser);
                     setUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
                     if (!isGuestUser(updatedUser)) {
                       setIsLoggedIn(true);
-                      sessionState.setAuthenticated(true);
-                      sessionState.setEmail(updatedUser.email || "");
+                      sesionWeb.setAuthenticated(true);
+                      sesionWeb.setEmail(updatedUser.email || "");
                       const parsed = typeof window !== 'undefined' ? parseRoute(window.location.pathname) : null;
                       if (parsed?.type === 'profile' && parsed.profileTab === 'config') {
                         setActiveTab('profile');
