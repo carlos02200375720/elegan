@@ -1,4 +1,4 @@
-import { Product, User } from "../../../../types";
+import { Product, User } from "../../tipos";
 import { CATEGORIES } from "./ConstantesCatalogo";
 
 export function filtrarProductosCatalogo(
