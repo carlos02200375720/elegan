@@ -4,7 +4,7 @@ import { Product, CartItem, Order, User, isGuestUser } from "../../../types";
 import { motion, AnimatePresence } from "motion/react";
 import { getProductShareUrl, getProductPath, getThankYouPath, navigateTo, parseRoute } from "../../../router";
 import { apiFetch } from "../../../config";
-import ProductoIdTiendaView from "./productoid";
+import ProductoIdTiendaView from "./producto/index";
 import CarritoTiendaView from "./carrito";
 import VerificasionTiendaView, { DEST_COUNTRIES } from "./verificasion";
 import GraciaTiendaView from "./gracia";
