@@ -1,6 +1,5 @@
 import { Send, X, ShieldCheck, ArrowLeft, Search, MessageSquare, Headphones, CheckCheck, Sparkles, AlertCircle, Check } from "lucide-react";
 import { SUPPORT_EMAIL, SUPPORT_USER_ID, isSupportAlias } from "../../../utils/supportChat";
-import type { User } from "../../../types";
 
 export default function ListaConversaciones({ props }: { props: any }) {
   const { isAdmin, supportUser, activeChatUser, onSelectChatUser, clearUnreads, adminClientList, clientLastMessage, clientUnreads, searchQuery, setSearchQuery, adminTabFilter, setAdminTabFilter, handleSelectClient } = props;
