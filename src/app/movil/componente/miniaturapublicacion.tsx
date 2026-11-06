@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Play } from "lucide-react";
-import { Reel } from "../../../types";
+import { Reel } from "../tipos";
 import { getMediaUrl } from "../config";
 
 interface AndroidPublicationCoverProps {
