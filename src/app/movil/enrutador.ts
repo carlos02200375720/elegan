@@ -1,233 +1,827 @@
-import { useState, useEffect } from "react";
-import type { User, Product, Reel, NavigationTab } from "./tipos";
+import { useState, useEffect } from 'react';
+import { sesionMovil } from './sesion';
+import { getLocalGuestToken, getOrCreateGuestToken } from './guestToken';
 
-export type MovilRoute =
-  | { type: "tab"; tab: NavigationTab }
-  | { type: "product"; productId: string; productSlug?: string }
-  | { type: "cart" }
-  | { type: "checkout" }
-  | { type: "thankyou"; orderId?: string }
-  | { type: "inicio"; reelId?: string }
-  | { type: "login" }
-  | { type: "profile"; userId?: string; profileTab?: string };
+export type AppRoute =
+  | { type: 'inicio'; reelId?: string; reelSlug?: string }
+  | { type: 'reels'; reelId?: string; reelSlug?: string }
+  | { type: 'shop' }
+  | { type: 'product'; productId: string; productSlug?: string }
+  | { type: 'store'; sellerId: string }
+  | { type: 'checkout' }
+  | { type: 'thankyou'; orderId?: string }
+  | { type: 'cart' }
+  | { type: 'messages' }
+  | { type: 'login' }
+  | { type: 'profile'; userId?: string; profileTab?: string }
+  | { type: 'admin'; adminTab?: string };
 
-export function extractProductId(rawParam: string): string {
+/**
+ * Converts a product name into a clean URL-safe slug
+ */
+export function slugifyProductName(name?: string): string {
+  if (!name) return 'producto';
+  const slug = name
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return slug || 'producto';
+}
+
+/**
+ * Extracts the product ID from a `/tienda/:id` parameter (also supports legacy slug-id format)
+ */
+export function extractProductIdFromShopParam(rawParam: string): string {
   let decoded = rawParam.trim();
   try {
     decoded = decodeURIComponent(decoded).trim();
   } catch {}
+
+  // Match canonical prod_xxx suffix (e.g. "prod_abc123" or legacy "auriculares-bluetooth-prod_abc123")
   const prodMatch = decoded.match(/(?:^|-)(prod_[a-zA-Z0-9_-]+)$/i);
-  if (prodMatch) return prodMatch[1];
+  if (prodMatch) {
+    return prodMatch[1];
+  }
+  // Match 24-char hex MongoDB ObjectId suffix
   const oidMatch = decoded.match(/(?:^|-)([a-f0-9]{24})$/i);
-  if (oidMatch) return oidMatch[1];
+  if (oidMatch) {
+    return oidMatch[1];
+  }
   return decoded;
 }
 
-export function extractReelId(rawParam: string): string {
+/**
+ * Converts a publication title/description into a clean URL-safe slug
+ */
+export function slugifyPublicationName(name?: string): string {
+  if (!name) return 'publicacion';
+  const withoutHashtags = name.replace(/#\S+/g, '').trim();
+  const baseText = withoutHashtags || name;
+  const slug = baseText
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 60)
+    .replace(/-+$/g, '');
+  return slug || 'publicacion';
+}
+
+export interface InicioReelLike {
+  id?: string;
+  _id?: string;
+  title?: string;
+  description?: string;
+  caption?: string;
+  creatorName?: string;
+}
+
+/**
+ * Extracts the publication ID from a `/inicio/:id` route segment
+ */
+export function extractReelIdFromInicioParam(rawParam: string): string {
   let decoded = rawParam.trim();
   try {
     decoded = decodeURIComponent(decoded).trim();
   } catch {}
+
+  // Match canonical reel_xxx or pub_xxx suffix (e.g. "reel_abc123" or "slug-reel_abc123")
   const reelMatch = decoded.match(/(?:^|-)((?:reel|pub)_[a-zA-Z0-9_-]+)$/i);
-  if (reelMatch) return reelMatch[1];
+  if (reelMatch) {
+    return reelMatch[1];
+  }
+  // Match 24-char hex MongoDB ObjectId suffix
   const oidMatch = decoded.match(/(?:^|-)([a-f0-9]{24})$/i);
-  if (oidMatch) return oidMatch[1];
+  if (oidMatch) {
+    return oidMatch[1];
+  }
   return decoded;
 }
 
-export function getProductPath(productOrId?: string | { id?: string; _id?: string } | null): string {
-  if (!productOrId) return "/tienda/catalogo";
-  const id = typeof productOrId === "object" ? productOrId.id || (productOrId as any)._id : productOrId;
-  const cleanId = (id || "").trim();
-  if (!cleanId) return "/tienda/catalogo";
-  return `/tienda/${encodeURIComponent(cleanId)}`;
-}
-
-export function getInicioPath(reelOrId?: string | { id?: string; _id?: string } | null): string {
-  if (!reelOrId) return "/inicio";
-  const id = typeof reelOrId === "object" ? reelOrId.id || (reelOrId as any)._id : reelOrId;
-  const cleanId = (id || "").trim();
-  if (!cleanId) return "/inicio";
-  return `/inicio/${encodeURIComponent(cleanId)}`;
-}
-
-export function getProfilePath(userOrId?: string | { id?: string; originalId?: string } | null): string {
-  if (!userOrId) return "/perfil";
-  const rawId = typeof userOrId === "object" ? userOrId.originalId || userOrId.id : userOrId;
-  const clean = (rawId || "").trim().replace(/^@/, "");
-  if (!clean || clean === "usuario" || clean === "invitado" || clean === "guest" || clean === "current_user") {
-    return "/perfil";
-  }
-  return `/perfil/${encodeURIComponent(clean)}`;
-}
-
-export function getProfileCompraPath(userOrId?: any): string {
-  return `${getProfilePath(userOrId).replace(/\/+$/, "")}/compra`;
-}
-
-export function getProfileConfigPath(userOrId?: any): string {
-  return `${getProfilePath(userOrId).replace(/\/+$/, "")}/config`;
-}
-
-export function getProfileSavedPath(userOrId?: any): string {
-  return `${getProfilePath(userOrId).replace(/\/+$/, "")}/guardado`;
-}
-
-export function getProfileProductoPath(userOrId?: any): string {
-  return `${getProfilePath(userOrId).replace(/\/+$/, "")}/producto`;
-}
-
-export function getProfileVentaPath(userOrId?: any): string {
-  return `${getProfilePath(userOrId).replace(/\/+$/, "")}/venta`;
-}
-
-export function getProfilePublicacionesPath(userOrId?: any): string {
-  return `${getProfilePath(userOrId).replace(/\/+$/, "")}/publicaciones`;
-}
-
-export function getProfilePublicarPath(userOrId?: any): string {
-  return `${getProfilePath(userOrId).replace(/\/+$/, "")}/publicar`;
-}
-
-export function getProfileRendimientoPath(userOrId?: any): string {
-  return `${getProfilePath(userOrId).replace(/\/+$/, "")}/rendimiento`;
-}
-
-export function getInicioShareUrl(reelOrId: any): string {
-  const path = getInicioPath(reelOrId);
-  if (typeof window === "undefined") return path;
-  return `${window.location.origin}${path}`;
-}
-
-export function findReelByInicioParam<T extends { id?: string; _id?: string }>(reels: T[], rawParam?: string | null): T | undefined {
+/**
+ * Finds a publication/reel in a list by matching its ID
+ */
+export function findReelByInicioParam<T extends InicioReelLike>(
+  reels: T[],
+  rawParam?: string | null
+): T | undefined {
   if (!rawParam || !Array.isArray(reels) || reels.length === 0) return undefined;
   const cleanParam = rawParam.trim();
   if (!cleanParam) return undefined;
-  const extractedId = extractReelId(cleanParam);
-  return reels.find((r) => r && (r.id === cleanParam || (r as any)._id === cleanParam || r.id === extractedId || (r as any)._id === extractedId));
+
+  const extractedId = extractReelIdFromInicioParam(cleanParam);
+
+  return reels.find((r) => {
+    if (!r) return false;
+    return (
+      r.id === cleanParam ||
+      r._id === cleanParam ||
+      r.id === extractedId ||
+      r._id === extractedId
+    );
+  });
 }
 
-export function parseMovilRoute(pathname: string): MovilRoute {
-  const normalized = pathname.trim().replace(/\/+$/, "") || "/movil";
-
-  if (
-    normalized === "/movil" ||
-    normalized === "/app/movil" ||
-    normalized === "/inicio" ||
-    normalized === "/"
-  ) {
-    return { type: "tab", tab: "inicio" };
+/**
+ * Returns the publication URL path `/inicio/:id` using the publication ID.
+ */
+export function getInicioPath(
+  reelOrId?: string | InicioReelLike | null
+): string {
+  if (!reelOrId) return '/inicio';
+  if (typeof reelOrId === 'object') {
+    const id = (reelOrId.id || reelOrId._id || '').trim();
+    if (!id) return '/inicio';
+    return `/inicio/${encodeURIComponent(id)}`;
   }
 
-  if (/^\/(?:movil\/|app\/movil\/)?(?:tienda\/|shop\/)?(?:carrito|cart)$/i.test(normalized)) {
-    return { type: "cart" };
+  const id = (reelOrId || '').trim();
+  if (!id) return '/inicio';
+  return `/inicio/${encodeURIComponent(id)}`;
+}
+
+/**
+ * Returns the product detail URL path `/tienda/:id` using the product ID.
+ */
+export function getProductPath(
+  productOrId?: string | { id?: string; _id?: string; name?: string } | null,
+  _productName?: string
+): string {
+  if (!productOrId) return '/tienda/catalogo';
+  if (typeof productOrId === 'object') {
+    const id = (productOrId.id || productOrId._id || '').trim();
+    if (!id) return '/tienda/catalogo';
+    return `/tienda/${encodeURIComponent(id)}`;
   }
 
-  if (/^\/(?:movil\/|app\/movil\/)?(?:tienda\/|shop\/)?(?:verificacion|verificasion|checkout)$/i.test(normalized)) {
-    return { type: "checkout" };
+  const id = (productOrId || '').trim();
+  if (!id) return '/tienda/catalogo';
+  return `/tienda/${encodeURIComponent(id)}`;
+}
+
+/**
+ * Returns the main shop catalog URL path `/tienda/catalogo`
+ */
+export function getShopPath(): string {
+  return '/tienda/catalogo';
+}
+
+/**
+ * Returns the cart URL path `/tienda/carrito`
+ */
+export function getCartPath(): string {
+  return '/tienda/carrito';
+}
+
+/**
+ * Returns the checkout URL path `/tienda/verificacion`
+ */
+export function getCheckoutPath(): string {
+  return '/tienda/verificacion';
+}
+
+/**
+ * Returns the order thank you URL path `/tienda/grasia/:orderId` (or `/tienda/grasia` without ID)
+ */
+export function getThankYouPath(
+  orderOrId?: string | { id?: string; _id?: string } | null
+): string {
+  if (!orderOrId) return '/tienda/grasia';
+  const id = typeof orderOrId === 'object' ? orderOrId.id || (orderOrId as any)._id : orderOrId;
+  const cleanId = (id || '').trim();
+  if (!cleanId) return '/tienda/grasia';
+  return `/tienda/grasia/${encodeURIComponent(cleanId)}`;
+}
+
+/**
+ * Returns the admin summary URL path `/admin/resumen`
+ */
+export function getAdminPath(): string {
+  return '/admin/resumen';
+}
+
+/**
+ * Returns the admin users URL path `/admin/usuarios`
+ */
+export function getAdminUsersPath(): string {
+  return '/admin/usuarios';
+}
+
+/**
+ * Returns the admin reels URL path `/admin/reels`
+ */
+export function getAdminReelsPath(): string {
+  return '/admin/reels';
+}
+
+/**
+ * Returns the admin products URL path `/admin/producto`
+ */
+export function getAdminProductoPath(): string {
+  return '/admin/producto';
+}
+
+/**
+ * Returns the admin publish URL path `/admin/publicar`
+ */
+export function getAdminPublicarPath(): string {
+  return '/admin/publicar';
+}
+
+/**
+ * Returns the admin orders URL path `/admin/pedidos`
+ */
+export function getAdminPedidosPath(): string {
+  return '/admin/pedidos';
+}
+
+/**
+ * Returns the admin metrics URL path `/admin/metrica`
+ */
+export function getAdminMetricaPath(): string {
+  return '/admin/metrica';
+}
+
+/**
+ * Returns true if the user path segment represents a generic or guest user
+ */
+export function isGenericProfileUser(rawUser?: string): boolean {
+  if (!rawUser) return true;
+  const lower = rawUser.toLowerCase().trim().replace(/^@/, '');
+  return (
+    !lower ||
+    lower === 'usuario' ||
+    lower === 'invitado' ||
+    lower === 'guest' ||
+    lower === 'current_user' ||
+    lower === 'usuario_actual'
+  );
+}
+
+/**
+ * Parses the current pathname into a structured AppRoute
+ */
+export function parseRoute(pathname: string): AppRoute {
+  const normalized = pathname.trim().replace(/\/+$/, '') || '/';
+
+  // Entry page: root domain '/' or empty string maps to shop catalog
+  if (normalized === '/' || normalized === '') {
+    return { type: 'shop' };
   }
 
-  const thanksMatch = normalized.match(/^\/(?:movil\/|app\/movil\/)?(?:tienda\/|shop\/)?(?:gracia|gracias|grasia|thankyou)\/([^/]+)$/i);
-  if (thanksMatch) {
-    return { type: "thankyou", orderId: decodeURIComponent(thanksMatch[1]).trim() };
-  }
-  if (/^\/(?:movil\/|app\/movil\/)?(?:tienda\/|shop\/)?(?:gracia|gracias|grasia|thankyou)$/i.test(normalized)) {
-    return { type: "thankyou" };
+  // /tienda/carrito (also supports legacy /shop/cart, /tienda/cart, /cart, or /shop/carrito)
+  if (/^\/(?:tienda\/|shop\/)?(?:carrito|cart)$/i.test(normalized)) {
+    return { type: 'cart' };
   }
 
-  if (/^\/(?:movil\/|app\/movil\/)?(?:perfil\/login|login)$/i.test(normalized)) {
-    return { type: "login" };
+  // /tienda/verificacion (also supports /tienda/verificasion, /checkout, /shop/checkout, /tienda/checkout, or /verificacion)
+  if (/^\/(?:tienda\/|shop\/)?(?:verificacion|verificasion|checkout)$/i.test(normalized)) {
+    return { type: 'checkout' };
   }
 
-  const prodMatch = normalized.match(/^\/(?:movil\/|app\/movil\/)?(?:tienda|shop|product)\/([^/]+)$/i);
-  if (prodMatch) {
-    const rawSegment = decodeURIComponent(prodMatch[1]);
+  // /tienda/grasia/:orderId or /tienda/gracia/:orderId (with purchase order ID)
+  const thankyouWithOrderMatch = normalized.match(
+    /^\/(?:tienda\/|shop\/)?(?:gracia|gracias|grasia|grasias|thankyou|thank-you)\/([^/]+)$/i
+  );
+  if (thankyouWithOrderMatch) {
     return {
-      type: "product",
+      type: 'thankyou',
+      orderId: decodeURIComponent(thankyouWithOrderMatch[1]).trim(),
+    };
+  }
+
+  // /tienda/gracia or /tienda/grasia (without order ID)
+  if (/^\/(?:tienda\/|shop\/)?(?:gracia|gracias|grasia|grasias|thankyou|thank-you)$/i.test(normalized)) {
+    return { type: 'thankyou' };
+  }
+
+  // /tienda, /tienda/catalogo, /shop, or /catalogo
+  if (/^\/(?:(?:tienda|shop)(?:\/catalogo)?|catalogo)$/i.test(normalized)) {
+    return { type: 'shop' };
+  }
+
+  if (/^\/(?:app\/movil\/)?perfil\/login$/i.test(normalized)) {
+    return { type: 'login' };
+  }
+
+  // /tienda/:slug/:productId or /shop/:slug/:productId (two segments)
+  const shopTwoSegmentMatch = normalized.match(/^\/(?:tienda|shop)\/([^/]+)\/([^/]+)$/i);
+  if (shopTwoSegmentMatch) {
+    return {
+      type: 'product',
+      productSlug: decodeURIComponent(shopTwoSegmentMatch[1]),
+      productId: extractProductIdFromShopParam(shopTwoSegmentMatch[2]),
+    };
+  }
+
+  // /tienda/:nombre-del-producto-y-su-id or /shop/:nombre-del-producto-y-su-id (single segment)
+  const shopProductMatch = normalized.match(/^\/(?:tienda|shop)\/([^/]+)$/i);
+  if (shopProductMatch) {
+    const rawSegment = decodeURIComponent(shopProductMatch[1]);
+    return {
+      type: 'product',
       productSlug: rawSegment,
-      productId: extractProductId(rawSegment),
+      productId: extractProductIdFromShopParam(rawSegment),
     };
   }
 
-  const reelMatch = normalized.match(/^\/(?:movil\/|app\/movil\/)?(?:inicio|reel|reels)\/([^/]+)$/i);
-  if (reelMatch) {
-    const rawSegment = decodeURIComponent(reelMatch[1]);
+  // Legacy /product/:productId
+  const productMatch = normalized.match(/^\/product\/([^/]+)$/i);
+  if (productMatch) {
+    const rawSegment = decodeURIComponent(productMatch[1]);
     return {
-      type: "inicio",
-      reelId: extractReelId(rawSegment),
+      type: 'product',
+      productSlug: rawSegment,
+      productId: extractProductIdFromShopParam(rawSegment),
     };
   }
 
-  const profileTabMatch = normalized.match(/^\/(?:movil\/|app\/movil\/)?perfil(?:\/([^/]+))?\/(guardado|compra|config|producto|venta|publicaciones|publicar|rendimiento)$/i);
-  if (profileTabMatch) {
-    const rawUser = profileTabMatch[1] ? decodeURIComponent(profileTabMatch[1]) : undefined;
+  // /store/:sellerId or /creator/:sellerId
+  const storeMatch = normalized.match(/^\/(?:store|creator)\/([^/]+)$/i);
+  if (storeMatch) {
+    return { type: 'store', sellerId: decodeURIComponent(storeMatch[1]) };
+  }
+
+  // /inicio or /inicio/:id (also supports legacy /reel/:reelId or /reels/:reelId)
+  if (normalized.toLowerCase() === '/inicio' || normalized.toLowerCase() === '/reels') {
+    return { type: 'inicio' };
+  }
+
+  const inicioMatch = normalized.match(/^\/(?:inicio|reel|reels)\/([^/]+)$/i);
+  if (inicioMatch) {
+    let rawSegment = inicioMatch[1];
+    try {
+      rawSegment = decodeURIComponent(rawSegment);
+    } catch {}
     return {
-      type: "profile",
-      userId: rawUser && !["usuario", "invitado", "guest", "current_user"].includes(rawUser) ? rawUser : undefined,
-      profileTab: profileTabMatch[2].toLowerCase(),
+      type: 'inicio',
+      reelSlug: rawSegment,
+      reelId: extractReelIdFromInicioParam(rawSegment),
     };
   }
 
-  const profileMatch = normalized.match(/^\/(?:movil\/|app\/movil\/)?perfil(?:\/([^/]+))?$/i);
+  // /messages
+  if (normalized === '/messages') {
+    return { type: 'messages' };
+  }
+
+  // /perfil/:userId/guardado or /app/movil/perfil/:userId/guardado or /app/web/perfil/:userId/guardado
+  const profileSavedMatch = normalized.match(
+    /^\/(?:src\/app\/(?:web|movil)\/|app\/(?:web|movil)\/)?(?:perfil|profile)(?:\/([^/]+))?\/guardados?$/i
+  );
+  if (profileSavedMatch) {
+    const rawUser = profileSavedMatch[1] ? decodeURIComponent(profileSavedMatch[1]) : undefined;
+    const isGenericUser = isGenericProfileUser(rawUser);
+    return {
+      type: 'profile',
+      userId: isGenericUser ? undefined : rawUser,
+      profileTab: 'guardado',
+    };
+  }
+
+  // /perfil/:userId/compra or /app/movil/perfil/:userId/compra or /app/web/perfil/:userId/compra
+  const profileCompraMatch = normalized.match(
+    /^\/(?:src\/app\/(?:web|movil)\/|app\/(?:web|movil)\/)?(?:perfil|profile)(?:\/([^/]+))?\/compras?$/i
+  );
+  if (profileCompraMatch) {
+    const rawUser = profileCompraMatch[1] ? decodeURIComponent(profileCompraMatch[1]) : undefined;
+    const isGenericUser = isGenericProfileUser(rawUser);
+    return {
+      type: 'profile',
+      userId: isGenericUser ? undefined : rawUser,
+      profileTab: 'compra',
+    };
+  }
+
+  // /perfil/:userId/config or /app/movil/perfil/:userId/config or /app/web/perfil/:userId/config
+  const profileConfigMatch = normalized.match(
+    /^\/(?:src\/app\/(?:web|movil)\/|app\/(?:web|movil)\/)?(?:perfil|profile)(?:\/([^/]+))?\/(?:config|configuracion)$/i
+  );
+  if (profileConfigMatch) {
+    const rawUser = profileConfigMatch[1] ? decodeURIComponent(profileConfigMatch[1]) : undefined;
+    const isGenericUser = isGenericProfileUser(rawUser);
+    return {
+      type: 'profile',
+      userId: isGenericUser ? undefined : rawUser,
+      profileTab: 'config',
+    };
+  }
+
+  // /perfil/:userId/producto or /app/movil/perfil/:userId/producto or /app/web/perfil/:userId/producto
+  const profileProductoMatch = normalized.match(
+    /^\/(?:src\/app\/(?:web|movil)\/|app\/(?:web|movil)\/)?(?:perfil|profile)(?:\/([^/]+))?\/productos?$/i
+  );
+  if (profileProductoMatch) {
+    const rawUser = profileProductoMatch[1] ? decodeURIComponent(profileProductoMatch[1]) : undefined;
+    const isGenericUser = isGenericProfileUser(rawUser);
+    return {
+      type: 'profile',
+      userId: isGenericUser ? undefined : rawUser,
+      profileTab: 'producto',
+    };
+  }
+
+  // /perfil/:userId/venta or /app/movil/perfil/:userId/venta or /app/web/perfil/:userId/venta
+  const profileVentaMatch = normalized.match(
+    /^\/(?:src\/app\/(?:web|movil)\/|app\/(?:web|movil)\/)?(?:perfil|profile)(?:\/([^/]+))?\/ventas?$/i
+  );
+  if (profileVentaMatch) {
+    const rawUser = profileVentaMatch[1] ? decodeURIComponent(profileVentaMatch[1]) : undefined;
+    const isGenericUser = isGenericProfileUser(rawUser);
+    return {
+      type: 'profile',
+      userId: isGenericUser ? undefined : rawUser,
+      profileTab: 'venta',
+    };
+  }
+
+  // /perfil/:userId/publicaciones or /app/movil/perfil/:userId/publicaciones or /app/web/perfil/:userId/publicaciones
+  const profilePublicacionesMatch = normalized.match(
+    /^\/(?:src\/app\/(?:web|movil)\/|app\/(?:web|movil)\/)?(?:perfil|profile)(?:\/([^/]+))?\/publicacion(?:es)?$/i
+  );
+  if (profilePublicacionesMatch) {
+    const rawUser = profilePublicacionesMatch[1] ? decodeURIComponent(profilePublicacionesMatch[1]) : undefined;
+    const isGenericUser = isGenericProfileUser(rawUser);
+    return {
+      type: 'profile',
+      userId: isGenericUser ? undefined : rawUser,
+      profileTab: 'publicaciones',
+    };
+  }
+
+  // /perfil/:userId/publicar or /app/movil/perfil/:userId/publicar or /app/web/perfil/:userId/publicar
+  const profilePublicarMatch = normalized.match(
+    /^\/(?:src\/app\/(?:web|movil)\/|app\/(?:web|movil)\/)?(?:perfil|profile)(?:\/([^/]+))?\/publicar$/i
+  );
+  if (profilePublicarMatch) {
+    const rawUser = profilePublicarMatch[1] ? decodeURIComponent(profilePublicarMatch[1]) : undefined;
+    const isGenericUser = isGenericProfileUser(rawUser);
+    return {
+      type: 'profile',
+      userId: isGenericUser ? undefined : rawUser,
+      profileTab: 'publicar',
+    };
+  }
+
+  // /perfil/:userId/rendimiento or /app/movil/perfil/:userId/rendimiento or /app/web/perfil/:userId/rendimiento
+  const profileRendimientoMatch = normalized.match(
+    /^\/(?:src\/app\/(?:web|movil)\/|app\/(?:web|movil)\/)?(?:perfil|profile)(?:\/([^/]+))?\/rendimientos?$/i
+  );
+  if (profileRendimientoMatch) {
+    const rawUser = profileRendimientoMatch[1] ? decodeURIComponent(profileRendimientoMatch[1]) : undefined;
+    const isGenericUser = isGenericProfileUser(rawUser);
+    return {
+      type: 'profile',
+      userId: isGenericUser ? undefined : rawUser,
+      profileTab: 'rendimiento',
+    };
+  }
+
+  // /perfil, /perfil/:userId, /app/movil/perfil/:userId, /app/movil/perfil, /app/web/perfil/:userId, etc.
+  const profileMatch = normalized.match(
+    /^\/(?:src\/app\/(?:web|movil)\/|app\/(?:web|movil)\/)?(?:perfil|profile)(?:\/([^/]+))?$/i
+  );
   if (profileMatch) {
     const rawUser = profileMatch[1] ? decodeURIComponent(profileMatch[1]) : undefined;
+    const isGenericUser = isGenericProfileUser(rawUser);
+    return { type: 'profile', userId: isGenericUser ? undefined : rawUser };
+  }
+
+  // /admin/resumen, /admin/usuarios, /admin/metrica, or /admin
+  const adminMatch = normalized.match(/^\/(?:src\/app\/|app\/(?:web\/)?)?admin(?:\/([^/]+))?(?:\/.*)?$/i);
+  if (adminMatch) {
+    let decodedTab = 'resumen';
+    if (adminMatch[1]) {
+      try {
+        decodedTab = decodeURIComponent(adminMatch[1]).toLowerCase();
+      } catch {
+        decodedTab = adminMatch[1].toLowerCase();
+      }
+    }
     return {
-      type: "profile",
-      userId: rawUser && !["usuario", "invitado", "guest", "current_user"].includes(rawUser) ? rawUser : undefined,
+      type: 'admin',
+      adminTab: decodedTab,
     };
   }
 
-  if (/^\/(?:movil\/|app\/movil\/)?(?:shop|tienda|catalogo)$/i.test(normalized)) {
-    return { type: "tab", tab: "shop" };
-  }
-
-  if (/^\/(?:movil\/|app\/movil\/)?(?:messages|mensajes)$/i.test(normalized)) {
-    return { type: "tab", tab: "messages" };
-  }
-
-  if (/^\/(?:movil\/|app\/movil\/)?reels$/i.test(normalized)) {
-    return { type: "tab", tab: "reels" };
-  }
-
-  return { type: "tab", tab: "inicio" };
+  // Default: shop catalog / entrada principal
+  return { type: 'shop' };
 }
 
-export function navigateToMovil(path: string, options?: { replace?: boolean }) {
-  if (typeof window === "undefined") return;
-  const current = window.location.pathname + window.location.search;
-  if (current === path) return;
-
-  if (options?.replace) {
-    window.history.replaceState(null, "", path);
-  } else {
-    window.history.pushState(null, "", path);
-  }
-  window.dispatchEvent(new CustomEvent("movil-route-change", { detail: { path } }));
-}
-
-export function useMovilRoute(): MovilRoute {
-  const [route, setRoute] = useState<MovilRoute>(() => {
-    if (typeof window === "undefined") return { type: "tab", tab: "inicio" };
-    return parseMovilRoute(window.location.pathname);
+/**
+ * Hook to subscribe to URL changes (popstate and app-route-change events)
+ */
+export function useCurrentRoute(): AppRoute {
+  const [route, setRoute] = useState<AppRoute>(() => {
+    if (typeof window === 'undefined') return { type: 'shop' };
+    return parseRoute(window.location.pathname);
   });
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (typeof window === 'undefined') return;
 
     const handleLocationChange = () => {
-      setRoute(parseMovilRoute(window.location.pathname));
+      const next = parseRoute(window.location.pathname);
+      setRoute((prev) => (JSON.stringify(prev) === JSON.stringify(next) ? prev : next));
     };
 
-    window.addEventListener("popstate", handleLocationChange);
-    window.addEventListener("movil-route-change", handleLocationChange);
+    window.addEventListener('popstate', handleLocationChange);
+    window.addEventListener('app-route-change', handleLocationChange);
 
     return () => {
-      window.removeEventListener("popstate", handleLocationChange);
-      window.removeEventListener("movil-route-change", handleLocationChange);
+      window.removeEventListener('popstate', handleLocationChange);
+      window.removeEventListener('app-route-change', handleLocationChange);
     };
   }, []);
 
   return route;
 }
 
-export { parseMovilRoute as parseRoute, navigateToMovil as navigateTo, useMovilRoute as useCurrentRoute };
+/**
+ * Converts a structured AppRoute to a URL pathname
+ */
+export function routeToPath(route: AppRoute): string {
+  switch (route.type) {
+    case 'product':
+      return getProductPath(route.productId);
+    case 'store':
+      return getProfilePath(route.sellerId);
+    case 'inicio':
+    case 'reels':
+      return route.reelId ? getInicioPath(route.reelId) : '/inicio';
+    case 'shop':
+      return '/tienda/catalogo';
+    case 'checkout':
+      return '/tienda/verificacion';
+    case 'thankyou':
+      return '/tienda/gracia';
+    case 'cart':
+      return '/tienda/carrito';
+    case 'messages':
+      return '/messages';
+    case 'login':
+      return '/perfil/login';
+    case 'profile':
+      if (route.profileTab === 'guardado') {
+        return getProfileSavedPath(route.userId);
+      }
+      if (route.profileTab === 'compra') {
+        return getProfileCompraPath(route.userId);
+      }
+      if (route.profileTab === 'config') {
+        return getProfileConfigPath(route.userId);
+      }
+      if (route.profileTab === 'producto') {
+        return getProfileProductoPath(route.userId);
+      }
+      if (route.profileTab === 'venta') {
+        return getProfileVentaPath(route.userId);
+      }
+      if (route.profileTab === 'publicaciones') {
+        return getProfilePublicacionesPath(route.userId);
+      }
+      if (route.profileTab === 'publicar') {
+        return getProfilePublicarPath(route.userId);
+      }
+      if (route.profileTab === 'rendimiento') {
+        return getProfileRendimientoPath(route.userId);
+      }
+      return route.userId ? getProfilePath(route.userId) : '/perfil';
+    case 'admin':
+      return route.adminTab ? `/admin/${encodeURIComponent(route.adminTab)}` : '/admin/resumen';
+    default:
+      return '/tienda/catalogo';
+  }
+}
+
+/**
+ * Returns the profile URL path `/perfil/:id` (dominio/perfil/id)
+ * for a registered or guest active user, ensuring the user's ID is always included.
+ */
+export function getProfilePath(
+  userOrId?: string | { id?: string; originalId?: string; name?: string; isGuest?: boolean; guestToken?: string } | null,
+  platform?: 'android' | 'web'
+): string {
+  // Mobile and Web profiles share the clean canonical route: dominio/perfil/id
+  const basePrefix = '/perfil';
+
+  let rawId: string | null = null;
+
+  if (typeof userOrId === 'string') {
+    let clean = userOrId.trim().replace(/^@/, '');
+    if (clean && !isGenericProfileUser(clean)) {
+      rawId = clean;
+    }
+  } else if (userOrId && typeof userOrId === 'object') {
+    // 1. Check valid persistent originalId (e.g. database persistent id "usr_xxx" or "guest_tok_xxx")
+    const validOriginalId =
+      userOrId.originalId && !isGenericProfileUser(userOrId.originalId)
+        ? userOrId.originalId
+        : null;
+
+    // 2. Check id
+    const validId =
+      userOrId.id && !isGenericProfileUser(userOrId.id)
+        ? userOrId.id
+        : null;
+
+    // 3. Check guestToken
+    const validToken =
+      userOrId.guestToken &&
+      typeof userOrId.guestToken === 'string' &&
+      !isGenericProfileUser(userOrId.guestToken)
+        ? userOrId.guestToken.trim()
+        : null;
+
+    if (validId) {
+      rawId = validId;
+    } else if (validOriginalId) {
+      rawId = validOriginalId;
+    } else if (validToken) {
+      rawId = validToken;
+    }
+  }
+
+  // Fallback: check session or generate/read persistent active guest token
+  if (!rawId) {
+    if (typeof window !== 'undefined') {
+      try {
+        const sessionUser = sessionState.getUser();
+        if (sessionUser) {
+          const sid =
+            sessionUser.id && !isGenericProfileUser(sessionUser.id)
+              ? sessionUser.id
+              : sessionUser.originalId && !isGenericProfileUser(sessionUser.originalId)
+              ? sessionUser.originalId
+              : sessionUser.guestToken && !isGenericProfileUser(sessionUser.guestToken)
+              ? sessionUser.guestToken
+              : null;
+          if (sid) rawId = sid;
+        }
+      } catch {}
+
+      if (!rawId) {
+        try {
+          const localTok = getLocalGuestToken() || getOrCreateGuestToken();
+          if (localTok) rawId = localTok;
+        } catch {}
+      }
+    }
+  }
+
+  if (!rawId || isGenericProfileUser(rawId)) {
+    return basePrefix;
+  }
+
+  // Format as requested: dominio/perfil/id
+  return `${basePrefix}/${encodeURIComponent(rawId)}`;
+}
+
+/**
+ * Returns the saved publications URL path `/perfil/:id/guardado` (or `/app/movil/perfil/:id/guardado`)
+ */
+export function getProfileSavedPath(
+  userOrId?: string | { id?: string; originalId?: string; name?: string; isGuest?: boolean; guestToken?: string } | null,
+  platform?: 'android' | 'web'
+): string {
+  const basePath = getProfilePath(userOrId, platform).replace(/\/+$/, '');
+  return `${basePath}/guardado`;
+}
+
+/**
+ * Returns the purchases URL path `/perfil/:id/compra` (or `/app/movil/perfil/:id/compra`)
+ */
+export function getProfileCompraPath(
+  userOrId?: string | { id?: string; originalId?: string; name?: string; isGuest?: boolean; guestToken?: string } | null,
+  platform?: 'android' | 'web'
+): string {
+  const basePath = getProfilePath(userOrId, platform).replace(/\/+$/, '');
+  return `${basePath}/compra`;
+}
+
+/**
+ * Returns the profile configuration URL path `/perfil/:id/config` (or `/app/movil/perfil/:id/config`)
+ */
+export function getProfileConfigPath(
+  userOrId?: string | { id?: string; originalId?: string; name?: string; isGuest?: boolean; guestToken?: string } | null,
+  platform?: 'android' | 'web'
+): string {
+  const basePath = getProfilePath(userOrId, platform).replace(/\/+$/, '');
+  return `${basePath}/config`;
+}
+
+/**
+ * Returns the profile products URL path `/perfil/:id/producto` (or `/app/movil/perfil/:id/producto`)
+ */
+export function getProfileProductoPath(
+  userOrId?: string | { id?: string; originalId?: string; name?: string; isGuest?: boolean; guestToken?: string } | null,
+  platform?: 'android' | 'web'
+): string {
+  const basePath = getProfilePath(userOrId, platform).replace(/\/+$/, '');
+  return `${basePath}/producto`;
+}
+
+/**
+ * Returns the profile incoming sales URL path `/perfil/:id/venta` (or `/app/movil/perfil/:id/venta`)
+ */
+export function getProfileVentaPath(
+  userOrId?: string | { id?: string; originalId?: string; name?: string; isGuest?: boolean; guestToken?: string } | null,
+  platform?: 'android' | 'web'
+): string {
+  const basePath = getProfilePath(userOrId, platform).replace(/\/+$/, '');
+  return `${basePath}/venta`;
+}
+
+/**
+ * Returns the profile publications URL path `/perfil/:id/publicaciones` (or `/app/movil/perfil/:id/publicaciones`)
+ */
+export function getProfilePublicacionesPath(
+  userOrId?: string | { id?: string; originalId?: string; name?: string; isGuest?: boolean; guestToken?: string } | null,
+  platform?: 'android' | 'web'
+): string {
+  const basePath = getProfilePath(userOrId, platform).replace(/\/+$/, '');
+  return `${basePath}/publicaciones`;
+}
+
+/**
+ * Returns the profile publish URL path `/perfil/:id/publicar` (or `/app/movil/perfil/:id/publicar`)
+ */
+export function getProfilePublicarPath(
+  userOrId?: string | { id?: string; originalId?: string; name?: string; isGuest?: boolean; guestToken?: string } | null,
+  platform?: 'android' | 'web'
+): string {
+  const basePath = getProfilePath(userOrId, platform).replace(/\/+$/, '');
+  return `${basePath}/publicar`;
+}
+
+/**
+ * Returns the profile performance URL path `/perfil/:id/rendimiento` (or `/app/movil/perfil/:id/rendimiento`)
+ */
+export function getProfileRendimientoPath(
+  userOrId?: string | { id?: string; originalId?: string; name?: string; isGuest?: boolean; guestToken?: string } | null,
+  platform?: 'android' | 'web'
+): string {
+  const basePath = getProfilePath(userOrId, platform).replace(/\/+$/, '');
+  return `${basePath}/rendimiento`;
+}
+
+/**
+ * Change URL programmatically using HTML5 History API without page reload
+ */
+export function navigateTo(path: string, options?: { replace?: boolean }) {
+  if (typeof window === 'undefined') return;
+  const current = window.location.pathname + window.location.search;
+  if (current === path) return;
+
+  if (options?.replace) {
+    window.history.replaceState(null, '', path);
+  } else {
+    window.history.pushState(null, '', path);
+  }
+  window.dispatchEvent(new CustomEvent('app-route-change', { detail: { path } }));
+}
+
+/**
+ * Get full public shareable URL for a product (/tienda/:id)
+ */
+export function getProductShareUrl(
+  productOrId: string | { id?: string; _id?: string; name?: string },
+  productName?: string
+): string {
+  const path = getProductPath(productOrId, productName);
+  if (typeof window === 'undefined') return path;
+  return `${window.location.origin}${path}`;
+}
+
+/**
+ * Get full public shareable URL for a creator profile/store (/perfil/:id)
+ */
+export function getStoreShareUrl(sellerId: string): string {
+  const path = getProfilePath(sellerId);
+  if (typeof window === 'undefined') return path;
+  return `${window.location.origin}${path}`;
+}
+
+export function getProfileShareUrl(userIdOrProfile: string): string {
+  return getStoreShareUrl(userIdOrProfile);
+}
+
+/**
+ * Get full public shareable URL for a home publication (/inicio/:id)
+ */
+export function getInicioShareUrl(
+  reelOrId: string | InicioReelLike
+): string {
+  const path = getInicioPath(reelOrId);
+  if (typeof window === 'undefined') return path;
+  return `${window.location.origin}${path}`;
+}
+
+export function getReelShareUrl(
+  reelOrId: string | InicioReelLike
+): string {
+  return getInicioShareUrl(reelOrId);
+}
