@@ -1,11 +1,11 @@
 import React from "react";
-import { PedidosAdminProps } from "./pedidos/tipos";
-import { useEstadoPedidos } from "./pedidos/estado";
-import ListaPedidos from "./pedidos/lista_pedidos";
-import VisorComprobante from "./pedidos/visor_comprobante";
-import ModalActualizarPedido from "./pedidos/modal_actualizar";
+import { PedidosAdminProps } from "./tipos";
+import { useEstadoPedidos } from "./estado";
+import ListaPedidos from "./lista_pedidos";
+import VisorComprobante from "./visor_comprobante";
+import ModalActualizarPedido from "./modal_actualizar";
 
-export type { PedidosAdminProps } from "./pedidos/tipos";
+export type { PedidosAdminProps } from "./tipos";
 
 export default function PedidosAdminView({
   orders, setOrders, onStatusMessage, onRequestEditOrder,
