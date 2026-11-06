@@ -1,8 +1,8 @@
 import React from "react";
-import { User, Reel } from "../../../../types";
+import { User, Reel } from "../../tipos";
 import { BadgeCheck, Mail, MapPin, Phone, Plus, Sparkles, UserPlus } from "lucide-react";
-import { isGuestUser } from "../../../../types";
-import { isSuperAdmin } from "../../../../superAdmin";
+import { isGuestUser } from "../../tipos";
+import { isSuperAdmin } from "../../superAdmin";
 import { navigateTo } from "../../enrutador";
 
 interface PresentacionPerfilProps {
