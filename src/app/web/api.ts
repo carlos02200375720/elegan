@@ -2,7 +2,7 @@
  * Dedicated Web API Layer
  * Ensures the Web frontend communicates cleanly with backend services
  */
-import { apiFetch, getApiUrl } from "../../config";
+import { apiFetch, getApiUrl } from "./config";
 
 export async function webApiFetch(endpoint: string, options: RequestInit = {}) {
   const headers = new Headers(options.headers || {});
@@ -104,5 +104,5 @@ export async function getFeedPosts(limit: number = 20) {
   return await res.json() as { posts: any[] };
 }
 
-export { syncGuestSession, getLocalGuestToken, setLocalGuestToken } from "../../utils/guestToken";
+export { syncGuestSession, getLocalGuestToken, setLocalGuestToken } from "./guestToken";
 
