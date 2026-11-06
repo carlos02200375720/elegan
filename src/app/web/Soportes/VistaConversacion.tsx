@@ -1,6 +1,5 @@
 import { Send, X, ShieldCheck, ArrowLeft, Search, MessageSquare, Headphones, CheckCheck, Sparkles, AlertCircle, Check } from "lucide-react";
 import { SUPPORT_EMAIL, SUPPORT_USER_ID, isSupportAlias } from "../../../utils/supportChat";
-import type { User } from "../../../types";
 
 export default function VistaConversacion({ props }: { props: any }) {
   const { isAdmin, activeChatUser, supportUser, SUPPORT_EMAIL, currentUser, currentConversationMessages, scrollRef, isGuest, handleSubmit, chatInput, setChatInput } = props;
