@@ -1,4 +1,4 @@
-import { sessionState } from "../../utils/sessionState";
+import { sesionMovil } from "./sesion";
 
 export const CLOUD_RUN_BACKEND_URL = "https://elegan-backend-587849039182.us-east1.run.app";
 
@@ -81,7 +81,7 @@ export const apiFetch = async (
 
   if (typeof window !== "undefined") {
     try {
-      const currentUser = sessionState.getUser();
+      const currentUser = sesionMovil.getUser();
       if (currentUser?.originalId || currentUser?.id) {
         headers.set("x-user-id", currentUser.originalId || currentUser.id);
       }
