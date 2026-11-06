@@ -14,7 +14,7 @@ import {
   ShoppingBag,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import { formatPrice } from "../../../../utils/currency";
+import { formatPrice } from "../../utilidades/moneda";
 import { PaymentMethodType, AndroidCheckoutForm } from "./TiposVerificacion";
 import { OFFICIAL_BANK_ACCOUNTS, ACCOUNT_HOLDER } from "./FuncionesVerificacion";
 
