@@ -5,53 +5,41 @@ import { useCarritoMovil } from "./tienda/useCarritoMovil";
 import { useCicloNativo } from "./nativo/useCicloNativo";
 import { AndroidApp } from "./index";
 import { AuthModal } from "./componente/AuthModal";
-import { apiFetch } from "./config";
-import { sesionMovil } from "./sesion";
 import { trackDailyVisitor } from "./analitica";
-import { getLocalGuestToken } from "./guestToken";
-import { parseRoute, navigateTo, getProfilePath, getProductPath } from "./enrutador";
+import { navigateTo, getProfilePath, getProductPath } from "./enrutador";
+import { useSesionAplicacionMovil } from "./sesion/useSesionMovil";
+import { useNavegacionMovil } from "./navegacion/useNavegacionMovil";
+import { useMensajeriaMovil } from "./mensajeria/useMensajeriaMovil";
 
 export default function AppMovil() {
-  const [activeTab, setActiveTab] = useState<NavigationTab>(() => {
-    if (typeof window !== "undefined") {
-      const route = parseRoute(window.location.pathname);
-      if (route.type === "store" || route.type === "profile" || route.type === "login") return "profile";
-      if (route.type === "messages") return "messages";
-      if (route.type === "product" || route.type === "shop" || route.type === "cart" || route.type === "checkout") return "shop";
-    }
-    return "inicio";
-  });
+  const { pestanaActiva: activeTab, establecerPestanaActiva: setActiveTab } = useNavegacionMovil();
 
   const { ocultarPantallaCarga } = useCicloNativo();
   const { users, setUsers, reels, setReels, products, setProducts, loadData } = useDatosMovil();
 
-  const [currentUser, setCurrentUser] = useState<User>(() => {
-    if (typeof window !== "undefined") {
-      const savedUser = sesionMovil.getUser();
-      if (savedUser && savedUser.id) return savedUser;
-    }
-    return {
-      id: "guest_" + (getLocalGuestToken() || "anonymous"),
-      name: "Invitado",
-      email: "guest@elegan.com",
-      avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=120&q=80",
-      bio: "Visitante",
-      followers: 0,
-      following: 0,
-      isGuest: true,
-    };
-  });
-
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => !currentUser.isGuest);
+  const {
+    usuarioActual: currentUser,
+    establecerUsuarioActual: setCurrentUser,
+    sesionIniciada: isLoggedIn,
+    establecerSesionIniciada: setIsLoggedIn,
+    cerrarSesion: handleLogout,
+    iniciarSesion: handleSessionLogin,
+  } = useSesionAplicacionMovil();
   const { cart, handleAddToCart, handleRemoveFromCart, handleUpdateCartQuantity, handleCheckoutCart } = useCarritoMovil(currentUser);
   const [directSelectedProduct, setDirectSelectedProduct] = useState<Product | null>(null);
   const [selectedCreatorProfileId, setSelectedCreatorProfileId] = useState<string | null>(null);
   const [isProductDetailOpen, setIsProductDetailOpen] = useState(false);
   const [shopInitialStep, setShopInitialStep] = useState<"catalog" | "detail" | "cart" | "checkout" | "payment" | "thankyou">("catalog");
   const [shopInitialSelectedIndices, setShopInitialSelectedIndices] = useState<number[]>([]);
-  const [activeChatUser, setActiveChatUser] = useState<User | null>(null);
-  const [privateMessages, setPrivateMessages] = useState<ChatMessage[]>([]);
-  const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
+  const {
+    usuarioChatActivo: activeChatUser,
+    establecerUsuarioChatActivo: setActiveChatUser,
+    mensajesPrivados: privateMessages,
+    conteoMensajesSinLeer: unreadCounts,
+    totalMensajesSinLeer: totalUnreads,
+    enviarMensajePrivado: handleSendPrivateMessage,
+    limpiarMensajesSinLeer: handleClearUnreads,
+  } = useMensajeriaMovil(currentUser);
   const [savedReelIds, setSavedReelIds] = useState<string[]>([]);
   const [guestInteractionAlert, setGuestInteractionAlert] = useState<string | null>(null);
   const socketRef = useRef<WebSocket | null>(null);
@@ -63,8 +51,6 @@ export default function AppMovil() {
   useEffect(() => {
     loadData().finally(ocultarPantallaCarga);
   }, [loadData, ocultarPantallaCarga]);
-
-  const totalUnreads: number = Object.values(unreadCounts).reduce<number>((acc, val) => acc + (val as number), 0);
 
   return (
     <div className="flex flex-1 w-full min-h-screen justify-center bg-slate-950 font-sans select-none" id="movil-root-app">
@@ -115,26 +101,8 @@ export default function AppMovil() {
           handleToggleSaveReel={(rId) => {
             setSavedReelIds((prev) => (prev.includes(rId) ? prev.filter((id) => id !== rId) : [...prev, rId]));
           }}
-          handleSendPrivateMessage={(text) => {
-            if (!text.trim()) return;
-            const newMsg: ChatMessage = {
-              id: "msg_" + Date.now(),
-              senderId: currentUser.id,
-              receiverId: activeChatUser?.id || "support",
-              text: text.trim(),
-              timestamp: new Date().toISOString(),
-              isRead: false,
-            };
-            setPrivateMessages((prev) => [...prev, newMsg]);
-            apiFetch("/api/chats/messages", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(newMsg),
-            }).catch(() => {});
-          }}
-          handleClearUnreads={(uId) => {
-            setUnreadCounts((prev) => ({ ...prev, [uId]: 0 }));
-          }}
+          handleSendPrivateMessage={handleSendPrivateMessage}
+          handleClearUnreads={handleClearUnreads}
           refreshReels={loadData}
           refreshProducts={loadData}
           refreshAllData={loadData}
@@ -145,11 +113,7 @@ export default function AppMovil() {
           setProducts={setProducts}
           isLoggedIn={isLoggedIn}
           setIsLoggedIn={setIsLoggedIn}
-          handleLogout={() => {
-            sesionMovil.clear();
-            setIsLoggedIn(false);
-            window.location.reload();
-          }}
+          handleLogout={handleLogout}
           setGuestInteractionAlert={setGuestInteractionAlert}
           openPrivateChatDirectly={(u) => {
             setActiveChatUser(u);
@@ -167,7 +131,7 @@ export default function AppMovil() {
         onLoginSuccess={(loggedUser) => {
           setCurrentUser(loggedUser);
           setIsLoggedIn(true);
-          sesionMovil.setUser(loggedUser);
+          handleSessionLogin(loggedUser);
           setGuestInteractionAlert(null);
         }}
       />
