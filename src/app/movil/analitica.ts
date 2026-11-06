@@ -90,10 +90,10 @@ export function getOrCreateVisitorId(): {
   if (typeof window === "undefined") {
     return { visitorId: "server_visitor" };
   }
-  const activeUser = typeof sessionState?.getUser === "function" ? sessionState.getUser() : null;
+  const activeUser = typeof sesionMovil?.getUser === "function" ? sesionMovil.getUser() : null;
   const activeUserId =
     activeUser?.id ||
-    (typeof sessionState?.getEmail === "function" ? sessionState.getEmail() : null) ||
+    (typeof sesionMovil?.getEmail === "function" ? sesionMovil.getEmail() : null) ||
     "";
   const isLoggedUser =
     Boolean(activeUserId) &&
@@ -262,7 +262,7 @@ export function trackDailyVisitor(platform: "web" | "android"): void {
   if (typeof window === "undefined") return;
 
   const visitorId = getLocalGuestToken() || getOrCreateGuestToken();
-  const activeUser = sessionState.getUser();
+  const activeUser = sesionMovil.getUser();
   const candidateUserId = activeUser?.originalId ||
     (activeUser?.id && activeUser.id !== "current_user" ? activeUser.id : "");
   const isRegistered = Boolean(
