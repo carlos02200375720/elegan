@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import { MongoUser, MongoSuperAdmin, MongoProduct, MongoReel, MongoOrder, MongoPublicacion } from "../models";
-import { Product, Order } from "../../types";
+import { Product, Order } from "../types";
 import {
   setProducts,
   getProducts,
