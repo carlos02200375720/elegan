@@ -1,5 +1,5 @@
 import React from "react";
-import { User, Reel, Product } from "../../../../types";
+import { User, Reel, Product } from "../../tipos";
 import AndroidUserPublicationsFeed from "../../componente/Feedperfil";
 import AndroidPublishView from "../../publicasion";
 import ConfigPerfilView from "../config";
