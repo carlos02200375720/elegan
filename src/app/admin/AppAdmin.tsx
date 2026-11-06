@@ -2,9 +2,9 @@ import React, { useState, useEffect } from "react";
 import { User, Reel, Product, Order } from "./tipos";
 import AdminApp from "./AdminApp";
 import { apiFetch } from "./config";
-import { sessionState } from "../../utils/sessionState";
-import { isSuperAdmin } from "../../superAdmin";
-import { INITIAL_USERS, INITIAL_PRODUCTS, INITIAL_REELS } from "../../initialData";
+import { sesionAdmin } from "./sesion";
+import { isSuperAdmin } from "./superAdmin";
+import { INITIAL_USERS, INITIAL_PRODUCTS, INITIAL_REELS } from "./datosIniciales";
 import { ShieldAlert, LogIn, ArrowLeft } from "lucide-react";
 
 export default function AppAdmin() {
