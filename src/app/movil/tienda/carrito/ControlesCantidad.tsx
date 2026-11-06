@@ -1,6 +1,6 @@
 import React from "react";
 import { Minus, Plus } from "lucide-react";
-import { CartItem } from "../../../../types";
+import { CartItem } from "../../tipos";
 import { getAvailableCartStock } from "./FuncionesCarrito";
 
 export interface ControlesCantidadProps {
