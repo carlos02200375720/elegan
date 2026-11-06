@@ -1,6 +1,6 @@
 import React from "react";
 import { Bookmark } from "lucide-react";
-import { Product, User } from "../../../../types";
+import { Product, User } from "../../tipos";
 import { obtenerVendedor } from "./FuncionesCatalogo";
 
 interface TarjetaProductoProps {
