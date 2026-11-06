@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Settings, ShieldCheck, Camera, Users, AlertCircle } from "lucide-react";
 import { motion } from "motion/react";
-import { User, isGuestUser as checkIsGuest } from "../../../types";
-import { apiFetch, getMediaUrl } from "../../../config";
-import { sessionState } from "../../../utils/sessionState";
+import { User, isGuestUser as checkIsGuest } from "../tipos";
+import { apiFetch, getMediaUrl } from "../config";
+import { sesionWeb } from "../sesion";
 
 export interface ConfigPerfilProps {
   currentUser: User;
@@ -142,9 +142,9 @@ export function ConfigPerfilView({
         return;
       }
       if (response.ok && data.success) {
-        sessionState.setAuthenticated(true);
-        sessionState.setEmail(data.user?.email || targetEmail);
-        sessionState.setUser(data.user);
+        sesionWeb.setAuthenticated(true);
+        sesionWeb.setEmail(data.user?.email || targetEmail);
+        sesionWeb.setUser(data.user);
 
         onProfileSaved?.(data.user);
         onRefreshUsers?.();
