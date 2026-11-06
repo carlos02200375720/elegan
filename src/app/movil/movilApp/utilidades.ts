@@ -1,4 +1,4 @@
-import type { CartItem } from "../../../types";
+import type { CartItem } from "../tipos";
 
 function cartItemsMatch(left: CartItem, right: CartItem): boolean {
   const getKey = (item: CartItem) => {
