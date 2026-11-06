@@ -1,10 +1,10 @@
 import React, { useState, useRef } from "react";
 import { Lock, UserPlus, LogIn, X, AlertCircle, Loader2, Sparkles, CheckCircle2 } from "lucide-react";
-import { User } from "../../../types";
-import { apiFetch } from "../../../config";
+import { User } from "../tipos";
+import { apiFetch } from "../config";
 import { motion, AnimatePresence } from "motion/react";
-import { sessionState } from "../../../utils/sessionState";
-import { navigateTo } from "../../../router";
+import { sesionWeb } from "../sesion";
+import { navigateTo } from "../enrutador";
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -80,10 +80,10 @@ export function AuthModal({
 
       const data = await response.json();
       if (response.ok && data.success) {
-        sessionState.setAuthenticated(true);
-        sessionState.setEmail(data.user?.email || regEmail.trim().toLowerCase());
+        sesionWeb.setAuthenticated(true);
+        sesionWeb.setEmail(data.user?.email || regEmail.trim().toLowerCase());
         
-        sessionState.setUser(data.user);
+        sesionWeb.setUser(data.user);
 
         setSuccessMessage(`¡Cuenta creada con éxito! Bienvenido, ${data.user?.name || regName.trim()}`);
         setTimeout(() => {
@@ -128,10 +128,10 @@ export function AuthModal({
 
       const data = await response.json();
       if (response.ok && data.success) {
-        sessionState.setAuthenticated(true);
-        sessionState.setEmail(data.user.name || data.user.email || "");
+        sesionWeb.setAuthenticated(true);
+        sesionWeb.setEmail(data.user.name || data.user.email || "");
         
-        sessionState.setUser(data.user);
+        sesionWeb.setUser(data.user);
 
         setSuccessMessage(`¡Bienvenido de vuelta, ${data.user.name}!`);
         setTimeout(() => {
