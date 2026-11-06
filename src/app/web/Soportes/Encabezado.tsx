@@ -1,5 +1,5 @@
 import { X, ArrowLeft, Headphones } from "lucide-react";
-import { SUPPORT_EMAIL } from "../../../utils/supportChat";
+import { SUPPORT_EMAIL } from "./utilidades";
 
 export default function EncabezadoSoporte({ props }: { props: any }) {
   const { isAdmin, activeChatUser, onSelectChatUser, onClose } = props;
