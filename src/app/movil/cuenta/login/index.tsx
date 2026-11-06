@@ -1,5 +1,5 @@
 import { CartItem, User } from "../../tipos";
-import coverImage from "../../../../../assets/portada-elegan.jpg";
+const coverImage = "/portada-elegan.jpg";
 import { usePerfilLogin } from "./usePerfilLogin";
 import LoginHeader from "./LoginHeader";
 import LoginForm from "./LoginForm";

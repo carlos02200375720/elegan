@@ -9,7 +9,7 @@ Add-Type -AssemblyName System.Drawing
 $source = [System.Drawing.Bitmap]::FromFile($SourceIcon)
 if ($source.Width -ne $source.Height) {
     $source.Dispose()
-    throw 'assets/icon.png debe ser cuadrado para generar los iconos Android.'
+    throw 'public/icon.png debe ser cuadrado para generar los iconos Android.'
 }
 
 $densities = @(
@@ -98,4 +98,4 @@ try {
     $source.Dispose()
 }
 
-Write-Output 'Iconos mipmap generados desde assets/icon.png, conservando su fondo original.'
+Write-Output 'Iconos mipmap generados desde public/icon.png, conservando su fondo original.'

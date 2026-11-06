@@ -3,14 +3,14 @@ const path = require('path');
 const { spawnSync } = require('child_process');
 
 const rootDir = path.resolve(__dirname, '..');
-const sourceIcon = path.join(rootDir, 'assets', 'icon.png');
+const sourceIcon = path.join(rootDir, 'public', 'icon.png');
 
 if (!fs.existsSync(sourceIcon)) {
-  console.error('ERROR: assets/icon.png no existe en ' + sourceIcon);
+  console.error('ERROR: public/icon.png no existe en ' + sourceIcon);
   process.exit(1);
 }
 
-console.log('=== Sincronizando ícono exclusivo de src/app/movil desde assets/icon.png ===');
+console.log('=== Sincronizando ícono exclusivo de src/app/movil desde public/icon.png ===');
 
 const movilResDir = path.join(rootDir, 'src', 'app', 'movil', 'res');
 const androidMainRes = path.join(rootDir, 'android', 'app', 'src', 'main', 'res');
@@ -51,7 +51,7 @@ function copyDirRecursive(srcDir, destDir) {
 if (fs.existsSync(movilResDir) && fs.existsSync(androidMainRes)) {
   console.log('Sobrescribiendo recursos nativos en android/app/src/main/res...');
   copyDirRecursive(movilResDir, androidMainRes);
-  console.log('✓ Se han reemplazado los íconos por defecto de Capacitor en android/app/src/main/res con assets/icon.png');
+  console.log('✓ Se han reemplazado los íconos por defecto de Capacitor en android/app/src/main/res con public/icon.png');
 }
 
 // 3. Si existe AndroidManifest en movil y en android/app, sincronizarlo

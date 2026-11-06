@@ -325,7 +325,7 @@ async function startServer() {
     res.sendFile(manifestPath);
   });
 
-  // Serve app icon assets directly (supporting assets/icon.png for mobile installation)
+  // Serve app icon assets directly (serving public/icon.png for mobile installation)
   app.get(
     [
       "/icon.png",
@@ -338,7 +338,7 @@ async function startServer() {
     (req, res) => {
       const requestedFile = path.basename(req.path);
       const publicPath = path.join(process.cwd(), "public", requestedFile);
-      const assetsPath = path.join(process.cwd(), "assets", "icon.png");
+      const assetsPath = path.join(process.cwd(), "public", "icon.png");
 
       const finalPath = fs.existsSync(publicPath)
         ? publicPath
@@ -357,7 +357,7 @@ async function startServer() {
   );
 
   app.get(["/icon.png", "/assets/icon.png", "/favicon.ico", "/favicon.svg", "/apple-touch-icon.png", "/icon-192.png", "/icon-512.png", "/app-icon.png", "/app-icon.jpg"], (req, res) => {
-    const iconPath = path.join(process.cwd(), "assets", "icon.png");
+    const iconPath = path.join(process.cwd(), "public", "icon.png");
     if (fs.existsSync(iconPath)) {
       res.setHeader("Content-Type", "image/png");
       res.setHeader("Cache-Control", "public, max-age=86400");
