@@ -1,6 +1,6 @@
 import React from "react";
 import { ArrowRight, Bookmark, ShoppingBag } from "lucide-react";
-import { CartItem } from "../../../../types";
+import { CartItem } from "../../tipos";
 
 export interface CabeceraProductoProps {
   onBackToCatalog: () => void;
