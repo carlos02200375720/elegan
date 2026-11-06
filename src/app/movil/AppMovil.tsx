@@ -4,12 +4,12 @@ import { StatusBar, Style } from "@capacitor/status-bar";
 import { SplashScreen } from "@capacitor/splash-screen";
 import { User, Reel, Product, CartItem, Order, ChatMessage, NavigationTab } from "./tipos";
 import { AndroidApp } from "./index";
-import { AuthModal } from "../web/components/AuthModal";
+import { AuthModal } from "./componente/AuthModal";
 import { apiFetch } from "./config";
 import { sesionMovil } from "./sesion";
 import { getLocalGuestToken, getOrCreateGuestToken } from "./guestToken";
-import { trackDailyVisitor } from "../../utils/analyticsTracker";
-import { INITIAL_USERS, INITIAL_PRODUCTS, INITIAL_REELS } from "../../initialData";
+import { trackDailyVisitor } from "./analitica";
+import { INITIAL_USERS, INITIAL_PRODUCTS, INITIAL_REELS } from "./datosIniciales";
 import { parseRoute, navigateTo, getProfilePath, getProductPath } from "./enrutador";
 
 const deduplicateById = <T extends { id?: string; _id?: string }>(items: T[]): T[] => {
