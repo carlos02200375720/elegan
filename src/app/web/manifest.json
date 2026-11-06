@@ -20,9 +20,9 @@
   ],
   "icons": [
     {
-      "src": "/elegan-icon.svg",
-      "type": "image/svg+xml",
-      "sizes": "any",
+      "src": "/elegan-icon.png",
+      "type": "image/png",
+      "sizes": "512x512",
       "purpose": "any"
     }
   ]
