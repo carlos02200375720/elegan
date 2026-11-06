@@ -3,7 +3,7 @@ import type { AndroidAppProps } from "./tipos";
 export type { AndroidAppProps } from "./tipos";
 import { cartItemsMatch } from "./utilidades";
 import { isGuestUser } from "../tipos";
-import type { CartItem } from "../../../types";
+import type { CartItem } from "../tipos";
 import InicioVista from "./vistas/InicioVista";
 import BarraNavegacion from "../componente/barranavegacion";
 import TiendaVista from "./vistas/TiendaVista";
