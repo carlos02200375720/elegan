@@ -189,10 +189,7 @@ export function crearGestoresProducto(scope: any) {
   const handleRemoveShippingOption = (index: number) => {
     setProdShippingOptions((prev) => prev.filter((_, idx) => idx !== index));
   };
-
-  // Form submit handler
-  const handleSubmit = (e: React.FormEvent) => procesarPublicacion(e, publishScope);
-
+ 
 
   return { handleAddColorVariant, handleAssignColorImage, handleRemoveVariantOption, handleAddVariant, handleRemoveVariant, SHIPPING_PRESETS, handleSelectShippingPreset, handleAddShippingOption, handleUpdateShippingOption, handleRemoveShippingOption };
 }
