@@ -26,9 +26,9 @@ import {
   memoryUsers,
 } from "../services/state";
 
-import { findAccount, getUsers, isConfiguredSuperadmin } from "./userAuthController";
+// Auth, session resolution, and account access handlers.
+// Shared account lookup, session resolution, and permission helpers.
 
-// User profile, saved content, and administration handlers.
 import { getUsers, isConfiguredSuperadmin } from "./userAccessController";
 
 // Saved content and user publication request handlers.
