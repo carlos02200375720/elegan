@@ -1,9 +1,9 @@
 import React from "react";
-import { User, Reel, Product, Order } from "../../../../types";
+import { User, Reel, Product, Order } from "../../tipos";
 
 
-import { isSuperAdmin } from "../../../../superAdmin";
-import { navigateTo, getProfilePath, getProfileConfigPath } from "../../../../router";
+import { isSuperAdmin } from "../../superAdmin";
+import { navigateTo, getProfilePath, getProfileConfigPath } from "../../enrutador";
 import usePerfilData from "./useDatosPerfil";
 import usePerfilEffects from "./useEfectosPerfil";
 import ModalesPerfil from "./ModalesPerfil";
