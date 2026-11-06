@@ -1,6 +1,6 @@
 /**
- * Public compatibility layer for user-related HTTP handlers.
- * Implementations live in focused controllers to keep responsibilities isolated.
+ * Stable public interface for user-related backend handlers.
+ * Keep existing route and controller imports pointed at this file.
  */
 export {
   getUsers,
@@ -8,6 +8,9 @@ export {
   isConfiguredSuperadmin,
   hasSellerPermission,
   handleGuestSession,
+} from "./userAccessController";
+
+export {
   registerUser,
   switchUser,
   logoutUser,
@@ -17,10 +20,13 @@ export {
 export {
   getAllUsers,
   getUserById,
-  getUserPublications,
-  toggleSaveReel,
-  toggleFollow,
   updateCurrentUser,
   updateUserSellerPermission,
   adminDeleteUser,
 } from "./userProfileController";
+
+export {
+  getUserPublications,
+  toggleSaveReel,
+  toggleFollow,
+} from "./userContentController";
