@@ -26,6 +26,7 @@ export default function ModalActualizarPedido({
   handleSaveLocalOrderUpdate, onClose, openReceiptModal,
 }: Props) {
   return (
+    <>
       {/* Fallback Modal for Updating Order Tracking & Status when used standalone */}
       <AnimatePresence>
         {order && (
@@ -169,6 +170,6 @@ export default function ModalActualizarPedido({
           </div>
         )}
       </AnimatePresence>
-
+    </>
   );
 }
