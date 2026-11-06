@@ -1,7 +1,7 @@
 import React from "react";
 import { ShieldCheck } from "lucide-react";
 import type { AdminClient } from "./TiposSocialPanel";
-import type { User } from "../../../types";
+import type { User } from "../tipos";
 import { SUPPORT_EMAIL, SUPPORT_USER_ID } from "../../../utils/supportChat";
 import EncabezadoSocialPanel from "./EncabezadoSocialPanel";
 
