@@ -1,4 +1,4 @@
-import { User, Product } from "../../../types";
+import { User, Product } from "../tipos";
 
 export interface PerfilProps {
   currentUser: User;
