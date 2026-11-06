@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import type { NavigationTab } from "../tipos";
-import { parseRoute } from "../enrutador";
+import { navigateTo, parseRoute } from "../enrutador";
 
 function obtenerPestanaInicial(): NavigationTab {
   if (typeof window === "undefined") return "inicio";
@@ -13,5 +13,16 @@ function obtenerPestanaInicial(): NavigationTab {
 
 export function useNavegacionMovil() {
   const [pestanaActiva, establecerPestanaActiva] = useState<NavigationTab>(obtenerPestanaInicial);
-  return { pestanaActiva, establecerPestanaActiva };
+
+  const navegarA = useCallback((
+    pestana: NavigationTab,
+    ruta: string,
+    antesDeNavegar?: () => void
+  ) => {
+    antesDeNavegar?.();
+    establecerPestanaActiva(pestana);
+    navigateTo(ruta);
+  }, []);
+
+  return { pestanaActiva, establecerPestanaActiva, navegarA };
 }
