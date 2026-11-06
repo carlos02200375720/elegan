@@ -1,7 +1,7 @@
 import React from "react";
 import { MessageSquare, Play, ShoppingBag, User as UserIcon } from "lucide-react";
 import { User, NavigationTab } from "../tipos";
-import { getProfilePath, navigateTo } from "../../../router";
+import { getProfilePath, navigateTo } from "../enrutador";
 
 interface BarraNavegacionProps {
   isVisible: boolean;
