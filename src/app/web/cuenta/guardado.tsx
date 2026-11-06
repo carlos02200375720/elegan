@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Bookmark, ShoppingBag, Eye, Heart, Play } from "lucide-react";
 import { motion } from "motion/react";
-import { Product, Reel } from "../../../types";
+import { Product, Reel } from "../tipos";
 import { getMediaUrl } from "../../../config";
 
 export function PublicationCover({ reel }: { reel: Reel }) {
