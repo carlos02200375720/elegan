@@ -69,7 +69,7 @@ export default function AndroidApp({
   socket,
 }: AndroidAppProps) {
   const currentRoute = useCurrentRoute();
-  const hasActiveAccount = (isLoggedIn ?? sessionState.isAuthenticated()) && !isGuestUser(currentUser);
+  const hasActiveAccount = (isLoggedIn ?? sesionMovil.isAuthenticated()) && !isGuestUser(currentUser);
   const requiresLogin = !hasActiveAccount;
   const isLoginPage = currentRoute.type === "login";
   const isHomeActive = activeTab === 'inicio' || activeTab === 'reels';
@@ -323,9 +323,9 @@ export default function AndroidApp({
                   navigateTo('/inicio');
                 }}
                 onSuccess={(user, restoredCart = []) => {
-                  sessionState.setUser(user);
-                  sessionState.setAuthenticated(true);
-                  sessionState.setEmail(user.email || "");
+                  sesionMovil.setUser(user);
+                  sesionMovil.setAuthenticated(true);
+                  sesionMovil.setEmail(user.email || "");
                   setCurrentUser(user);
                   setIsLoggedIn(true);
                   setUsers((previous) => {
@@ -395,12 +395,12 @@ export default function AndroidApp({
                     onSelectReel={handleReelLink}
                     onProfileUpdate={(updatedUser) => {
                       setCurrentUser(updatedUser);
-                      sessionState.setUser(updatedUser);
+                      sesionMovil.setUser(updatedUser);
                       setUsers(prev => prev.map(u => u.id === updatedUser.id ? updatedUser : u));
                       if (updatedUser.username && updatedUser.username !== "invitado" && !updatedUser.isGuest) {
                         setIsLoggedIn(true);
-                        sessionState.setAuthenticated(true);
-                        sessionState.setEmail(updatedUser.email || "");
+                        sesionMovil.setAuthenticated(true);
+                        sesionMovil.setEmail(updatedUser.email || "");
                         setSelectedCreatorProfileId(null);
                         setActiveTab('profile');
                         navigateTo(getProfilePath(updatedUser));
