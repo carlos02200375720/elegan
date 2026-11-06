@@ -3,7 +3,7 @@ import { User, Reel, Product, CartItem, Order, ChatMessage, NavigationTab, isGue
 import WebSidebar from "./WebSidebar";
 import Tienda from "./tienda";
 import SocialPanel from "./SocialPanel";
-import Perfil from "./perfil";
+import Perfil from "./cuenta";
 import AdminView from "../admin/resumen/index";
 import { motion, AnimatePresence } from "motion/react";
 import { sessionState } from "../../utils/sessionState";

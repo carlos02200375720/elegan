@@ -16,10 +16,10 @@ export {
   Gracia,
   GraciaTiendaView,
 } from "./tienda";
-export { default as Perfil, default as ProfileView } from "./perfil";
-export { default as Guardado, default as GuardadoPerfilView, PublicationCover } from "./perfil/guardado";
-export { default as Compra, default as CompraPerfilView } from "./perfil/compra";
-export { default as Config, default as ConfigPerfilView } from "./perfil/config";
+export { default as Perfil, default as ProfileView } from "./cuenta";
+export { default as Guardado, default as GuardadoPerfilView, PublicationCover } from "./cuenta/guardado";
+export { default as Compra, default as CompraPerfilView } from "./cuenta/compra";
+export { default as Config, default as ConfigPerfilView } from "./cuenta/config";
 export { default as LoginView } from "./LoginView";
 export { default as SocialPanel } from "./SocialPanel";
 export { default as SplashScreen } from "./SplashScreen";
