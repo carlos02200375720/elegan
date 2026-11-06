@@ -1,7 +1,7 @@
 import React, { forwardRef, useImperativeHandle, useRef, useState, useEffect, useCallback } from "react";
 import { Play, Pause } from "lucide-react";
 import Hls from "hls.js";
-import { getMediaUrl } from "../../../config";
+import { getMediaUrl } from "../config";
 
 export interface MovilVideoPlayHandle {
   getVideoElement: () => HTMLVideoElement | null;
