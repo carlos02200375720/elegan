@@ -12,8 +12,8 @@ export {
   default as ProductoId,
   default as ProductoIdTiendaView,
   getManualShippingOptions,
-} from "./productoid";
-export * from "./productoid";
+} from "./producto/index";
+export * from "./producto/index";
 export { default as Carrito, default as CarritoTiendaView } from "./carrito";
 export * from "./carrito";
 export {
