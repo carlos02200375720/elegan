@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from "react";
-import { Product, CartItem, Order } from "../../../../types";
+import { Product, CartItem, Order } from "../../tipos";
 import { navigateTo, getProductPath, parseRoute } from "../../enrutador";
 import ProductoIdTiendaView from "../producto";
 import CarritoTiendaView from "../carrito";
