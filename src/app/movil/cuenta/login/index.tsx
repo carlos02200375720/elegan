@@ -1,4 +1,4 @@
-import { CartItem, User } from "../../../../types";
+import { CartItem, User } from "../../tipos";
 import coverImage from "../../../../../assets/portada-elegan.jpg";
 import { usePerfilLogin } from "./usePerfilLogin";
 import LoginHeader from "./LoginHeader";
