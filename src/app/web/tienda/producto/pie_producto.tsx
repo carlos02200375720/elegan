@@ -3,7 +3,8 @@ import type { Product } from "../../../../types";
 
 export function PieProducto({ selectedProduct }: { selectedProduct: Product }) {
   return (
-    {/* Product Description Section */}
+    <>
+      {/* Product Description Section */}
       {selectedProduct.description && (
         <div
           className="mt-6 md:mt-8 bg-white rounded-2xl border-0 p-5 sm:p-7 mx-0 md:mx-6"
@@ -38,5 +39,6 @@ export function PieProducto({ selectedProduct }: { selectedProduct: Product }) {
           </div>
         </div>
       </div>
+    </>
   );
 }
