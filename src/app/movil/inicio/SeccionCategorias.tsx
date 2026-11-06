@@ -1,6 +1,6 @@
 import React from "react";
 
-import { getMediaUrl } from "../../../config";
+import { getMediaUrl } from "../config";
 
 interface SeccionCategoriasProps {
   categories: string[];
