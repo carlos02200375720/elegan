@@ -54,7 +54,7 @@ export const getMediaUrl = (path: string | undefined | null): string => {
     return trimmed;
   }
   const cleanPath = trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
-  if (isNativeMobileWrapper()) {
+  if (isNativeMobileWrapper() || isExternalStaticHost()) {
     const trimmedBackend = (BACKEND_URL || CLOUD_RUN_BACKEND_URL).replace(/\/$/, "");
     return `${trimmedBackend}${cleanPath}`;
   }
@@ -63,7 +63,7 @@ export const getMediaUrl = (path: string | undefined | null): string => {
 
 export const getApiUrl = (path: string): string => {
   const cleanPath = path.startsWith("/") ? path : `/${path}`;
-  if (typeof window !== "undefined" && window.location && window.location.protocol.startsWith("http") && !isNativeMobileWrapper()) {
+  if (typeof window !== "undefined" && window.location && window.location.protocol.startsWith("http") && !isNativeMobileWrapper() && !isExternalStaticHost()) {
     return cleanPath;
   }
   const trimmedBackend = (BACKEND_URL || CLOUD_RUN_BACKEND_URL).replace(/\/$/, "");
