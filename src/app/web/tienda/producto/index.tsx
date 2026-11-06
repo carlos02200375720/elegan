@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { motion } from "motion/react";
-import type { Product } from "../../../../types";
+import type { Product } from "../../tipos";
 import { apiFetch } from "../../../../config";
 import type { ProductoIdTiendaViewProps, GrupoVariante, ShippingOptionItem } from "./tipos";
 import { getManualShippingOptions } from "./envios";
