@@ -1,4 +1,4 @@
-import { Product, Reel } from "../../../types";
+import { Product, Reel } from "../../tipos";
 import { useGuardadoPerfil } from "./useGuardadoPerfil";
 import FiltrosGuardado from "./FiltrosGuardado";
 import TarjetaProductoGuardado from "./TarjetaProductoGuardado";
