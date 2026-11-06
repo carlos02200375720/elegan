@@ -1,5 +1,5 @@
 import type { MouseEvent } from "react";
-import type { Product, CartItem } from "../../../../types";
+import type { Product, CartItem } from "../../tipos";
 
 export interface CarritoTiendaViewProps {
   showCartDrawer: boolean;
