@@ -1,4 +1,4 @@
-import { CartItem } from "../../../../types";
+import { CartItem } from "../../tipos";
 
 export interface ContactInfo {
   fullName: string;
