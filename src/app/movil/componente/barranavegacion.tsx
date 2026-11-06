@@ -1,6 +1,6 @@
 import React from "react";
 import { MessageSquare, Play, ShoppingBag, User as UserIcon } from "lucide-react";
-import { User, NavigationTab } from "../../../types";
+import { User, NavigationTab } from "../tipos";
 import { getProfilePath, navigateTo } from "../../../router";
 
 interface BarraNavegacionProps {
