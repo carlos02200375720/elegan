@@ -1,4 +1,4 @@
-import { sessionState } from "../../utils/sessionState";
+import { sesionWeb } from "./sesion";
 
 export const CLOUD_RUN_BACKEND_URL = "https://elegan-backend-587849039182.us-east1.run.app";
 
