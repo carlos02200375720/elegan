@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { User } from "../tipos";
 import { apiFetch } from "../config";
-import { isSuperAdmin } from "../../../superAdmin";
+import { isSuperAdmin } from "../superAdmin";
 import { EstadoUsuarios, UsuarioEliminar } from "./tipos";
 
 interface Props {
