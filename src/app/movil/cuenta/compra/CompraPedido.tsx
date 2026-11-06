@@ -1,6 +1,6 @@
 import { ChevronDown, ChevronUp, MapPin, Package, ShieldCheck, ShoppingBag, Truck } from "lucide-react";
 import { Order } from "../../../../types";
-import { formatPrice } from "../../../../utils/currency";
+import { formatPrice } from "../../utilidades/moneda";
 import { getStatusBadge } from "./EstadoPedido";
 
 interface CompraPedidoProps {
