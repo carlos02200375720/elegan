@@ -1,5 +1,5 @@
 import React from "react";
-import { formatPrice } from "../../../../utils/currency";
+import { formatPrice } from "../../utilidades/moneda";
 
 export interface ResumenCarritoProps {
   selectedCartItemsCount: number;
