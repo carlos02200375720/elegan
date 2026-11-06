@@ -1,7 +1,7 @@
 import React from "react";
 import { Truck, X, Eye, Loader2, CheckCircle2 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import { Order } from "../../../types";
+import { Order } from "../tipos";
 
 interface Props {
   order: Order | null;

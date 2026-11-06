@@ -1,4 +1,4 @@
-import { User, Reel, Product, Order } from "../../../types";
+import { User, Reel, Product, Order } from "../tipos";
 export function calcularReelsDestacados(reels: Reel[]) {
 
     return [...reels]

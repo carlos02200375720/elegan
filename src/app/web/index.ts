@@ -23,7 +23,6 @@ export { default as Config, default as ConfigPerfilView } from "./cuenta/config"
 export { default as LoginView } from "./Login/principal";
 export { default as SocialPanel } from "./Soportes/principal";
 export { default as SplashScreen } from "./SplashScreen";
-export { default as AdminView, default as Resumen } from "../admin/resumen/index";
 export * from "./api";
 export * from "./components/AuthModal";
 export * from "./components/ErrorBoundary";

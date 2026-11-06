@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
-import { Reel } from "../../../types";
-import { apiFetch } from "../../../config";
+import { Reel } from "../tipos";
+import { apiFetch } from "../config";
 import { EstadoReels, ReelEliminar } from "./tipos";
 
 interface Props {

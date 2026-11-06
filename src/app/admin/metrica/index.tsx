@@ -6,7 +6,7 @@ import {
   CreditCard,
   CheckCircle2,
 } from "lucide-react";
-import { User, Reel, Product, Order } from "../../../types";
+import { User, Reel, Product, Order } from "../tipos";
 import {
   fetchFunnelAnalytics,
   FunnelAnalyticsData,

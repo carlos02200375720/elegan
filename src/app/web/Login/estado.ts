@@ -26,7 +26,13 @@ export function useEstadoAcceso({
   const [contraseñaRegistro, setContraseñaRegistro] = useState("");
   const [errorRegistro, setErrorRegistro] = useState("");
   const [cargandoRegistro, setCargandoRegistro] = useState(false);
-  const registroEnCurso = useRef(false);\n\n  const cambiarPestaña = (nuevaPestaña: PestañaAcceso) => {\n    setPestaña(nuevaPestaña);\n    setErrorAcceso("");\n    setErrorRegistro("");\n  };
+  const registroEnCurso = useRef(false);
+
+  const cambiarPestaña = (nuevaPestaña: PestañaAcceso) => {
+    setPestaña(nuevaPestaña);
+    setErrorAcceso("");
+    setErrorRegistro("");
+  };
 
   useEffect(() => {
     onRefreshUsers();

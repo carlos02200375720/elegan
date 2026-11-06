@@ -1,5 +1,5 @@
 import React from "react";
-import { Reel } from "../../../types";
+import { Reel } from "../tipos";
 
 export interface ReelsAdminProps {
   reels: Reel[];

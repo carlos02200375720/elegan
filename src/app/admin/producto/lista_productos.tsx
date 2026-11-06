@@ -1,6 +1,6 @@
 import React from "react";
 import { Search, ExternalLink, Trash2 } from "lucide-react";
-import { Product } from "../../../types";
+import { Product } from "../tipos";
 
 interface Props {
   filteredProducts: Product[];

@@ -4,6 +4,7 @@ import { StatusBar, Style } from "@capacitor/status-bar";
 import { User, Reel, Product, CartItem, Order, ChatMessage, LiveSession, NavigationTab, isGuestUser } from "./types";
 import { WebApp, AuthModal } from "./app/web";
 import { AndroidApp } from "./app/movil";
+import { AdminApp } from "./app/admin";
 import { SplashScreen } from "@capacitor/splash-screen";
 import { getApiUrl, getWebSocketUrl, BACKEND_URL, apiFetch } from "./config";
 import { isSuperAdmin } from "./superAdmin";
@@ -2092,8 +2093,41 @@ export default function App() {
         </aside>
       )}
 
-      {/* Main Target Routing: Android vs Web */}
-      {activePlatform === "android" ? (
+      {/* Main Target Routing: Admin vs Android vs Web */}
+      {activeTab === "admin" && isSuperAdmin(currentUser) ? (
+        <div className="flex flex-1 w-full min-h-screen bg-slate-50" id="app-admin-container">
+          <AdminApp
+            currentUser={currentUser}
+            users={users}
+            reels={reels}
+            products={products}
+            onRefreshAll={refreshAllData}
+            onCreatorClick={handleCreatorProfileLink}
+            onProductClick={handleProductDetailsLink}
+            onReelClick={handleReelLink}
+            onNavigateToTab={(tab) => {
+              setSelectedCreatorProfileId(null);
+              setActiveTab(tab);
+              if (tab === "profile") {
+                navigateTo(getProfilePath(currentUser));
+              } else if (tab === "inicio" || tab === "reels") {
+                navigateTo("/inicio");
+              } else if (tab === "shop") {
+                navigateTo("/tienda/catalogo");
+              } else if (tab === "messages") {
+                navigateTo("/messages");
+              } else if (tab === "admin") {
+                navigateTo("/admin/resumen");
+              }
+            }}
+            setUsers={setUsers}
+            setReels={setReels}
+            setProducts={setProducts}
+            activePlatform={activePlatform}
+            onSwitchPlatform={handleSwitchPlatform}
+          />
+        </div>
+      ) : activePlatform === "android" ? (
         <div className="flex flex-1 w-full min-h-screen justify-center bg-slate-950" id="app-android-container">
           <div className="w-full sm:max-w-[430px] min-h-screen flex flex-col relative sm:border-x sm:border-slate-800 sm:shadow-2xl bg-white">
             <AndroidApp

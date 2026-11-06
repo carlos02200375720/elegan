@@ -1,5 +1,5 @@
 import React from "react";
-import { ProductVariantItem, ProductShippingOption } from "../../../types";
+import { ProductVariantItem, ProductShippingOption } from "../tipos";
 
 export async function procesarPublicacion(e: React.FormEvent, scope: any) {
   const { currentUser, onSuccess, publishType, description, prodDescription, setErrorMessage, setSuccessMessage, setIsLoading, singleVideoFile, validateFileExtension, uploadFileToGCS, videoCoverFile, generateVideoThumbnail, apiFetch, taggedProductId, singleImageFile, carouselImageFiles, uploadFilesSequentially, prodName, prodPrice, prodQuantity, newColorName, prodVariants, colorImageFiles, newColorFile, productPhotoFiles, productVideoFile, prodVariantList, prodShippingOptions, newShipLabel, newShipOrigin, newShipPrice, newShipTime, prodShippingCapital, prodShippingProvince, prodFreeShipping } = scope;

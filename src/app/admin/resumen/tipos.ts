@@ -1,5 +1,5 @@
 import React from "react";
-import { User, Reel, Product, NavigationTab } from "../../../types";
+import { User, Reel, Product, NavigationTab } from "../tipos";
 export interface AdminViewProps {
  currentUser: User; users: User[]; reels: Reel[]; products: Product[];
  onRefreshAll: () => void; onCreatorClick: (creatorId: string) => void;

@@ -10,7 +10,6 @@ import TiendaVista from "./vistas/TiendaVista";
 import MensajesVista from "./vistas/MensajesVista";
 import PerfilVista from "./vistas/PerfilVista";
 import PerfilLogin from "../cuenta/login";
-import AdministracionVista from "./vistas/AdministracionVista";
 import { isSuperAdmin } from "../../../superAdmin";
 import { motion, AnimatePresence } from "motion/react";
 import { sessionState } from "../../../utils/sessionState";
@@ -439,42 +438,7 @@ export default function AndroidApp({
               />
             )}
 
-            {activeTab === 'admin' && isSuperAdmin(currentUser) && (
-              <div
-                className="w-full pb-16"
-                id="android-admin-container"
-                style={{ paddingBottom: `${navBarHeight + 12}px` }}
-              >
-                <AdministracionVista
-                  currentUser={currentUser}
-                  users={users}
-                  reels={reels}
-                  products={products}
-                  onRefreshAll={refreshAllData}
-                  onCreatorClick={handleCreatorProfileLink}
-                  onProductClick={handleProductDetailsLink}
-                  onReelClick={handleReelLink}
-                  onNavigateToTab={(tab) => {
-                    setSelectedCreatorProfileId(null);
-                    setActiveTab(tab);
-                    if (tab === 'profile') {
-                      navigateTo(getProfilePath(currentUser));
-                    } else if (tab === 'inicio' || tab === 'reels') {
-                      navigateTo('/inicio');
-                    } else if (tab === 'shop') {
-                      navigateTo('/tienda/catalogo');
-                    } else if (tab === 'messages') {
-                      navigateTo('/messages');
-                    } else if (tab === 'admin') {
-                      navigateTo('/admin/resumen');
-                    }
-                  }}
-                  setUsers={setUsers}
-                  setReels={setReels}
-                  setProducts={setProducts}
-                />
-              </div>
-            )}
+
           </motion.div>
         </AnimatePresence>
       </main>

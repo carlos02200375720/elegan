@@ -1,4 +1,4 @@
-import { ProductShippingOption } from "../../../types";
+import { ProductShippingOption } from "../tipos";
 import { Truck, Globe, Plus, Clock, Trash2, CheckCircle2 } from "lucide-react";
 
 type Props = { scope: any };

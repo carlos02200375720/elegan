@@ -4,7 +4,6 @@ import WebSidebar from "./WebSidebar";
 import Tienda from "./tienda";
 import SocialPanel from "./Soportes/principal";
 import Perfil from "./cuenta";
-import AdminView from "../admin/resumen/index";
 import { motion, AnimatePresence } from "motion/react";
 import { sessionState } from "../../utils/sessionState";
 import { navigateTo, parseRoute, getProfilePath, getProfileSavedPath, getProfileCompraPath, getProfileConfigPath, getProfileProductoPath, getProfileVentaPath, getProfilePublicacionesPath, getProfilePublicarPath, getProfileRendimientoPath, getProductPath, getThankYouPath } from "../../router";
@@ -349,43 +348,7 @@ export default function WebApp({
               />
             )}
 
-            {activeTab === 'admin' && isSuperAdmin(currentUser) && (
-              <div className="w-full pb-10" id="web-admin-container">
-                <AdminView
-                  currentUser={currentUser}
-                  users={users}
-                  reels={reels}
-                  products={products}
-                  onRefreshAll={refreshAllData}
-                  onCreatorClick={(creatorId) => {
-                    handleCreatorProfileLink(creatorId);
-                  }}
-                  onProductClick={handleProductDetailsLink}
-                  onReelClick={handleReelLink}
-                  onNavigateToTab={(tab) => {
-                    setSelectedCreatorProfileId(null);
-                    setActiveTab(tab);
-                    if (tab === 'profile') {
-                      navigateTo(getProfilePath(currentUser));
-                    } else if (tab === 'inicio' || tab === 'reels') {
-                      setActiveTab('shop');
-                      navigateTo('/tienda/catalogo');
-                    } else if (tab === 'shop') {
-                      navigateTo('/tienda/catalogo');
-                    } else if (tab === 'messages') {
-                      navigateTo('/messages');
-                    } else if (tab === 'admin') {
-                      navigateTo('/admin/resumen');
-                    }
-                  }}
-                  setUsers={setUsers}
-                  setReels={setReels}
-                  setProducts={setProducts}
-                  activePlatform={activePlatform}
-                  onSwitchPlatform={onSwitchPlatform}
-                />
-              </div>
-            )}
+
           </motion.div>
         </AnimatePresence>
       </main>

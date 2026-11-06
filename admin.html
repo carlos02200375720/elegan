@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <title>Elegan - Panel Administrativo</title>
+    <meta name="description" content="Panel de administración autónomo para métricas, productos, usuarios, pedidos y sistema de Elegan." />
+    <link rel="icon" type="image/svg+xml" href="/elegan-icon.svg" />
+    <meta name="theme-color" content="#0f172a" />
+    <style>
+      *, *::before, *::after, html, body, #root, div, main, section, nav, aside, ul, ol, textarea {
+        scrollbar-width: none !important;
+        -ms-overflow-style: none !important;
+      }
+      *::-webkit-scrollbar, ::-webkit-scrollbar {
+        display: none !important;
+        width: 0px !important;
+        height: 0px !important;
+      }
+      body {
+        margin: 0;
+        padding: 0;
+        background-color: #0f172a;
+        color: #f8fafc;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        overflow-x: hidden;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/app/admin/main.tsx"></script>
+  </body>
+</html>

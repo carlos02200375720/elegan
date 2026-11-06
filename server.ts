@@ -412,11 +412,16 @@ async function startServer() {
     // Rewrite SPA deep-link routes that may contain dots or extensions (e.g. /inicio/https://storage.googleapis.com/.../master.m3u8)
     // so Vite's htmlFallbackMiddleware serves index.html instead of treating them as missing static files
     app.use((req, res, next) => {
-      if (
-        req.method === "GET" &&
-        /^\/(inicio|reel|reels|perfil|tienda|catalogo|carrito|checkout|gracia|gracias|store|product|admin|mensajes|crear|app|movil)(\/|$)/i.test(req.path)
-      ) {
-        req.url = "/index.html";
+      if (req.method === "GET") {
+        if (/^\/admin(\/|$)/i.test(req.path)) {
+          req.url = "/admin.html";
+        } else if (/^\/(movil|app\/movil)(\/|$)/i.test(req.path)) {
+          req.url = "/movil.html";
+        } else if (
+          /^\/(inicio|reel|reels|perfil|tienda|catalogo|carrito|checkout|gracia|gracias|store|product|mensajes|crear|app)(\/|$)/i.test(req.path)
+        ) {
+          req.url = "/index.html";
+        }
       }
       next();
     });
@@ -425,7 +430,13 @@ async function startServer() {
     const distPath = path.join(process.cwd(), "dist");
     app.use(express.static(distPath));
     app.get("*", (req, res) => {
-      res.sendFile(path.join(distPath, "index.html"));
+      if (/^\/admin(\/|$)/i.test(req.path)) {
+        res.sendFile(path.join(distPath, "admin.html"));
+      } else if (/^\/(movil|app\/movil)(\/|$)/i.test(req.path)) {
+        res.sendFile(path.join(distPath, "movil.html"));
+      } else {
+        res.sendFile(path.join(distPath, "index.html"));
+      }
     });
   }
 

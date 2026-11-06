@@ -1,9 +1,8 @@
 import React from "react";
 import {
   Edit3, Truck, Loader2, CheckCircle2, Building2, CreditCard,
-  Eye, AlertTriangle, Download, ShieldCheck, FileCheck,
 } from "lucide-react";
-import { Order } from "../../../types";
+import { Order } from "../tipos";
 
 interface Props {
   filteredOrders: Order[];

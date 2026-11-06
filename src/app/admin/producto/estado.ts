@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
-import { Product } from "../../../types";
-import { apiFetch } from "../../../config";
+import { Product } from "../tipos";
+import { apiFetch } from "../config";
 
 interface Mensaje {
   type: "success" | "error" | "info";

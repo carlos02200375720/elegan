@@ -1,5 +1,5 @@
 import { FunnelAnalyticsData, getLocalFunnelCounts } from "../../../utils/analyticsTracker";
-import { Order } from "../../../types";
+import { Order, Product } from "../tipos";
 export function calcularDatosEmbudo(funnelApiData: FunnelAnalyticsData | null, orders: Order[]) {
 
     const ONE_DAY = 24 * 60 * 60 * 1000;
@@ -89,7 +89,6 @@ export function calcularDatosEmbudo(funnelApiData: FunnelAnalyticsData | null, o
     };
 }
 import { ShoppingBag, Eye, ShoppingCart, CreditCard, CheckCircle2 } from "lucide-react";
-import { Product } from "../../../types";
 export function crearCapasEmbudo(activeFunnelMetrics: any, products: Product[]) {
 
     const rawC1 = activeFunnelMetrics.capa1_tienda;

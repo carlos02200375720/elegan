@@ -1,6 +1,6 @@
 import React from "react";
 import { Eye, Heart, Trash2 } from "lucide-react";
-import { Reel } from "../../../types";
+import { Reel } from "../tipos";
 import { ReelEliminar } from "./tipos";
 
 interface Props {

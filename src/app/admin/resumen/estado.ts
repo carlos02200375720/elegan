@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { User, Order } from "../../../types";
-import { apiFetch } from "../../../config";
+import { User, Order } from "../tipos";
+import { apiFetch } from "../config";
 import { sessionState } from "../../../utils/sessionState";
 import { isSuperAdmin } from "../../../superAdmin";
-import { navigateTo } from "../../../router";
+import { navigateToAdmin as navigateTo } from "../enrutador";
 import { getDefaultAvatar, getDefaultCoverPhoto, setDefaultAssetsCache, FALLBACK_DEFAULT_AVATAR, FALLBACK_DEFAULT_COVER } from "../../../utils/defaultAssets";
 import { AdminViewProps, AdminTab } from "./tipos";
 import { parseAdminTabFromPath } from "./rutas";

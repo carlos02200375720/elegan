@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type React from "react";
-import type { User } from "../../../types";
+import type { User, ChatMessage } from "../../../types";
 import { isGuestUser } from "../../../types";
 import { resolveSupportUser, isSupportAdmin, isSupportAlias, SUPPORT_EMAIL, SUPPORT_USER_ID } from "../../../utils/supportChat";
 import { apiFetch } from "../../../config";

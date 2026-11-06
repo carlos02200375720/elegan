@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
-import { Order } from "../../../types";
-import { apiFetch } from "../../../config";
+import { Order } from "../tipos";
+import { apiFetch } from "../config";
 import { MensajePedidos } from "./tipos";
 
 export function useEstadoPedidos(

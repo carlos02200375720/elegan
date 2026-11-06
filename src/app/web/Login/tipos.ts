@@ -1,3 +1,4 @@
+import type React from "react";
 import type { User } from "../../../types";
 
 export interface LoginViewProps {

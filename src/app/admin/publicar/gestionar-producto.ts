@@ -1,4 +1,4 @@
-import { ProductShippingOption } from "../../../types";
+import { ProductShippingOption } from "../tipos";
 
 export function crearGestoresProducto(scope: any) {
   const { prodVariants, setProdVariants, newColorName, setNewColorName, newColorFile, setNewColorFile, newColorImageInputRef, setColorImageFiles, setColorImagePreviews, setProdVariantList, prodPrice, prodVariantList, setEditingColorTarget, newVarName, setNewVarName, newVarValue, setNewVarValue, newShipLabel, setNewShipLabel, newShipOrigin, setNewShipOrigin, newShipPrice, setNewShipPrice, newShipTime, setNewShipTime, setProdShippingOptions } = scope;

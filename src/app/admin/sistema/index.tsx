@@ -1,6 +1,6 @@
 import React from "react";
 import { Server, CheckCircle2, Database, Activity, RefreshCw, Radio, HardDrive, ShieldCheck } from "lucide-react";
-import { User } from "../../../types";
+import { User } from "../tipos";
 
 export interface SistemaAdminProps {
   systemHealth: {

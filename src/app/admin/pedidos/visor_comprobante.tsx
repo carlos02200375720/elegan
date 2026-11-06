@@ -4,7 +4,7 @@ import {
   Loader2, ShieldCheck, X, Download,
 } from "lucide-react";
 import { AnimatePresence } from "motion/react";
-import { Order } from "../../../types";
+import { Order } from "../tipos";
 
 interface Props {
   order: Order | null;

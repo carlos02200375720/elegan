@@ -1,3 +1,4 @@
+export { default as AdminApp } from "./AdminApp";
 export { default as Resumen, default as AdminView, default } from "./resumen/index";
 export { default as Usuarios, default as UsuariosAdminView } from "./usuarios/index";
 export { default as Reels, default as ReelsAdminView } from "./reels/index";
