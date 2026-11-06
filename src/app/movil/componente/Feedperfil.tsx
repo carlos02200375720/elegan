@@ -3,7 +3,7 @@ import Hls from "hls.js";
 import { ArrowLeft, X, Heart, MessageCircle, Share2, Bookmark, Volume2, VolumeX, Play, Pause, Trash2, Send, Check } from "lucide-react";
 import { Reel, Product, Comment, User } from "../tipos";
 import { motion, AnimatePresence } from "motion/react";
-import { getMediaUrl } from "../../../config";
+import { getMediaUrl } from "../config";
 import { androidApiFetch } from "../api";
 import { AndroidProgressBar } from "./barraprogreso";
 
