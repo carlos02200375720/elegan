@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { resolveSupportUser, isSupportAdmin, SUPPORT_EMAIL, SUPPORT_USER_ID } from "../../../utils/supportChat";
+import { resolveSupportUser, isSupportAdmin, SUPPORT_EMAIL, SUPPORT_USER_ID } from "./utilidades";
 import type { AndroidSocialPanelProps } from "./TiposSocialPanel";
 import { getAdminClientList, getConversationMessages } from "./FuncionesSocialPanel";
 import VistaConversacion from "./VistaConversacion";
