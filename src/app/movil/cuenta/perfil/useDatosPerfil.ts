@@ -5,7 +5,7 @@ import {
   navigateTo, parseRoute, getProfilePath, getProfileSavedPath,
   getProfileCompraPath, getProfileConfigPath, getProfileProductoPath,
   getProfilePublicacionesPath,
-} from "../../../../router";
+} from "../../enrutador";
 
 type TabType = "reels" | "products" | "saved" | "orders";
 
