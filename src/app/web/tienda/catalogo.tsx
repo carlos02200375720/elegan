@@ -5,9 +5,9 @@ import { motion, AnimatePresence } from "motion/react";
 import { getProductShareUrl, getProductPath, getThankYouPath, navigateTo, parseRoute } from "../../../router";
 import { apiFetch } from "../../../config";
 import ProductoIdTiendaView from "./producto/index";
-import CarritoTiendaView from "./carrito";
-import VerificasionTiendaView, { DEST_COUNTRIES } from "./verificasion";
-import GraciaTiendaView from "./gracia";
+import CarritoTiendaView from "./carrito/index";
+import VerificasionTiendaView, { DEST_COUNTRIES } from "./verificasion/index";
+import GraciaTiendaView from "./gracia/index";
 import { trackFunnelStep } from "../../../utils/analyticsTracker";
 
 export const CATEGORIES = [
