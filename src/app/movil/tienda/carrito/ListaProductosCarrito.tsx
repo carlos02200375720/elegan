@@ -1,6 +1,6 @@
 import React from "react";
 import { Check } from "lucide-react";
-import { Product, CartItem } from "../../../../types";
+import { Product, CartItem } from "../../tipos";
 import { TarjetaProductoCarrito } from "./TarjetaProductoCarrito";
 
 export interface ListaProductosCarritoProps {
