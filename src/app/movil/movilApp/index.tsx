@@ -2,7 +2,7 @@ import React from "react";
 import type { AndroidAppProps } from "./tipos";
 export type { AndroidAppProps } from "./tipos";
 import { cartItemsMatch } from "./utilidades";
-import { isGuestUser } from "../../../types";
+import { isGuestUser } from "../tipos";
 import type { CartItem } from "../../../types";
 import InicioVista from "./vistas/InicioVista";
 import BarraNavegacion from "../componente/barranavegacion";
@@ -10,10 +10,10 @@ import TiendaVista from "./vistas/TiendaVista";
 import MensajesVista from "./vistas/MensajesVista";
 import PerfilVista from "./vistas/PerfilVista";
 import PerfilLogin from "../cuenta/login";
-import { isSuperAdmin } from "../../../superAdmin";
+import { isSuperAdmin } from "../utilidades/superAdmin";
 import { motion, AnimatePresence } from "motion/react";
-import { sessionState } from "../../../utils/sessionState";
-import { navigateTo, parseRoute, getProfilePath, getProfileCompraPath, getProductPath, getInicioPath, useCurrentRoute } from "../../../router";
+import { sesionMovil } from "../sesion";
+import { navigateTo, parseRoute, getProfilePath, getProfileCompraPath, getProductPath, getInicioPath, useCurrentRoute } from "../enrutador";
 
 export default function AndroidApp({
   activeTab,
