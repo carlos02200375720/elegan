@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useMemo } from "react";
-import { Product } from "../../../../types";
+import { Product } from "../../tipos";
 import { AnimatePresence } from "motion/react";
 import { navigateTo, parseRoute } from "../../../../router";
 import ProductoIdTiendaView from "../producto/index";
