@@ -1,6 +1,6 @@
 import React from "react";
 import { ExternalLink, ShieldCheck, Trash2 } from "lucide-react";
-import { User } from "../../../types";
+import { User } from "../tipos";
 import { isSuperAdmin } from "../superAdmin";
 import { UsuarioEliminar } from "./tipos";
 
