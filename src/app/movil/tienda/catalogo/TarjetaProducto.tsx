@@ -1,6 +1,6 @@
 import React from "react";
 import { Bookmark } from "lucide-react";
-import { Product } from "../../../../types";
+import { Product } from "../../tipos";
 import { formatPrice } from "../../utilidades/moneda";
 import { getProductImageUrl } from "../productMedia";
 
