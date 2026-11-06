@@ -157,27 +157,19 @@ export function crearUtilidadesSubida(currentUser: any, apiFetch: any, getApiUrl
       }, timeoutMs);
     } catch (primaryErr: any) {
       console.warn("⚠️ [PublishView] Fallo inicial con apiFetch(/api/upload), intentando fetch relativo directo...", primaryErr);
-      // Direct relative fallback if primary fetch failed
       try {
         response = await fetch("/api/upload", {
           method: "POST",
           body: createFormData(),
         });
-      } catch (localErr) {
-        try {
-          response = await fetch("/api/android/upload", {
-            method: "POST",
-            body: createFormData(),
-          });
-        } catch {
-          throw new Error(`No se pudo conectar con el servidor de subida: ${primaryErr?.message || "error de red"}`);
-        }
+      } catch {
+        throw new Error(`No se pudo conectar con el servidor de subida: ${primaryErr?.message || "error de red"}`);
       }
     }
 
     let rawText = await response.text();
 
-    // If the server returned 5xx or HTML, attempt direct local fallback
+    // Reintenta únicamente el endpoint general de subida; admin no depende del router móvil.
     if (!response.ok || !rawText.trim().startsWith("{")) {
       try {
         const directRes = await fetch("/api/upload", {
@@ -188,21 +180,6 @@ export function crearUtilidadesSubida(currentUser: any, apiFetch: any, getApiUrl
         if (directRes.ok && directText.trim().startsWith("{")) {
           response = directRes;
           rawText = directText;
-        }
-      } catch {}
-    }
-
-    // Second fallback to android upload endpoint if standard failed
-    if (!response.ok || !rawText.trim().startsWith("{")) {
-      try {
-        const androidRes = await fetch("/api/android/upload", {
-          method: "POST",
-          body: createFormData(),
-        });
-        const androidText = await androidRes.text();
-        if (androidRes.ok && androidText.trim().startsWith("{")) {
-          response = androidRes;
-          rawText = androidText;
         }
       } catch {}
     }
