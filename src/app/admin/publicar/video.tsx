@@ -4,7 +4,7 @@ import VideoUploadPreview from "../../web/components/VideoUploadPreview";
 type Props = { scope: any };
 
 export default function Video({ scope }: Props) {
- const { videoInputRef, singleVideoFile, setSingleVideoFile, videoCoverFile, setVideoCoverFile, videoCoverInputRef } = scope;
+ const { publishType, videoInputRef, singleVideoFile, setSingleVideoFile, videoCoverFile, setVideoCoverFile, videoCoverInputRef } = scope;
  return (
   <>
           {publishType === "video" && (
