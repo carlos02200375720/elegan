@@ -1,6 +1,16 @@
 import React, { useState, useRef, useEffect } from "react";
-import { 
-
+import { User, Product, ProductVariantItem, ProductShippingOption } from "../../types";
+import {
+  ArrowLeft,
+  Video,
+  Image as ImageIcon,
+  Layers,
+  ShoppingBag,
+  Loader2,
+  Sparkles,
+  AlertCircle,
+  CheckCircle2,
+  Tag
 } from "lucide-react";
 import { apiFetch, getApiUrl } from "../../config";
 import Banner from "./publicar/banner";
