@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { User, Product, ProductVariantItem, ProductShippingOption } from "../../types";
+import { User, Product, ProductVariantItem, ProductShippingOption } from "../../../types";
 import {
   ArrowLeft,
   Video,
@@ -12,7 +12,7 @@ import {
   CheckCircle2,
   Tag
 } from "lucide-react";
-import { apiFetch, getApiUrl } from "../../config";
+import { apiFetch, getApiUrl } from "../../../config";
 import Banner from "./banner";
 import Vender from "./vender";
 import DatosProducto from "./datos-producto";
