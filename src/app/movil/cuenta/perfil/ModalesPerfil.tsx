@@ -4,7 +4,7 @@ import AndroidUserPublicationsFeed from "../../componente/Feedperfil";
 import AndroidPublishView from "../../publicasion";
 import ConfigPerfilView from "../config";
 import ModalEliminarPublicacion from "./ModalEliminarPublicacion";
-import { navigateTo, getProfilePath } from "../../../../router";
+import { navigateTo, getProfilePath } from "../../enrutador";
 
 interface ModalesPerfilProps {
   selectedFeedReelId: string | null;
