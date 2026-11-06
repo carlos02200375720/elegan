@@ -1,7 +1,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import AppWeb from "./AppWeb";
-import "../../index.css";
+import "./estilos.css";
 import ErrorBoundary from "./components/ErrorBoundary";
 
 const rootElement = document.getElementById("root");
