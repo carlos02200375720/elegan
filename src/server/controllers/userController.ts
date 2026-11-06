@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import mongoose from "mongoose";
 import { waitForMongoConnection } from "../utils/mongoConnection";
 import crypto from "crypto";
-import { User, Reel } from "../../types";
+import { User, Reel } from "../types";
 import { MongoUser, MongoSuperAdmin, MongoReel, MongoProduct, MongoOrder, MongoCart, MongoChatMessage } from "../models";
 import { generateId } from "../utils/helpers";
 import { uploadBase64ToGCS } from "../services/mediaStorage";
