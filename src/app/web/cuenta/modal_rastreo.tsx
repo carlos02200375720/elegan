@@ -1,5 +1,5 @@
 import React from "react";
-import { Order } from "../../../types";
+import { Order } from "../tipos";
 import { motion, AnimatePresence } from "motion/react";
 import {
   X, Check, Truck, Copy, ExternalLink, MapPin, Calendar, Clock, PackageSearch,
