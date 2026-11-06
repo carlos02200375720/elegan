@@ -1,6 +1,6 @@
 import React from "react";
 import { Play, Volume2, VolumeX } from "lucide-react";
-import type { Product } from "../../../../types";
+import type { Product } from "../../tipos";
 import { NativeVideoPlayer } from "../../components/VideoPlayer";
 
 interface GaleriaProductoProps {
