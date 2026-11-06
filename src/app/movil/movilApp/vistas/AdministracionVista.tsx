@@ -1,5 +1,5 @@
 import React from "react";
-import AdminView from "../../../admin/resumen";
+import AdminView from "../../../admin/resumen/index";
 
 type Props = React.ComponentProps<typeof AdminView>;
 
