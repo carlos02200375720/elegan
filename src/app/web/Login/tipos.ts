@@ -13,7 +13,7 @@ export type PestañaAcceso = "login" | "register";
 
 export interface EstadoFormularioAcceso {
   pestaña: PestañaAcceso;
-  setPestaña: (pestaña: PestañaAcceso) => void;
+  cambiarPestaña: (pestaña: PestañaAcceso) => void;
   correo: string;
   setCorreo: (valor: string) => void;
   contraseña: string;
