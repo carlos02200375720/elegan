@@ -1,5 +1,5 @@
 import React from "react";
-import { Product } from "../../../../types";
+import { Product } from "../../tipos";
 import { DisplayProductItem } from "./TiposCatalogo";
 import TarjetaProducto from "./TarjetaProducto";
 import CatalogoSinResultados from "./CatalogoSinResultados";
