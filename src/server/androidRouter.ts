@@ -2,14 +2,14 @@ import { Router, Request, Response, NextFunction } from "express";
 import mongoose from "mongoose";
 import { getPaypalConfig, createPaypalOrder } from "./controllers/paypalController";
 import type { AndroidRouterDependencies } from "./androidRouterTypes";
-import { registerAndroidAuthRoutes } from "./routes/android/authRoutes";
-import { registerAndroidUserRoutes } from "./routes/android/userRoutes";
-import { registerAndroidCartRoutes } from "./routes/android/cartRoutes";
-import { registerAndroidReelRoutes } from "./routes/android/reelRoutes";
-import { registerAndroidProductRoutes } from "./routes/android/productRoutes";
-import { registerAndroidMediaRoutes } from "./routes/android/mediaRoutes";
-import { registerAndroidPostRoutes } from "./routes/android/postRoutes";
-import { registerAndroidOrderRoutes } from "./routes/android/orderRoutes";
+import { registerAndroidAuthRoutes } from "./routes/movil/authRoutes";
+import { registerAndroidUserRoutes } from "./routes/movil/userRoutes";
+import { registerAndroidCartRoutes } from "./routes/movil/cartRoutes";
+import { registerAndroidReelRoutes } from "./routes/movil/reelRoutes";
+import { registerAndroidProductRoutes } from "./routes/movil/productRoutes";
+import { registerAndroidMediaRoutes } from "./routes/movil/mediaRoutes";
+import { registerAndroidPostRoutes } from "./routes/movil/postRoutes";
+import { registerAndroidOrderRoutes } from "./routes/movil/orderRoutes";
 
 export type { AndroidRouterDependencies } from "./androidRouterTypes";
 
