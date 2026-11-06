@@ -7,7 +7,7 @@ export const AVATAR_PRESETS = [
   { id: "preset_1", label: "Modern Portrait", url: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&q=80" },
   { id: "preset_2", label: "Creative Creator", url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80" },
   { id: "preset_3", label: "3D Avatar Smile", url: "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=200&q=80" },
-  { id: "preset_4", label: "Digital Nomad", url: "https://images.unsplash.com/photo-1507003211169-0a1dd722e2d?auto=format&fit=crop&w=200&q=80" },
+  { id: "preset_4", label: "Digital Nomad", url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&q=80" },
   { id: "preset_5", label: "Minimalist Gradient", url: "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=200&q=80" }
 ];
 export const COVER_PRESETS = [
