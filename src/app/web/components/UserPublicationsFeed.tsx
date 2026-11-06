@@ -18,7 +18,7 @@ import {
   AlertCircle,
   Loader2,
 } from "lucide-react";
-import { Reel, Product, Comment, User } from "../../../types";
+import { Reel, Product, Comment, User } from "../tipos";
 import { motion, AnimatePresence } from "motion/react";
 import { apiFetch, getMediaUrl } from "../../../config";
 import { getInicioShareUrl } from "../../../router";
