@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { User, Reel, Product, Order } from "../../../../types";
+import { User, Reel, Product, Order } from "../../tipos";
 import { androidApiFetch } from "../../api";
 import {
   navigateTo, parseRoute, getProfilePath, getProfileSavedPath,
