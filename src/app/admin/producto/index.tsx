@@ -1,10 +1,10 @@
 import React from "react";
-import { ProductoAdminProps } from "./producto/tipos";
-import { useEstadoProductos } from "./producto/estado";
-import ListaProductos from "./producto/lista_productos";
-import ModalEliminarProducto from "./producto/modal_eliminar";
+import { ProductoAdminProps } from "./tipos";
+import { useEstadoProductos } from "./estado";
+import ListaProductos from "./lista_productos";
+import ModalEliminarProducto from "./modal_eliminar";
 
-export type { ProductoAdminProps } from "./producto/tipos";
+export type { ProductoAdminProps } from "./tipos";
 
 export default function ProductoAdminView({
   products, setProducts, onProductClick, onStatusMessage, onRequestDeleteProduct,
