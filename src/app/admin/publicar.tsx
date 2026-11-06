@@ -68,8 +68,6 @@ export default function PublishView({ currentUser, onBack, onSuccess, userProduc
       setBannerImagePreview(data.banner.imageUrl || "");
       setBannerEnabled(data.banner.enabled !== false);
     }).catch((error) => console.warn("[Banner] No se pudo cargar la configuración:", error));
-    const publishScope = { bannerLabel, bannerTitle, bannerDescription, bannerLink, bannerEnabled, setBannerLabel, setBannerTitle, setBannerDescription, setBannerLink, setBannerEnabled, bannerImageFile, setBannerImageFile, bannerImagePreview, setBannerImagePreview, errorMessage, successMessage, handleSaveBanner, bannerSaving, videoInputRef, singleVideoFile, setSingleVideoFile, videoCoverFile, setVideoCoverFile, videoCoverInputRef, imageInputRef, singleImageFile, setSingleImageFile, carouselInputRef, carouselImageFiles, setCarouselImageFiles, prodPhotosRef, productPhotoFiles, setProductPhotoFiles, prodVideoRef, productVideoFile, setProductVideoFile, newColorImageInputRef, existingColorImageInputRef, newColorName, newColorFile, setNewColorFile, colorImageFiles, colorImagePreviews, editingColorTarget, setEditingColorTarget };
-
   return () => { cancelled = true; };
   }, [showBannerSection]);
 
@@ -1046,6 +1044,8 @@ export default function PublishView({ currentUser, onBack, onSuccess, userProduc
       setProductPhotoFiles([...productPhotoFiles, ...imgFiles]);
     }
   };
+
+  const publishScope = { bannerLabel, bannerTitle, bannerDescription, bannerLink, bannerEnabled, setBannerLabel, setBannerTitle, setBannerDescription, setBannerLink, setBannerEnabled, bannerImageFile, setBannerImageFile, bannerImagePreview, setBannerImagePreview, errorMessage, successMessage, handleSaveBanner, bannerSaving, videoInputRef, singleVideoFile, setSingleVideoFile, videoCoverFile, setVideoCoverFile, videoCoverInputRef, imageInputRef, singleImageFile, setSingleImageFile, carouselInputRef, carouselImageFiles, setCarouselImageFiles, prodPhotosRef, productPhotoFiles, setProductPhotoFiles, prodVideoRef, productVideoFile, setProductVideoFile, newColorImageInputRef, existingColorImageInputRef, newColorName, newColorFile, setNewColorFile, colorImageFiles, colorImagePreviews, editingColorTarget, setEditingColorTarget };
 
   return (
     <div className="w-full bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
