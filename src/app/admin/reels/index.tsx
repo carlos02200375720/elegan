@@ -1,11 +1,11 @@
 import React from "react";
 import { Search } from "lucide-react";
-import TarjetaReel from "./reels/tarjeta_reel";
-import ModalEliminacionReel from "./reels/modal_eliminacion";
-import { useEstadoReels } from "./reels/estado";
-import { ReelsAdminProps } from "./reels/tipos";
+import TarjetaReel from "./tarjeta_reel";
+import ModalEliminacionReel from "./modal_eliminacion";
+import { useEstadoReels } from "./estado";
+import { ReelsAdminProps } from "./tipos";
 
-export type { ReelsAdminProps } from "./reels/tipos";
+export type { ReelsAdminProps } from "./tipos";
 
 export default function ReelsAdminView({
   reels,
