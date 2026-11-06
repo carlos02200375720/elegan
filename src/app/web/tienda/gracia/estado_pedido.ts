@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Order } from "../../../types";
-import { apiFetch } from "../../../config";
+import { apiFetch } from "../../../../config";
 
 export function useEstadoPedido(completedOrder: Order | null, orderId?: string) {
   const [activeOrder, setActiveOrder] = useState<Order | null>(completedOrder);
