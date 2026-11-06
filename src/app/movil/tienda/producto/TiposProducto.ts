@@ -1,4 +1,4 @@
-import { Product, CartItem, User } from "../../../../types";
+import { Product, CartItem, User } from "../../tipos";
 
 export interface ShippingOptionItem {
   carrier: string;
