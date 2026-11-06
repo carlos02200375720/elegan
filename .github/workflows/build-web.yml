@@ -5,12 +5,9 @@ on:
     branches: [ "main", "master", "fix/reels-video-performance" ]
     paths:
       - 'src/app/web/**'
-      - 'src/App.tsx'
-      - 'src/utils/**'
-      - 'src/config.ts'
-      - 'src/types.ts'
-      - 'src/router/**'
       - 'index.html'
+      - 'package.json'
+      - 'package-lock.json'
       - 'vite.config.ts'
       - 'vercel.json'
       - '.github/workflows/build-web.yml'
