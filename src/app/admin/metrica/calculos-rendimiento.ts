@@ -10,7 +10,6 @@ export function calcularReelsDestacados(reels: Reel[]) {
       .slice(0, 6);
 }
 
-import { User, Reel, Product, Order } from "../../../types";
 export function calcularProductosDestacados(products: Product[], orders: Order[]) {
 
     const salesByProduct: Record<string, { units: number; revenue: number }> = {};
@@ -48,7 +47,6 @@ export function calcularProductosDestacados(products: Product[], orders: Order[]
       .slice(0, 6);
 }
 
-import { User, Reel, Product, Order } from "../../../types";
 export function calcularCreadoresDestacados(users: User[], reels: Reel[], products: Product[]) {
 
     return users
