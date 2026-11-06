@@ -1,7 +1,7 @@
 import React from "react";
 import { Bookmark } from "lucide-react";
 import { Product } from "../../../../types";
-import { formatPrice } from "../../../../utils/currency";
+import { formatPrice } from "../../utilidades/moneda";
 import { getProductImageUrl } from "../productMedia";
 
 export interface TarjetaProductoProps {
