@@ -1,5 +1,5 @@
 import { FileText, ShieldCheck, Star, Truck } from "lucide-react";
-import type { Product } from "../../../../types";
+import type { Product } from "../../tipos";
 
 export function PieProducto({ selectedProduct }: { selectedProduct: Product }) {
   return (
