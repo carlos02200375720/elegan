@@ -1,4 +1,4 @@
-import { Reel, ReelMedia } from "../../types";
+import { Reel, ReelMedia } from "../types";
 
 /**
  * Builds a deterministic, ordered sequence of media (videos and/or images) for a Reel.
