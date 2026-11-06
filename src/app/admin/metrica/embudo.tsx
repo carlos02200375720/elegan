@@ -1,6 +1,6 @@
 import React from "react";
 import { BarChart3, TrendingUp, DollarSign, Eye, Heart, MessageSquare, Bookmark, ShoppingBag, Users, Video, Truck, CheckCircle2, ExternalLink, Award, Activity, Filter, Calendar, ShoppingCart, CreditCard, ArrowDown, Globe, Smartphone, Clock, Search, Key } from "lucide-react";
-import { navigateTo } from "../../../router";
+import { navigateTo } from "../enrutador";
 import ClientesEmbudo from "./clientes-embudo";
 type Props = any;
 export default function EmbudoMetrica(props: Props) {
