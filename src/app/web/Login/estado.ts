@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
-import type { User } from "../../../types";
-import { apiFetch } from "../../../config";
-import { sessionState } from "../../../utils/sessionState";
-import { navigateTo, parseRoute, getProfileConfigPath } from "../../../router";
+import type { User } from "../tipos";
+import { apiFetch } from "../config";
+import { sesionWeb } from "../sesion";
+import { navigateTo, parseRoute, getProfileConfigPath } from "../enrutador";
 import { AVATARES_PREDEFINIDOS, PORTADAS_PREDEFINIDAS } from "./constantes";
 import type { EstadoFormularioAcceso, LoginViewProps, PestañaAcceso } from "./tipos";
 
@@ -68,9 +68,9 @@ export function useEstadoAcceso({
       });
       const datos = await respuesta.json();
       if (respuesta.ok && datos.success) {
-        sessionState.setUser(datos.user);
-        sessionState.setAuthenticated(true);
-        sessionState.setEmail(datos.user?.email || correoLimpio);
+        sesionWeb.setUser(datos.user);
+        sesionWeb.setAuthenticated(true);
+        sesionWeb.setEmail(datos.user?.email || correoLimpio);
         onLoginSuccess(datos.user);
         redirigirDespuesDeAcceso(datos.user);
       } else {
@@ -122,9 +122,9 @@ export function useEstadoAcceso({
       });
       const datos = await respuesta.json();
       if (respuesta.ok && datos.success) {
-        sessionState.setAuthenticated(true);
-        sessionState.setEmail(datos.user?.email || correoRegistro.trim().toLowerCase());
-        sessionState.setUser(datos.user);
+        sesionWeb.setAuthenticated(true);
+        sesionWeb.setEmail(datos.user?.email || correoRegistro.trim().toLowerCase());
+        sesionWeb.setUser(datos.user);
         onRefreshUsers();
         onLoginSuccess(datos.user);
         redirigirDespuesDeAcceso(datos.user);
