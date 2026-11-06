@@ -1,4 +1,4 @@
-import { Product, CartItem } from "../../../../types";
+import { Product, CartItem } from "../../tipos";
 
 export interface AndroidCarritoProps {
   cart: CartItem[];
