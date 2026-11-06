@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import type { FormEvent } from "react";
 import type { User } from "../../../types";
 import { apiFetch } from "../../../config";
 import { sessionState } from "../../../utils/sessionState";
@@ -42,7 +43,7 @@ export function useEstadoAcceso({
     }
   };
 
-  const iniciarSesion = async (evento: React.FormEvent) => {
+  const iniciarSesion = async (evento: FormEvent) => {
     evento.preventDefault();
     if (cargandoAcceso) return;
     setErrorAcceso("");
@@ -77,7 +78,7 @@ export function useEstadoAcceso({
     }
   };
 
-  const registrar = async (evento: React.FormEvent) => {
+  const registrar = async (evento: FormEvent) => {
     evento.preventDefault();
     if (cargandoRegistro || registroEnCurso.current) return;
     registroEnCurso.current = true;
