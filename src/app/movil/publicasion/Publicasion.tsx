@@ -1,5 +1,5 @@
 import React, { useRef, useState } from "react";
-import type { ProductVariantItem } from "../../../types";
+import type { ProductVariantItem } from "../tipos";
 import { androidApiFetch } from "../api";
 import type { AndroidPublishViewProps, PublishType, ProductVariantsProps } from "./TiposPublicasion";
 import EncabezadoPublicasion from "./EncabezadoPublicasion";
