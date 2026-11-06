@@ -1,9 +1,9 @@
 import React from "react";
 import { Play, ShoppingBag, MessageSquare, User as UserIcon, ShieldCheck, Sparkles, X, Menu } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
-import { User, NavigationTab, isGuestUser } from "../../../types";
-import { navigateTo, getProfilePath } from "../../../router";
-import { isSuperAdmin } from "../../../superAdmin";
+import { User, NavigationTab, isGuestUser } from "../tipos";
+import { navigateTo, getProfilePath } from "../enrutador";
+import { isSuperAdmin } from "../superAdmin";
 
 export interface MovilHamburgerMenuProps {
   isOpen: boolean;
