@@ -10,7 +10,7 @@ import { sesionMovil } from "./sesion";
 import { getLocalGuestToken, getOrCreateGuestToken } from "./guestToken";
 import { trackDailyVisitor } from "../../utils/analyticsTracker";
 import { INITIAL_USERS, INITIAL_PRODUCTS, INITIAL_REELS } from "../../initialData";
-import { parseRoute, navigateTo, getProfilePath, getProductPath } from "../../router";
+import { parseRoute, navigateTo, getProfilePath, getProductPath } from "./enrutador";
 
 const deduplicateById = <T extends { id?: string; _id?: string }>(items: T[]): T[] => {
   const seen = new Set<string>();
