@@ -9,7 +9,7 @@ import { AdminViewProps, AdminTab } from "./tipos";
 import { parseAdminTabFromPath } from "./rutas";
 
 export function useEstadoAdmin(props: AdminViewProps) {
-  const { currentUser, users, reels, products, onRefreshAll, onCreatorClick, onProductClick, onReelClick, onNavigateToTab, setUsers, setReels, setProducts, activePlatform, onSwitchPlatform } = props;
+  const { currentUser, users, reels, products, onRefreshAll, onCreatorClick, onProductClick, onReelClick, onNavigateToTab, setUsers, setReels, setProducts, activePlatform = 'web', onSwitchPlatform } = props;
   const [activeAdminTab, setActiveAdminTab] = useState<AdminTab>(() => {
     if (typeof window !== 'undefined') {
       return parseAdminTabFromPath(window.location.pathname);
