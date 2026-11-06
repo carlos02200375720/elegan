@@ -6,7 +6,8 @@ import dotenv from "dotenv";
 
 import { connectToMongoDB } from "./src/server/config/database";
 import { createAndroidRouter } from "./src/server/androidRouter";
-import { createApiRouter } from "./src/server/routes/apiRoutes";
+import { createApiRouter } from "./src/server/routes/shared/apiRoutes";
+import { createAdminRouter } from "./src/server/routes/admin/adminRoutes";
 import { setupWebSocket } from "./src/server/services/websocketService";
 import { uploadSingleSafe } from "./src/server/middleware/upload";
 import {
@@ -302,7 +303,10 @@ async function startServer() {
     })
   );
 
-  // Main Modular API Router
+  // Admin endpoints are isolated from the customer-facing shared API.
+  app.use("/api", createAdminRouter());
+
+  // Main Shared API Router
   app.use("/api", createApiRouter());
   app.use("/v1", createApiRouter());
 
