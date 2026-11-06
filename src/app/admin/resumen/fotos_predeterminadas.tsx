@@ -1,6 +1,6 @@
 import React from "react";
 import { Loader2, Sparkles, Camera, Upload, RotateCcw, Check, UserCheck } from "lucide-react";
-import { AVATAR_PRESETS, COVER_PRESETS, FALLBACK_DEFAULT_AVATAR, FALLBACK_DEFAULT_COVER } from "../../../utils/defaultAssets";
+import { AVATAR_PRESETS, COVER_PRESETS, FALLBACK_DEFAULT_AVATAR, FALLBACK_DEFAULT_COVER } from "../utilidades/activosPredeterminados";
 import { DatosResumen } from "./tipos";
 
 export default function FotosPredeterminadas({ datos }: { datos: DatosResumen }) {
