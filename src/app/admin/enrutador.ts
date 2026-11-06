@@ -70,3 +70,5 @@ export function useAdminRoute(): AdminRoute {
 
   return route;
 }
+
+export const navigateTo = navigateToAdmin;
