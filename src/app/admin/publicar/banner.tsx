@@ -60,5 +60,7 @@ export default function Banner({ scope }: Props) {
             </button>
           </div>
         </div>
-      ) : null;
+      ) : null}
+    </>
+  );
 }
