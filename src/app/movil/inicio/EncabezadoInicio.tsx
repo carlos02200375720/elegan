@@ -1,7 +1,7 @@
 import React from "react";
 import { ShoppingBag } from "lucide-react";
-import type { User } from "../../../types";
-import { isGuestUser } from "../../../types";
+import type { User } from "../tipos";
+import { isGuestUser } from "../tipos";
 import { MovilHamburgerButton } from "../componente/menu";
 
 interface EncabezadoInicioProps {
