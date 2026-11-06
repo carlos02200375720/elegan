@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { User, Reel, Product, CartItem, Order, ChatMessage, NavigationTab, isGuestUser } from "../../types";
+import { User, Reel, Product, CartItem, Order, ChatMessage, NavigationTab, isGuestUser } from "./tipos";
 import { WebApp, AuthModal } from "./index";
-import { getApiUrl, getWebSocketUrl, apiFetch } from "../../config";
-import { isSuperAdmin } from "../../superAdmin";
-import { resolveSupportUser, isSupportAdmin } from "../../utils/supportChat";
-import { sessionState } from "../../utils/sessionState";
-import { getLocalGuestToken, getOrCreateGuestToken, syncGuestSession } from "../../utils/guestToken";
-import { trackFunnelStep, trackDailyVisitor } from "../../utils/analyticsTracker";
-import { INITIAL_USERS, INITIAL_PRODUCTS, INITIAL_REELS } from "../../initialData";
-import { useCurrentRoute, navigateTo, parseRoute, getProfilePath, getProductPath } from "../../router";
+import { getApiUrl, getWebSocketUrl, apiFetch } from "./config";
+import { isSuperAdmin } from "./superAdmin";
+import { resolveSupportUser, isSupportAdmin } from "./Soportes/utilidades";
+import { sesionWeb } from "./sesion";
+import { getLocalGuestToken, getOrCreateGuestToken, syncGuestSession } from "./guestToken";
+import { trackFunnelStep, trackDailyVisitor } from "./analitica";
+import { INITIAL_USERS, INITIAL_PRODUCTS, INITIAL_REELS } from "./datosIniciales";
+import { useCurrentRoute, navigateTo, parseRoute, getProfilePath, getProductPath } from "./enrutador";
 
 const deduplicateById = <T extends { id?: string; _id?: string }>(items: T[]): T[] => {
   const seen = new Set<string>();
@@ -55,7 +55,7 @@ export default function AppWeb() {
 
   const [currentUser, setCurrentUser] = useState<User>(() => {
     if (typeof window !== "undefined") {
-      const savedUser = sessionState.getUser();
+      const savedUser = sesionWeb.getUser();
       if (savedUser && savedUser.id) return savedUser;
     }
     return {
@@ -298,7 +298,7 @@ export default function AppWeb() {
           setProducts={setProducts}
           setIsLoggedIn={setIsLoggedIn}
           handleLogout={() => {
-            sessionState.clear();
+            sesionWeb.clear();
             setIsLoggedIn(false);
             window.location.reload();
           }}
@@ -323,7 +323,7 @@ export default function AppWeb() {
         onLoginSuccess={(loggedUser) => {
           setCurrentUser(loggedUser);
           setIsLoggedIn(true);
-          sessionState.setUser(loggedUser);
+          sesionWeb.setUser(loggedUser);
           setGuestInteractionAlert(null);
         }}
       />
