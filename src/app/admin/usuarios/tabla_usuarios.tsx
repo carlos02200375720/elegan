@@ -1,5 +1,5 @@
 import React from "react";
-import { User } from "../../../types";
+import { User } from "../tipos";
 import FilaUsuario from "./fila_usuario";
 import { UsuarioEliminar } from "./tipos";
 
