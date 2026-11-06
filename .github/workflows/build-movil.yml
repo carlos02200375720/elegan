@@ -226,7 +226,7 @@ jobs:
       - name: Exportar IPA para App Store Connect
         if: steps.firma.outputs.configured == 'true'
         run: |
-          cat > build/ios/ExportOptions.plist <<'PLIST'
+          cat > build/ios/ExportOptions.plist <<PLIST
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
           <plist version="1.0">
@@ -251,7 +251,7 @@ jobs:
             -archivePath build/ios/Elegan.xcarchive \
             -exportPath build/ios/export \
             -exportOptionsPlist build/ios/ExportOptions.plist
-          test -f build/ios/export/Elegan.ipa
+          find build/ios/export -maxdepth 1 -name '*.ipa' -print -quit | grep -q .
 
       - name: Guardar IPA firmado para App Store Connect
         if: steps.firma.outputs.configured == 'true'
