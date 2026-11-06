@@ -1,6 +1,6 @@
 import React from "react";
 import { Check, Copy, Truck } from "lucide-react";
-import { Order } from "../../../../types";
+import { Order } from "../../tipos";
 interface Props { activeOrder: Order | null; itemsSubtotal: number; selectedShippingCost: number; selectedCarrier: string; copiedId: boolean; handleCopyOrderId: () => void; }
 export function DetallePedido({ activeOrder, itemsSubtotal, selectedShippingCost, selectedCarrier, copiedId, handleCopyOrderId }: Props) {
   return (
