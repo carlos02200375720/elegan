@@ -1,6 +1,6 @@
 import React from "react";
 import { CartItem } from "../../../../types";
-import { formatPrice } from "../../../../utils/currency";
+import { formatPrice } from "../../utilidades/moneda";
 import { getProductImageUrl } from "../productMedia";
 
 export interface ResumenPedidoProps {
