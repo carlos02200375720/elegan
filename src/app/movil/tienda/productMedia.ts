@@ -1,5 +1,5 @@
-import { Product } from "../../../types";
-import { getMediaUrl } from "../../../config";
+import { Product } from "../tipos";
+import { getMediaUrl } from "../config";
 
 const cleanMedia = (value: unknown): string =>
   typeof value === "string" ? value.trim() : "";
