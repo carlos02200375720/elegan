@@ -1,6 +1,6 @@
 import React from "react";
 import { Check, Trash2 } from "lucide-react";
-import { Product, CartItem } from "../../../../types";
+import { Product, CartItem } from "../../tipos";
 import { formatPrice } from "../../utilidades/moneda";
 import { getProductImageUrl } from "../productMedia";
 import { calculateItemShippingFee } from "./FuncionesCarrito";
