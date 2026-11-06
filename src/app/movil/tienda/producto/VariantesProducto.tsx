@@ -1,6 +1,6 @@
 import React from "react";
 import { AlertCircle } from "lucide-react";
-import { Product } from "../../../../types";
+import { Product } from "../../tipos";
 import { getMediaUrl } from "../../../../config";
 import { VariantGroup, VariantSwatch } from "./TiposProducto";
 
