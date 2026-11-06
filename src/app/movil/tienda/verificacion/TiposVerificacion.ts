@@ -1,5 +1,5 @@
 import type React from "react";
-import { CartItem } from "../../../../types";
+import { CartItem } from "../../tipos";
 
 export interface PaypalSdk {
   Buttons: (options: {
