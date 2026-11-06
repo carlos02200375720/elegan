@@ -28,6 +28,7 @@ export default function FeedPublicaciones(props: FeedPublicacionesProps) {
   } = props;
 
   return (
+    <>
       {/* COMPONENTE EXCLUSIVO PARA MOSTRAR LA LISTA DE PUBLICACIONES DE UN USUARIO */}
       <AnimatePresence>
         {activeFeedReelId && (
@@ -71,5 +72,6 @@ export default function FeedPublicaciones(props: FeedPublicacionesProps) {
           />
         )}
       </AnimatePresence>
+    </>
   );
 }
