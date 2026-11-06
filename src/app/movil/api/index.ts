@@ -1,4 +1,4 @@
-import type { User, Reel, Product, CartItem, Order, ChatMessage } from "../../../types";
+import type { User, Reel, Product, CartItem, Order, ChatMessage } from "../tipos";
 import { androidApiFetch, readResponseBody, syncGuestSession as sincronizarSesionInvitado } from "./transporte";
 
 export {
