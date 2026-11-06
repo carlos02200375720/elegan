@@ -1,4 +1,4 @@
-import type { Reel, Product, User, Comment, CartItem, NavigationTab } from "../../../types";
+import type { Reel, Product, User, Comment, CartItem, NavigationTab } from "../tipos";
 
 export interface AndroidInicioProps {
   reels: Reel[];
