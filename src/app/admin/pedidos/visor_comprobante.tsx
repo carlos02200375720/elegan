@@ -22,6 +22,7 @@ export default function VisorComprobante({
   isVerifyingPaymentId, handleToggleVerifyReceipt, onClose,
 }: Props) {
   return (
+    <>
       {/* MODAL LIGHTBOX PARA INSPECCIONAR COMPROBANTE EN PANTALLA COMPLETA */}
       <AnimatePresence>
         {order && order.paymentReceiptUrl && (
@@ -174,7 +175,6 @@ export default function VisorComprobante({
           </div>
         )}
       </AnimatePresence>
-
-
+    </>
   );
 }
