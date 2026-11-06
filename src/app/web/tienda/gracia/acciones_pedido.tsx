@@ -17,5 +17,6 @@ export function AccionesPedido({ onContinueShopping, onViewOrderHistory }: Props
           >
             Historial de Pedidos
           </button>
+    </div>
   );
 }
