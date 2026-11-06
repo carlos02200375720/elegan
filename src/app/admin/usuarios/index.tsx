@@ -1,11 +1,11 @@
 import React from "react";
 import { Search } from "lucide-react";
-import TablaUsuarios from "./usuarios/tabla_usuarios";
-import ModalEliminacionUsuario from "./usuarios/modal_eliminacion";
-import { useEstadoUsuarios } from "./usuarios/estado";
-import { UsuariosAdminProps } from "./usuarios/tipos";
+import TablaUsuarios from "./tabla_usuarios";
+import ModalEliminacionUsuario from "./modal_eliminacion";
+import { useEstadoUsuarios } from "./estado";
+import { UsuariosAdminProps } from "./tipos";
 
-export type { UsuariosAdminProps } from "./usuarios/tipos";
+export type { UsuariosAdminProps } from "./tipos";
 
 export default function UsuariosAdminView({
   currentUser,
