@@ -1,5 +1,5 @@
 import { Send, ShieldCheck, MessageSquare, Headphones, CheckCheck, AlertCircle } from "lucide-react";
-import { SUPPORT_EMAIL } from "../../../utils/supportChat";
+import { SUPPORT_EMAIL } from "./utilidades";
 
 export default function VistaConversacion({ props }: { props: any }) {
   const { isAdmin, activeChatUser, supportUser, SUPPORT_EMAIL, currentUser, currentConversationMessages, scrollRef, isGuest, handleSubmit, chatInput, setChatInput } = props;
