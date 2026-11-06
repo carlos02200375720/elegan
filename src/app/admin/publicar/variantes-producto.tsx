@@ -2,7 +2,7 @@ import { Tag, Image as ImageIcon, X, Upload, Plus, Trash2 } from "lucide-react";
 
 type Props = { scope: any };
 
-export default function Componente({ scope }: Props) {
+export default function VariantesProducto({ scope }: Props) {
  const { prodVariants, prodVariantList, colorImagePreviews, newColorName, setNewColorName, newColorFile, setNewColorFile, newColorImageInputRef, existingColorImageInputRef, editingColorTarget, setEditingColorTarget, handleAddColorVariant, handleRemoveVariant, handleRemoveVariantOption, handleAddVariant, handleAssignColorImage, newVarName, setNewVarName, newVarValue, setNewVarValue } = scope;
  return (
   <>
