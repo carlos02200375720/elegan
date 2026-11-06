@@ -1,6 +1,6 @@
 import React from "react";
 import { ShoppingCart, CheckCircle2, AlertCircle } from "lucide-react";
-import { formatPrice } from "../../../../utils/currency";
+import { formatPrice } from "../../utilidades/moneda";
 
 export interface AccionesProductoProps {
   availableStock: number;
