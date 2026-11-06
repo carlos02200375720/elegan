@@ -5,7 +5,7 @@ import { MongoUser } from "../models/User";
 import { MongoSuperAdmin } from "../models/SuperAdmin";
 import { MongoProduct } from "../models/Product";
 import { formatReelDTO } from "../utils/reelUtils";
-import { Reel } from "../../types";
+import { Reel } from "../types";
 
 let migrationRan = false;
 
