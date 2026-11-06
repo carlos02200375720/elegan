@@ -1,6 +1,6 @@
 import React from "react";
 import { AlertCircle, ShoppingCart } from "lucide-react";
-import type { Product, User } from "../../../../types";
+import type { Product, User } from "../../tipos";
 import type { GrupoVariante, ShippingOptionItem } from "./tipos";
 import { getManualShippingOptions } from "./envios";
 import { formatPrice } from "../../utilidades/moneda";
