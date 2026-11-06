@@ -1,5 +1,5 @@
 import { Bookmark, Play } from "lucide-react";
-import { Reel } from "../../../../types";
+import { Reel } from "../../tipos";
 import AndroidPublicationCover from "../../componente/miniaturapublicacion";
 
 interface TarjetaPublicacionGuardadaProps {
