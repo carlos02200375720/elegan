@@ -1,5 +1,5 @@
 import React from "react";
-import { formatPrice } from "../../../../utils/currency";
+import { formatPrice } from "../../utilidades/moneda";
 import { ShippingOptionItem } from "./TiposProducto";
 
 export interface EnvioProductoProps {
