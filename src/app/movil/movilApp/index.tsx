@@ -10,7 +10,7 @@ import TiendaVista from "./vistas/TiendaVista";
 import MensajesVista from "./vistas/MensajesVista";
 import PerfilVista from "./vistas/PerfilVista";
 import PerfilLogin from "../cuenta/login";
-import { isSuperAdmin } from "../utilidades/superAdmin";
+import { isSuperAdmin } from "../superAdmin";
 import { motion, AnimatePresence } from "motion/react";
 import { sesionMovil } from "../sesion";
 import { navigateTo, parseRoute, getProfilePath, getProfileCompraPath, getProductPath, getInicioPath, useCurrentRoute } from "../enrutador";
