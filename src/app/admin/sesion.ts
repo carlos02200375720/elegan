@@ -15,6 +15,7 @@ function getStoredUser(): User | null {
 }
 
 let sessionUser: User | null = getStoredUser();
+let platformTarget: "android" | "web" | null = null;
 
 export const sesionAdmin = {
   getUser: (): User | null => {
@@ -37,6 +38,21 @@ export const sesionAdmin = {
           localStorage.removeItem("mall_authenticated");
         }
       } catch {}
+    }
+  },
+  getPlatform: (): "android" | "web" | null => {
+    if (!platformTarget && typeof window !== "undefined") {
+      try {
+        const stored = localStorage.getItem("mall_last_active_platform");
+        if (stored === "android" || stored === "web") platformTarget = stored;
+      } catch {}
+    }
+    return platformTarget;
+  },
+  setPlatform: (value: "android" | "web" | null): void => {
+    platformTarget = value;
+    if (typeof window !== "undefined" && value) {
+      try { localStorage.setItem("mall_last_active_platform", value); } catch {}
     }
   },
   isAuthenticated: (): boolean => {
