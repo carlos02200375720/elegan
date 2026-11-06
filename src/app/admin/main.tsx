@@ -1,7 +1,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import AppAdmin from "./AppAdmin";
-import "../../index.css";
+import "./estilos.css";
 
 const rootElement = document.getElementById("root");
 if (rootElement) {
