@@ -1,6 +1,6 @@
 import type { User, ChatMessage } from "../../../types";
 
-interface SocialPanelProps {
+export interface SocialPanelProps {
   users: User[];
   currentUser: User;
   messages: ChatMessage[];
@@ -12,7 +12,7 @@ interface SocialPanelProps {
   onClose: () => void;
 }
 
-interface SupportConversationItem {
+export interface SupportConversationItem {
   clientId: string;
   user: User;
   lastMessage?: ChatMessage;
