@@ -1,4 +1,4 @@
-import { Product, CartItem } from "../../../../types";
+import { Product, CartItem } from "../../tipos";
 
 export function calculateItemShippingFee(item: CartItem): { fee: number; carrier?: string } {
   const fee =
