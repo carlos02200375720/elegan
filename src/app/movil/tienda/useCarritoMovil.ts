@@ -21,10 +21,10 @@ export function useCarritoMovil(currentUser: User) {
     try {
       const token = getLocalGuestToken() || getOrCreateGuestToken();
       localStorage.setItem(`mall_cart_${token}`, JSON.stringify(newCart));
-      await apiFetch("/api/cart", {
+      await apiFetch(`/api/cart/${encodeURIComponent(currentUser.id)}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ cart: newCart, userId: currentUser.id }),
+        body: JSON.stringify({ items: newCart }),
       });
     } catch {}
   }, [currentUser.id]);
