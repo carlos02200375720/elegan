@@ -108,7 +108,7 @@ export function crearUtilidadesSubida(currentUser: any, apiFetch: any, getApiUrl
         const folder = "publicaciones";
         const mime = fileToUpload.type || "image/jpeg";
         const signedUrlRes = await fetch(
-          getApiUrl(`/api/v1/media/upload-url?folder=${folder}&file_type=${encodeURIComponent(mime)}&file_name=${encodeURIComponent(fileToUpload.name)}`)
+          getApiUrl(`/api/admin/v1/media/upload-url?folder=${folder}&file_type=${encodeURIComponent(mime)}&file_name=${encodeURIComponent(fileToUpload.name)}`)
         );
 
         if (signedUrlRes.ok) {
@@ -151,14 +151,14 @@ export function crearUtilidadesSubida(currentUser: any, apiFetch: any, getApiUrl
     const timeoutMs = isVideo ? 300000 : 120000;
     let response: Response;
     try {
-      response = await apiFetch("/api/upload", {
+      response = await apiFetch("/api/admin/upload", {
         method: "POST",
         body: createFormData(),
       }, timeoutMs);
     } catch (primaryErr: any) {
-      console.warn("⚠️ [PublishView] Fallo inicial con apiFetch(/api/upload), intentando fetch relativo directo...", primaryErr);
+      console.warn("⚠️ [PublishView] Fallo inicial con apiFetch(/api/admin/upload), intentando fetch relativo directo...", primaryErr);
       try {
-        response = await fetch("/api/upload", {
+        response = await fetch("/api/admin/upload", {
           method: "POST",
           body: createFormData(),
         });
@@ -172,7 +172,7 @@ export function crearUtilidadesSubida(currentUser: any, apiFetch: any, getApiUrl
     // Reintenta únicamente el endpoint general de subida; admin no depende del router móvil.
     if (!response.ok || !rawText.trim().startsWith("{")) {
       try {
-        const directRes = await fetch("/api/upload", {
+        const directRes = await fetch("/api/admin/upload", {
           method: "POST",
           body: createFormData(),
         });
