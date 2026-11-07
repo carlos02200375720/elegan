@@ -230,4 +230,33 @@ export function getLocalFunnelCounts(windowMs: number) {
   };
 }
 
+/**
+ * Registra una visita diaria del cliente móvil.
+ */
+export function trackDailyVisitor(platform: "web" | "android"): void {
+  if (typeof window === "undefined") return;
 
+  const visitorId = getLocalGuestToken() || getOrCreateGuestToken();
+  const activeUser = sesionMovil.getUser();
+  const candidateUserId = activeUser?.originalId ||
+    (activeUser?.id && activeUser.id !== "current_user" ? activeUser.id : "");
+  const isRegistered = Boolean(
+    activeUser && !isGuestUser(activeUser) && activeUser.email && candidateUserId
+  );
+
+  apiFetch("/api/analytics/visitors/track", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-guest-token": visitorId,
+    },
+    body: JSON.stringify({
+      visitorId,
+      platform,
+      visitorType: isRegistered ? "registered" : "guest",
+      userId: isRegistered ? candidateUserId : undefined,
+    }),
+  }).catch(() => {
+    // Visitor analytics must never block app startup or navigation.
+  });
+}
