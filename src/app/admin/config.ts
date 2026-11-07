@@ -5,11 +5,13 @@ export const BACKEND_URL: string =
 
 export const getApiUrl = (path: string): string => {
   const rawPath = path.startsWith("/") ? path : `/${path}`;
-  const cleanPath = rawPath.startsWith("/api/android/")
-    ? `/api/admin/${rawPath.slice("/api/android/".length)}`
-    : rawPath.startsWith("/api/")
-      ? `/api/admin/${rawPath.slice("/api/".length)}`
-      : rawPath;
+  const cleanPath = rawPath.startsWith("/api/admin/")
+    ? rawPath
+    : rawPath.startsWith("/api/android/")
+      ? `/api/admin/${rawPath.slice("/api/android/".length)}`
+      : rawPath.startsWith("/api/")
+        ? `/api/admin/${rawPath.slice("/api/".length)}`
+        : rawPath;
   if (typeof window !== "undefined" && window.location && window.location.protocol.startsWith("http")) {
     return cleanPath;
   }
