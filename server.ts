@@ -5,9 +5,9 @@ import { createServer as createHttpServer } from "http";
 import dotenv from "dotenv";
 
 import { connectToMongoDB } from "./src/server/config/database";
-import { createAndroidRouter } from "./src/server/androidRouter";
+import { createMovilRouter } from "./src/server/routes/movil/router";
 import { createWebRouter } from "./src/server/routes/web/webRoutes";
-import { createMovilAppRouter } from "./src/server/routes/movil/appRoutes";
+
 import { createAdminRouter } from "./src/server/routes/admin/adminRoutes";
 import { setupWebSocket } from "./src/server/services/websocketService";
 import { uploadSingleSafe } from "./src/server/middleware/upload";
@@ -274,7 +274,7 @@ async function startServer() {
   // Dedicated Android API Router
   app.use(
     "/api/movil",
-    createAndroidRouter({
+    createMovilRouter({
       MongoUser,
       MongoProduct,
       MongoReel,
@@ -302,7 +302,6 @@ async function startServer() {
   // but clients never share endpoint URLs.
   app.use("/api/admin", createAdminRouter());
   app.use("/api/web", createWebRouter());
-  app.use("/api/movil", createMovilAppRouter());
 
   // Root-level aliases for legacy clients & Android compatibility
   app.get("/health", (req, res) => {
