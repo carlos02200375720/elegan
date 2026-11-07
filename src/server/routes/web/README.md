@@ -1,7 +1,10 @@
 # Web API routes
 
-No web-exclusive backend endpoints were identified in the current frontend API layer.
+The web frontend owns the `/api/web/*` HTTP namespace.
 
-The web application currently consumes the shared API under `/api` and `/api/v1`.
-Keep web-specific endpoints here only when a route is verified to be used exclusively
-by `src/app/web`. Do not duplicate shared endpoints or change their public URLs.
+Its router is mounted independently in `server.ts`; it does not call the
+mobile or admin endpoint namespace. Shared controllers and services may be
+reused internally, but web requests use only `/api/web/*` URLs.
+
+Add web-only route registrations in this folder when a dedicated handler is
+needed.
