@@ -59,7 +59,7 @@ export default function Inicio({
 
   useEffect(() => {
     let cancelled = false;
-    apiFetch("/api/admin/banner")
+    apiFetch("/api/banner")
       .then(async (response) => {
         if (!response.ok) return;
         const data = await response.json();
