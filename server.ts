@@ -278,7 +278,7 @@ async function startServer() {
 
   // Dedicated Android API Router
   app.use(
-    "/api/android",
+    "/api/movil",
     createAndroidRouter({
       MongoUser,
       MongoProduct,
@@ -303,12 +303,12 @@ async function startServer() {
     })
   );
 
-  // Admin endpoints are isolated from the customer-facing shared API.
-  app.use("/api", createAdminRouter());
-
-  // Main Shared API Router
-  app.use("/api", createApiRouter());
-  app.use("/v1", createApiRouter());
+  // Each frontend owns an independent HTTP namespace. Controllers/services may be reused,
+  // but clients never share endpoint URLs.
+  app.use("/api/admin", createAdminRouter());
+  app.use("/api/admin", createApiRouter());
+  app.use("/api/web", createApiRouter());
+  app.use("/api/movil", createApiRouter());
 
   // Root-level aliases for legacy clients & Android compatibility
   app.get("/health", (req, res) => {
