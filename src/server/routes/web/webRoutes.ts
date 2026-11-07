@@ -89,8 +89,9 @@ export function createWebRouter(): Router {
   router.get("/products/:id", productController.getProductById);
   router.post("/products", productController.createProduct);
   router.post("/products/:id/view", productController.viewProduct);
-  router.all(["/products/:id/update", "/products/:id"], productController.updateProduct);
-  router.all(["/products/:id/delete", "/products/:id"], productController.deleteProduct);
+  router.put("/products/:id", productController.updateProduct);
+  router.patch("/products/:id", productController.updateProduct);
+  router.post("/products/:id/update", productController.updateProduct);
 
   // Cart routes
   router.get("/cart/:userId", cartController.getCart);
