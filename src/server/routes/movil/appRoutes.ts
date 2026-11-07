@@ -6,7 +6,7 @@ import * as visitorController from "../../controllers/visitorController";
 
 /**
  * Mobile-only application endpoints not owned by the dedicated commerce/auth
- * route modules in androidRouter.ts. All URLs are mounted below /api/movil.
+ * route modules in router.ts. All URLs are mounted below /api/movil.
  */
 export function createMovilAppRouter(): Router {
   const router = Router();
