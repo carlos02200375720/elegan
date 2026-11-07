@@ -30,7 +30,7 @@ export function PublicationCover({ reel }: { reel: Reel }) {
       /(?:\/uploads\/hls\/|\/api\/hls\/|\/hls\/)([a-zA-Z0-9_-]+)\//
     );
     if (hlsMatch) {
-      return `/api/hls/${hlsMatch[1]}/poster.jpg`;
+      return `/api/web/hls/${hlsMatch[1]}/poster.jpg`;
     }
     return null;
   });
@@ -51,7 +51,7 @@ export function PublicationCover({ reel }: { reel: Reel }) {
       /(?:\/uploads\/hls\/|\/api\/hls\/|\/hls\/)([a-zA-Z0-9_-]+)\//
     );
     if (hlsMatch && !thumbUrl) {
-      setThumbUrl(`/api/hls/${hlsMatch[1]}/poster.jpg`);
+      setThumbUrl(`/api/web/hls/${hlsMatch[1]}/poster.jpg`);
       setHasError(false);
       return;
     }
