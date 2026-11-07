@@ -1,3 +1,4 @@
+// Mobile-only order endpoints mounted under /api/movil.
 import { Router, Request, Response, NextFunction } from "express";
 import mongoose from "mongoose";
 import fs from "fs";
