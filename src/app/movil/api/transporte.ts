@@ -14,10 +14,21 @@ export const isAndroidNative = (): boolean => {
 };
 
 export const getAndroidApiUrl = (endpoint: string): string => {
-  let clean = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
-  if (!clean.startsWith("/api/movil/")) {
-    clean = clean.startsWith("/api/") ? clean.replace(/^\/api/, "/api/movil") : `/api/movil${clean}`;
+  const rawPath = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
+  if (rawPath === "/api/android" || rawPath.startsWith("/api/android/")) {
+    throw new Error("La ruta /api/android está obsoleta; utiliza /api/movil.");
   }
+  if (
+    rawPath === "/api/web" || rawPath.startsWith("/api/web/") ||
+    rawPath === "/api/admin" || rawPath.startsWith("/api/admin/")
+  ) {
+    throw new Error("La aplicación móvil no puede utilizar endpoints de otros clientes.");
+  }
+  const clean = rawPath === "/api/movil" || rawPath.startsWith("/api/movil/")
+    ? rawPath
+    : rawPath.startsWith("/api/")
+      ? `/api/movil/${rawPath.slice("/api/".length)}`
+      : `/api/movil${rawPath}`;
   if (typeof window !== "undefined" && window.location &&
       window.location.protocol.startsWith("http") && !isAndroidNative() && !isExternalStaticHost()) {
     return clean;
