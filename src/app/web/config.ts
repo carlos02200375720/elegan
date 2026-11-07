@@ -52,7 +52,12 @@ export const getMediaUrl = (path: string | undefined | null): string => {
 };
 
 export const getApiUrl = (path: string): string => {
-  const cleanPath = path.startsWith("/") ? path : `/${path}`;
+  const rawPath = path.startsWith("/") ? path : `/${path}`;
+  const cleanPath = rawPath.startsWith("/api/android/")
+    ? `/api/web/${rawPath.slice("/api/android/".length)}`
+    : rawPath.startsWith("/api/")
+      ? `/api/web/${rawPath.slice("/api/".length)}`
+      : rawPath;
   if (typeof window !== "undefined" && window.location && window.location.protocol.startsWith("http") && !isExternalStaticHost()) {
     return cleanPath;
   }
