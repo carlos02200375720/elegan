@@ -353,7 +353,7 @@ export function registerMovilReelRoutes(router: Router, deps: MovilRouterDepende
           ...(Array.isArray(existingPub?.images) ? existingPub.images : []),
         ];
   
-        const { deleteFullPublicationMedia } = await import("./services/mediaStorage");
+        const { deleteFullPublicationMedia } = await import("../../services/mediaStorage");
         const cleanupStats = await deleteFullPublicationMedia(mediaToDelete);
   
         const deleteIds = Array.from(new Set([targetId, existingReel?.id, existingPub?.id].filter(Boolean)));
