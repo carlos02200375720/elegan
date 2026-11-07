@@ -18,7 +18,7 @@ export function useMensajeriaMovil(usuarioActual: User) {
       isRead: false,
     };
     establecerMensajesPrivados((anteriores) => [...anteriores, nuevoMensaje]);
-    apiFetch("/api/chats/messages", {
+    apiFetch("/api/chats", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(nuevoMensaje),
