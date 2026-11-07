@@ -15,9 +15,9 @@ import { isConfiguredSuperadmin, handleGuestSession, registerUser, switchUser, l
 import { getCart, updateCart, clearCart } from "../../controllers/cartController";
 import { createPaypalOrder, getPaypalConfig } from "../../controllers/paypalController";
 import { MongoCart, MongoChatMessage, MongoSuperAdmin } from "../../models";
-import type { AndroidRouterDependencies } from "../../androidRouterTypes";
+import type { MovilRouterDependencies } from "./types";
 
-export function registerAndroidAuthRoutes(router: Router, deps: AndroidRouterDependencies): void {
+export function registerAndroidAuthRoutes(router: Router, deps: MovilRouterDependencies): void {
   const {
     MongoUser, MongoProduct, MongoReel, MongoOrder, MongoPublicacion,
     getUsers, getReels, setReels, getProducts, setProducts, getOrders, setOrders,
