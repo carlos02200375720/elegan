@@ -1,10 +1,7 @@
 # Web API routes
 
-The web frontend owns the `/api/web/*` HTTP namespace.
+The web frontend owns the `/api/web/*` namespace and is registered through
+`createWebRouter()` in `webRoutes.ts`.
 
-Its router is mounted independently in `server.ts`; it does not call the
-mobile or admin endpoint namespace. Shared controllers and services may be
-reused internally, but web requests use only `/api/web/*` URLs.
-
-Add web-only route registrations in this folder when a dedicated handler is
-needed.
+The web router has its own route registrations. It may reuse backend controllers
+and services, but it does not mount or call the mobile or admin routers.
