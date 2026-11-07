@@ -6,16 +6,11 @@ import dotenv from "dotenv";
 
 import { connectToMongoDB } from "./src/server/config/database";
 import { createAndroidRouter } from "./src/server/androidRouter";
-import { createApiRouter } from "./src/server/routes/shared/apiRoutes";
+import { createWebRouter } from "./src/server/routes/web/webRoutes";
+import { createMovilAppRouter } from "./src/server/routes/movil/appRoutes";
 import { createAdminRouter } from "./src/server/routes/admin/adminRoutes";
 import { setupWebSocket } from "./src/server/services/websocketService";
 import { uploadSingleSafe } from "./src/server/middleware/upload";
-import {
-  processUploadHlsOnly,
-  uploadAvatar,
-  uploadCover,
-} from "./src/server/controllers/uploadController";
-import { getPaypalConfig, createPaypalOrder } from "./src/server/controllers/paypalController";
 import { getUsers } from "./src/server/controllers/userController";
 import {
   MongoUser,
@@ -263,8 +258,8 @@ async function startServer() {
     }
   };
 
-  // Dedicated HLS streaming route: /api/hls/*
-  app.use("/api/hls", (req, res) => {
+  // Web-owned HLS poster/streaming route: /api/web/hls/*
+  app.use("/api/web/hls", (req, res) => {
     const subPath = String(req.path || "").replace(/^\/+/, "");
     return streamGcsFile(req, res, `hls/${subPath}`);
   });
@@ -306,19 +301,13 @@ async function startServer() {
   // Each frontend owns an independent HTTP namespace. Controllers/services may be reused,
   // but clients never share endpoint URLs.
   app.use("/api/admin", createAdminRouter());
-  app.use("/api/admin", createApiRouter());
-  app.use("/api/web", createApiRouter());
-  app.use("/api/movil", createApiRouter());
+  app.use("/api/web", createWebRouter());
+  app.use("/api/movil", createMovilAppRouter());
 
   // Root-level aliases for legacy clients & Android compatibility
   app.get("/health", (req, res) => {
     res.json({ status: "ok", server: "mall-social-cloudrun", timestamp: new Date().toISOString() });
   });
-  app.get("/paypal/config", getPaypalConfig);
-  app.post("/paypal/orders", createPaypalOrder);
-  app.post("/upload", uploadSingleSafe("file"), processUploadHlsOnly);
-  app.post("/upload-avatar", uploadSingleSafe("avatar"), uploadAvatar);
-  app.post("/upload-cover", uploadSingleSafe("cover"), uploadCover);
 
   // Serve PWA manifest file directly from web module
   app.get("/manifest.json", (req, res) => {
