@@ -99,7 +99,7 @@ export function setDefaultAssetsCache(avatar?: string, cover?: string): void {
 
 export async function fetchAndSyncDefaultAssets(): Promise<{ avatar: string; cover: string }> {
   try {
-    const res = await apiFetch("/api/admin/default-assets");
+    const res = await apiFetch("/api/default-assets");
     if (res.ok) {
       const data = await res.json();
       const avatar = data.defaultAvatar || FALLBACK_DEFAULT_AVATAR;
