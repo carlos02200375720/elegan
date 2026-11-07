@@ -6,6 +6,13 @@ on:
     paths:
       - "server.ts"
       - "src/server/**"
+      - "src/app/web/**"
+      - "src/app/movil/**"
+      - "src/app/admin/**"
+      - "index.html"
+      - "movil.html"
+      - "admin.html"
+      - "vite.config.ts"
       - "Dockerfile"
       - "package.json"
       - "package-lock.json"
