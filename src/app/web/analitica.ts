@@ -90,10 +90,10 @@ export function getOrCreateVisitorId(): {
   if (typeof window === "undefined") {
     return { visitorId: "server_visitor" };
   }
-  const activeUser = typeof sessionState?.getUser === "function" ? sessionState.getUser() : null;
+  const activeUser = typeof sesionWeb?.getUser === "function" ? sesionWeb.getUser() : null;
   const activeUserId =
     activeUser?.id ||
-    (typeof sessionState?.getEmail === "function" ? sessionState.getEmail() : null) ||
+    (typeof sesionWeb?.getEmail === "function" ? sesionWeb.getEmail() : null) ||
     "";
   const isLoggedUser =
     Boolean(activeUserId) &&
