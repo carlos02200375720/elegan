@@ -117,9 +117,9 @@ export function createApiRouter(): Router {
   router.post("/live", liveController.createLiveSession);
   router.post("/live/:id/end", liveController.endLiveSession);
 
-  // App Settings & Default Assets routes (Admin controlled)
-  router.get("/admin/banner", settingsController.getPublicBanner);
-  router.get("/admin/default-assets", settingsController.getDefaultAssets);
+  // Public settings exposed through each frontend-specific namespace.
+  router.get("/banner", settingsController.getPublicBanner);
+  router.get("/default-assets", settingsController.getDefaultAssets);
   router.get("/app-settings/defaults", settingsController.getDefaultAssets);
 
   // Analytics & Sales Funnel routes
