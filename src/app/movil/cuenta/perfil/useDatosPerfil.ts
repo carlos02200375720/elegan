@@ -106,10 +106,10 @@ export default function usePerfilData({
         method: "DELETE",
       });
       if (!res.ok) {
-        res = await fetch(`/api/android/reels/${reelId}`, { method: "DELETE" });
+        res = await fetch(`/api/movil/reels/${reelId}`, { method: "DELETE" });
       }
       if (!res.ok) {
-        res = await fetch(`/api/reels/${reelId}`, { method: "DELETE" });
+        res = await fetch(`/api/movil/reels/${reelId}`, { method: "DELETE" });
       }
 
       // Inmediatamente remover del estado local
