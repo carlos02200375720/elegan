@@ -63,10 +63,18 @@ export const getMediaUrl = (path: string | undefined | null): string => {
 
 export const getApiUrl = (path: string): string => {
   const rawPath = path.startsWith("/") ? path : `/${path}`;
-  const cleanPath = rawPath.startsWith("/api/movil/")
-    ? rawPath
-    : rawPath.startsWith("/api/android/")
-      ? `/api/movil/${rawPath.slice("/api/android/".length)}`
+  if (rawPath === "/api/android" || rawPath.startsWith("/api/android/")) {
+    throw new Error("La ruta /api/android está obsoleta; utiliza /api/movil.");
+  }
+  if (rawPath === "/api/web" || rawPath.startsWith("/api/web/")) {
+    throw new Error("El cliente movil no puede utilizar endpoints de web.");
+  }
+  if (rawPath === "/api/admin" || rawPath.startsWith("/api/admin/")) {
+    throw new Error("El cliente movil no puede utilizar endpoints de admin.");
+  }
+  const cleanPath =
+    rawPath === "/api/movil" || rawPath.startsWith("/api/movil/")
+      ? rawPath
       : rawPath.startsWith("/api/")
         ? `/api/movil/${rawPath.slice("/api/".length)}`
         : rawPath;
@@ -116,12 +124,6 @@ export const apiFetch = async (
     return res;
   } catch (err) {
     clearTimeout(timeoutId);
-    if (targetUrl !== cleanPath && typeof window !== "undefined") {
-      try {
-        const localRes = await fetch(cleanPath, { ...init, headers, signal });
-        if (localRes.ok || localRes.status < 500) return localRes;
-      } catch {}
-    }
     throw err;
   }
 };
