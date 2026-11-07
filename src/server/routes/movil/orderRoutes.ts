@@ -74,10 +74,10 @@ export function registerAndroidOrderRoutes(router: Router, deps: AndroidRouterDe
       try {
         const { items, total, userId, userName, userEmail } = req.body;
         const newOrder: Order = {
-          id: "ord_movil_" + generateId(),
+          id: "ord_android_" + generateId(),
           buyerId: userId || "current_user",
           buyerName: userName || "Usuario móvil",
-          buyerEmail: userEmail || "movil@elegan.app",
+          buyerEmail: userEmail || "android@mallsocial.app",
           buyerUsername: req.body?.buyerUsername || (userName ? userName.toLowerCase().replace(/\s+/g, "_") : undefined),
           buyerAvatar: req.body?.buyerAvatar || undefined,
           buyerPhone: req.body?.buyerPhone || undefined,
@@ -131,7 +131,7 @@ export function registerAndroidOrderRoutes(router: Router, deps: AndroidRouterDe
         broadcastToAll({
           type: "new_order",
           order: newOrder,
-          platform: "movil",
+          platform: "android",
         });
   
         console.log(`📱 [Mobile Gateway] Orden creada desde móvil en Atlas: ${newOrder.id} ($${newOrder.total})`);
