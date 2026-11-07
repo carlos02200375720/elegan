@@ -2,14 +2,14 @@ import { Router, Request, Response, NextFunction } from "express";
 import mongoose from "mongoose";
 import { getPaypalConfig, createPaypalOrder } from "../../controllers/paypalController";
 import type { MovilRouterDependencies } from "./types";
-import { registerAndroidAuthRoutes } from "./authRoutes";
-import { registerAndroidUserRoutes } from "./userRoutes";
-import { registerAndroidCartRoutes } from "./cartRoutes";
-import { registerAndroidReelRoutes } from "./reelRoutes";
-import { registerAndroidProductRoutes } from "./productRoutes";
-import { registerAndroidMediaRoutes } from "./mediaRoutes";
-import { registerAndroidPostRoutes } from "./postRoutes";
-import { registerAndroidOrderRoutes } from "./orderRoutes";
+import { registerMovilAuthRoutes } from "./authRoutes";
+import { registerMovilUserRoutes } from "./userRoutes";
+import { registerMovilCartRoutes } from "./cartRoutes";
+import { registerMovilReelRoutes } from "./reelRoutes";
+import { registerMovilProductRoutes } from "./productRoutes";
+import { registerMovilMediaRoutes } from "./mediaRoutes";
+import { registerMovilPostRoutes } from "./postRoutes";
+import { registerMovilOrderRoutes } from "./orderRoutes";
 import { createMovilAppRouter } from "./appRoutes";
 
 export type { MovilRouterDependencies } from "./types";
@@ -36,14 +36,14 @@ export function createMovilRouter(deps: MovilRouterDependencies): Router {
   router.get("/paypal/config", getPaypalConfig);
   router.post("/paypal/orders", createPaypalOrder);
 
-  registerAndroidAuthRoutes(router, deps);
-  registerAndroidUserRoutes(router, deps);
-  registerAndroidCartRoutes(router, deps);
-  registerAndroidReelRoutes(router, deps);
-  registerAndroidProductRoutes(router, deps);
-  registerAndroidMediaRoutes(router, deps);
-  registerAndroidPostRoutes(router, deps);
-  registerAndroidOrderRoutes(router, deps);
+  registerMovilAuthRoutes(router, deps);
+  registerMovilUserRoutes(router, deps);
+  registerMovilCartRoutes(router, deps);
+  registerMovilReelRoutes(router, deps);
+  registerMovilProductRoutes(router, deps);
+  registerMovilMediaRoutes(router, deps);
+  registerMovilPostRoutes(router, deps);
+  registerMovilOrderRoutes(router, deps);
 
   router.use(createMovilAppRouter());
 
