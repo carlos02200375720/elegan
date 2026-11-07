@@ -1,6 +1,7 @@
 import { Router } from "express";
 import * as userController from "../../controllers/userController";
 import * as orderController from "../../controllers/orderController";
+import * as productController from "../../controllers/productController";
 import * as settingsController from "../../controllers/settingsController";
 import * as visitorController from "../../controllers/visitorController";
 
@@ -12,6 +13,7 @@ export function createAdminRouter(): Router {
   const router = Router();
 
   router.delete("/users/:id", userController.adminDeleteUser);
+  router.delete("/products/:id", productController.deleteProduct);
   router.post("/users/:id/permission", userController.updateUserSellerPermission);
   router.post("/orders/:id/update-tracking", orderController.updateTracking);
 
