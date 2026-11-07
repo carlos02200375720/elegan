@@ -17,7 +17,7 @@ import { createPaypalOrder, getPaypalConfig } from "../../controllers/paypalCont
 import { MongoCart, MongoChatMessage, MongoSuperAdmin } from "../../models";
 import type { MovilRouterDependencies } from "./types";
 
-export function registerAndroidCartRoutes(router: Router, deps: MovilRouterDependencies): void {
+export function registerMovilCartRoutes(router: Router, deps: MovilRouterDependencies): void {
   const {
     MongoUser, MongoProduct, MongoReel, MongoOrder, MongoPublicacion,
     getUsers, getReels, setReels, getProducts, setProducts, getOrders, setOrders,
