@@ -15,9 +15,11 @@ export function createAdminRouter(): Router {
   router.post("/users/:id/permission", userController.updateUserSellerPermission);
   router.post("/orders/:id/update-tracking", orderController.updateTracking);
 
-  router.post("/admin/banner", settingsController.saveBanner);
-  router.post("/admin/default-assets", settingsController.updateDefaultAssets);
-  router.post("/admin/default-assets/reset", settingsController.resetDefaultAssets);
+  router.get("/banner", settingsController.getPublicBanner);
+  router.post("/banner", settingsController.saveBanner);
+  router.get("/default-assets", settingsController.getDefaultAssets);
+  router.post("/default-assets", settingsController.updateDefaultAssets);
+  router.post("/default-assets/reset", settingsController.resetDefaultAssets);
 
   router.get("/analytics/visitors/daily", visitorController.getDailyVisitorAnalytics);
 
