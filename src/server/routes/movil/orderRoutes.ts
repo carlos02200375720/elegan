@@ -141,7 +141,4 @@ export function registerAndroidOrderRoutes(router: Router, deps: AndroidRouterDe
         res.status(500).json({ error: "Error al crear orden en Android", details: err.message });
       }
     });
-  
-    return router;
-  }
 }
