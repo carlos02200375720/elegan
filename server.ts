@@ -271,7 +271,7 @@ async function startServer() {
     return streamGcsFile(req, res, subPath);
   });
 
-  // Dedicated Android API Router
+  // Dedicated mobile API router
   app.use(
     "/api/movil",
     createMovilRouter({
@@ -303,7 +303,7 @@ async function startServer() {
   app.use("/api/admin", createAdminRouter());
   app.use("/api/web", createWebRouter());
 
-  // Root-level aliases for legacy clients & Android compatibility
+  // Root-level health endpoint retained for platform health checks
   app.get("/health", (req, res) => {
     res.json({ status: "ok", server: "mall-social-cloudrun", timestamp: new Date().toISOString() });
   });
