@@ -180,7 +180,7 @@ export default function AndroidPublishView({ currentUser, onBack, onSuccess, use
         const folder = "publicaciones";
         const mime = file.type || "image/jpeg";
         const signedRes = await fetch(
-          `/api/v1/media/upload-url?folder=${folder}&file_type=${encodeURIComponent(mime)}&file_name=${encodeURIComponent(file.name)}`
+          `/api/movil/v1/media/upload-url?folder=${folder}&file_type=${encodeURIComponent(mime)}&file_name=${encodeURIComponent(file.name)}`
         );
         if (signedRes.ok) {
           const { upload_url, public_url } = await signedRes.json();
@@ -214,13 +214,13 @@ export default function AndroidPublishView({ currentUser, onBack, onSuccess, use
     try {
       r = await androidApiFetch("/upload", { method: "POST", body: createFormData() });
     } catch {
-      r = await fetch("/api/upload", { method: "POST", body: createFormData() });
+      r = await fetch("/api/movil/upload", { method: "POST", body: createFormData() });
     }
 
     let text = await r.text();
     if (!r.ok || !text.trim().startsWith("{")) {
       try {
-        const altR = await fetch("/api/upload", { method: "POST", body: createFormData() });
+        const altR = await fetch("/api/movil/upload", { method: "POST", body: createFormData() });
         if (altR.ok) {
           const altText = await altR.text();
           if (altText.trim().startsWith("{")) {
