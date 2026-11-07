@@ -1,7 +1,7 @@
 import { Router, Request, Response, NextFunction } from "express";
 import mongoose from "mongoose";
 import { getPaypalConfig, createPaypalOrder } from "./controllers/paypalController";
-import type { AndroidRouterDependencies } from "./androidRouterTypes";
+import type { MovilRouterDependencies } from "./routes/movil/types";
 import { registerAndroidAuthRoutes } from "./routes/movil/authRoutes";
 import { registerAndroidUserRoutes } from "./routes/movil/userRoutes";
 import { registerAndroidCartRoutes } from "./routes/movil/cartRoutes";
@@ -11,9 +11,9 @@ import { registerAndroidMediaRoutes } from "./routes/movil/mediaRoutes";
 import { registerAndroidPostRoutes } from "./routes/movil/postRoutes";
 import { registerAndroidOrderRoutes } from "./routes/movil/orderRoutes";
 
-export type { AndroidRouterDependencies } from "./androidRouterTypes";
+export type { MovilRouterDependencies } from "./routes/movil/types";
 
-export function createAndroidRouter(deps: AndroidRouterDependencies): Router {
+export function createAndroidRouter(deps: MovilRouterDependencies): Router {
   const router = Router();
 
   router.use((req: Request, res: Response, next: NextFunction) => {
