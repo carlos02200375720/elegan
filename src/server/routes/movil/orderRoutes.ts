@@ -43,7 +43,7 @@ export function registerAndroidOrderRoutes(router: Router, deps: AndroidRouterDe
               }) as any[];
             }
           } catch (dbErr) {
-            console.error("Error fetching MongoOrders in android router:", dbErr);
+            console.error("Error fetching MongoOrders in mobile router:", dbErr);
           }
         }
   
@@ -63,27 +63,27 @@ export function registerAndroidOrderRoutes(router: Router, deps: AndroidRouterDe
   
         res.json({ orders: allOrders, purchases });
       } catch (err: any) {
-        console.error("Error in GET /api/android/orders:", err);
+        console.error("Error in GET /api/movil/orders:", err);
         res.status(500).json({ error: "Error al obtener órdenes", details: err.message });
       }
     });
   
-    // Android Shop: Create Order
+    // Mobile Shop: Create Order
   
     router.post("/orders", async (req: Request, res: Response) => {
       try {
         const { items, total, userId, userName, userEmail } = req.body;
         const newOrder: Order = {
-          id: "ord_android_" + generateId(),
+          id: "ord_movil_" + generateId(),
           buyerId: userId || "current_user",
-          buyerName: userName || "Usuario Android",
-          buyerEmail: userEmail || "android@mallsocial.app",
+          buyerName: userName || "Usuario móvil",
+          buyerEmail: userEmail || "movil@elegan.app",
           buyerUsername: req.body?.buyerUsername || (userName ? userName.toLowerCase().replace(/\s+/g, "_") : undefined),
           buyerAvatar: req.body?.buyerAvatar || undefined,
           buyerPhone: req.body?.buyerPhone || undefined,
           items: items || [],
           total: total || 0,
-          shippingAddress: req.body?.shippingAddress || req.body?.address || "Dirección Android Móvil",
+          shippingAddress: req.body?.shippingAddress || req.body?.address || "Dirección de compra móvil",
           status: "processing",
           paymentStatus: "paid",
           createdAt: new Date().toISOString(),
@@ -109,7 +109,7 @@ export function registerAndroidOrderRoutes(router: Router, deps: AndroidRouterDe
                 await MongoProduct.updateOne(
                   { id: targetProd.id },
                   { $set: { stock: targetProd.stock } }
-                ).catch((err: any) => console.error("Error updating MongoProduct stock in android router:", err));
+                ).catch((err: any) => console.error("Error updating MongoProduct stock in mobile router:", err));
               }
             }
           }
@@ -131,14 +131,14 @@ export function registerAndroidOrderRoutes(router: Router, deps: AndroidRouterDe
         broadcastToAll({
           type: "new_order",
           order: newOrder,
-          platform: "android",
+          platform: "movil",
         });
   
-        console.log(`📱 [Android Gateway] Orden creada desde Android en Atlas: ${newOrder.id} ($${newOrder.total})`);
+        console.log(`📱 [Mobile Gateway] Orden creada desde móvil en Atlas: ${newOrder.id} ($${newOrder.total})`);
         res.json({ success: true, order: newOrder, products: allProds });
       } catch (err: any) {
-        console.error("❌ [Android Gateway] Error al registrar orden:", err);
-        res.status(500).json({ error: "Error al crear orden en Android", details: err.message });
+        console.error("❌ [Mobile Gateway] Error al registrar orden:", err);
+        res.status(500).json({ error: "Error al crear orden móvil", details: err.message });
       }
     });
 }
