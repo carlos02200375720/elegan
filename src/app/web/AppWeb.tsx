@@ -228,7 +228,7 @@ export default function AppWeb() {
       timestamp: new Date().toISOString(),
     };
     setPrivateMessages((prev) => [...prev, newMsg]);
-    apiFetch("/api/chats/messages", {
+    apiFetch("/api/chats", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(newMsg),
