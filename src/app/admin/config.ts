@@ -4,7 +4,12 @@ export const BACKEND_URL: string =
   (import.meta as any).env?.VITE_BACKEND_URL || CLOUD_RUN_BACKEND_URL;
 
 export const getApiUrl = (path: string): string => {
-  const cleanPath = path.startsWith("/") ? path : `/${path}`;
+  const rawPath = path.startsWith("/") ? path : `/${path}`;
+  const cleanPath = rawPath.startsWith("/api/android/")
+    ? `/api/admin/${rawPath.slice("/api/android/".length)}`
+    : rawPath.startsWith("/api/")
+      ? `/api/admin/${rawPath.slice("/api/".length)}`
+      : rawPath;
   if (typeof window !== "undefined" && window.location && window.location.protocol.startsWith("http")) {
     return cleanPath;
   }
