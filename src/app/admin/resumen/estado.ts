@@ -83,7 +83,7 @@ export function useEstadoAdmin(props: AdminViewProps) {
 
   // Platform switcher state (app/web <-> app/movil)
   const [currentPlatform, setCurrentPlatform] = useState<'android' | 'web'>(() => {
-    return activePlatform || (sessionState.getPlatform() as 'android' | 'web') || 'web';
+    return activePlatform || (sesionAdmin.getPlatform() as 'android' | 'web') || 'web';
   });
 
   useEffect(() => {
@@ -94,7 +94,7 @@ export function useEstadoAdmin(props: AdminViewProps) {
 
   const handlePlatformChange = (target: 'android' | 'web') => {
     setCurrentPlatform(target);
-    sessionState.setPlatform(target);
+    sesionAdmin.setPlatform(target);
     if (onSwitchPlatform) {
       onSwitchPlatform(target);
     } else {
