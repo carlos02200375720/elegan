@@ -15,8 +15,8 @@ export const isAndroidNative = (): boolean => {
 
 export const getAndroidApiUrl = (endpoint: string): string => {
   let clean = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
-  if (!clean.startsWith("/api/android/")) {
-    clean = clean.startsWith("/api/") ? clean.replace(/^\/api/, "/api/android") : `/api/android${clean}`;
+  if (!clean.startsWith("/api/movil/")) {
+    clean = clean.startsWith("/api/") ? clean.replace(/^\/api/, "/api/movil") : `/api/movil${clean}`;
   }
   if (typeof window !== "undefined" && window.location &&
       window.location.protocol.startsWith("http") && !isAndroidNative() && !isExternalStaticHost()) {
@@ -78,7 +78,7 @@ export const androidApiFetch = async (
     if (!response.ok && response.status >= 500 && typeof window !== "undefined" &&
         window.location?.protocol?.startsWith("http")) {
       const cleanEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
-      const localUrl = cleanEndpoint.startsWith("/api/android") ? cleanEndpoint : `/api/android${cleanEndpoint}`;
+      const localUrl = cleanEndpoint.startsWith("/api/movil") ? cleanEndpoint : `/api/movil${cleanEndpoint}`;
       if (url !== localUrl) {
         try {
           const localResponse = await fetch(localUrl, { ...init, headers, signal });
@@ -94,7 +94,7 @@ export const androidApiFetch = async (
     }
     if (typeof window !== "undefined" && window.location?.protocol?.startsWith("http")) {
       const cleanEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
-      const localUrl = cleanEndpoint.startsWith("/api/android") ? cleanEndpoint : `/api/android${cleanEndpoint}`;
+      const localUrl = cleanEndpoint.startsWith("/api/movil") ? cleanEndpoint : `/api/movil${cleanEndpoint}`;
       if (url !== localUrl) {
         try { return await fetch(localUrl, { ...init, headers, signal }); } catch {}
       }
