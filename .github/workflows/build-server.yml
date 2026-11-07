@@ -45,9 +45,12 @@ jobs:
       - name: Instalar dependencias
         run: npm install
 
-      - name: Verificar compilación del servidor
+      - name: Verificar compilación de las tres aplicaciones y del servidor
         run: |
-          npm run build:server
+          npm run build
+          test -s dist/index.html
+          test -s dist/movil.html
+          test -s dist/admin.html
           test -s dist/server.cjs
 
       - name: Autenticar en Google Cloud
