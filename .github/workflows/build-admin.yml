@@ -5,6 +5,10 @@ on:
     branches: [ "main", "master", "fix/reels-video-performance" ]
     paths:
       - 'src/app/admin/**'
+      - 'admin.html'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'vite.config.ts'
       - '.github/workflows/build-admin.yml'
   workflow_dispatch:
 
@@ -25,10 +29,12 @@ jobs:
       - name: Instalar dependencias
         run: npm install
 
-      - name: Compilar solo el Módulo Admin
+      - name: Compilar la página y el módulo Admin
         run: |
+          npx vite build --mode admin
           npm run build:admin
-          test -f dist/admin.js
+          test -s dist/admin.html
+          test -s dist/admin.js
 
       - name: Guardar artefacto Admin
         uses: actions/upload-artifact@v4
