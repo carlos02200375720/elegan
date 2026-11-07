@@ -138,9 +138,9 @@ export default function AndroidApp({
 
   const handleDeleteReel = async (reelId: string) => {
     try {
-      const res = await fetch(`/api/android/reels/${reelId}`, { method: 'DELETE' });
+      const res = await fetch(`/api/movil/reels/${reelId}`, { method: 'DELETE' });
       if (!res.ok) {
-        await fetch(`/api/reels/${reelId}`, { method: 'DELETE' });
+        await fetch(`/api/movil/reels/${reelId}`, { method: 'DELETE' });
       }
     } catch (err) {
       console.error("Error deleting reel:", err);
