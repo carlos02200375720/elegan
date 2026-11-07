@@ -63,10 +63,10 @@ export default function FeedPublicaciones(props: FeedPublicacionesProps) {
             }}
             savedReelIds={currentUser.savedReelIds || []}
             onToggleSaveReel={(reelId) => {
-              apiFetch(`/api/users/${currentUser.id}/save-reel`, {
+              apiFetch("/api/users/current/save", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ reelId }),
+                body: JSON.stringify({ reelId, userId: currentUser.originalId || currentUser.id }),
               }).catch(() => {});
             }}
           />
